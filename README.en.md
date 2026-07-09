@@ -38,7 +38,7 @@ Live API calls require a server-side API key and API base URL, both provided at 
 
 ```bash
 export DATA_MARKETPLACE_API_KEY=<your-api-key>
-export DATA_MARKETPLACE_BASE_URL=<onboarding-provided-base-url>
+export DATA_MARKETPLACE_BASE_URL=<data-marketplace-base-url>
 ```
 
 The API key must be used server-side in the `X-API-KEY` header. Do not hardcode it or expose it to browser code.
