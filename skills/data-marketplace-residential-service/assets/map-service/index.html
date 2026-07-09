@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>주거 지도 — 단지의 모든 가격, 한 화면에</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='22' y='22' width='56' height='56' rx='14' fill='%230e6b4f' transform='rotate(45 50 50)'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+<div id="map" aria-label="지도"></div>
+
+<!-- 지도 로드 실패 폴백 -->
+<div id="map-fallback" class="map-fallback" hidden>
+  <div class="map-fallback-box">
+    <strong>지도를 불러오지 못했어요</strong>
+    <p>카카오맵 연결을 확인한 뒤 다시 시도해 주세요.<br/>지도 없이도 검색으로 단지 정보를 볼 수 있어요.</p>
+    <button type="button" id="map-retry" class="btn-ghost">다시 불러오기</button>
+  </div>
+</div>
+
+<!-- 좌측 상단: 로고 + 검색 -->
+<header class="search-card" id="search-card">
+  <div class="brand-row">
+    <a class="brand" href="./" aria-label="홈">
+      <span class="brand-dot" aria-hidden="true"></span><span id="brand-name">주거 지도</span>
+    </a>
+    <span class="brand-tag" id="brand-tag">단지의 모든 가격, 한 화면에</span>
+  </div>
+  <div class="search-box" role="combobox" aria-expanded="false" aria-haspopup="listbox" id="search-combo">
+    <svg class="search-icon" viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="6" fill="none" stroke="currentColor" stroke-width="2"/><line x1="13.5" y1="13.5" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <input id="search-input" type="text" placeholder="단지명으로 검색 (예: 헬리오시티)"
+           autocomplete="off" spellcheck="false" aria-label="단지명 검색" />
+    <button type="button" id="search-clear" class="search-clear" hidden aria-label="검색어 지우기">×</button>
+  </div>
+  <ul id="search-results" class="search-results" role="listbox" hidden></ul>
+  <div class="type-seg" role="group" aria-label="주거유형 필터">
+    <button type="button" class="seg-btn is-on" data-type="아파트">아파트</button>
+    <button type="button" class="seg-btn" data-type="오피스텔">오피스텔</button>
+    <button type="button" class="seg-btn" data-type="연립다세대">연립·다세대</button>
+    <button type="button" class="seg-btn" data-type="전체">전체</button>
+  </div>
+</header>
+
+<!-- 단지 상세 패널 -->
+<aside class="panel" id="panel" hidden aria-label="단지 상세 정보" data-testid="complex-detail-drawer">
+  <div class="panel-scroll" id="panel-body"><!-- js 렌더 --></div>
+</aside>
+
+<!-- 호실 상세 시트 -->
+<section class="unit-sheet" id="unit-sheet" hidden aria-label="동·호실 상세" data-testid="unit-drilldown-panel"></section>
+
+<!-- 우측 컨트롤 -->
+<nav class="map-tools" aria-label="지도 도구">
+  <div class="tool-group">
+    <button type="button" id="tool-maptype" class="tool-btn" title="스카이뷰 전환">위성</button>
+    <button type="button" id="tool-area" class="tool-btn is-on" title="면적 단위 전환">평</button>
+  </div>
+  <div class="tool-group">
+    <button type="button" id="tool-zoomin" class="tool-btn" aria-label="확대">＋</button>
+    <button type="button" id="tool-zoomout" class="tool-btn" aria-label="축소">－</button>
+  </div>
+</nav>
+
+<!-- 지도 상태 안내 pill -->
+<div id="map-notice" class="map-notice" hidden></div>
+
+<!-- 데이터 출처 -->
+<footer class="data-credit" id="data-credit">
+  <span>실거래가 국토교통부 · 산출시세/공시 빅밸류 데이터 마켓플레이스</span>
+  <span id="credit-balance" class="credit-chip" hidden></span>
+</footer>
+
+<script src="js/config.js"></script>
+<script src="js/format.js"></script>
+<script src="js/api.js"></script>
+<script src="js/chart.js"></script>
+<script src="js/map.js"></script>
+<script src="js/panel.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
