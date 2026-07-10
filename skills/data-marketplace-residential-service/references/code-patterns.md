@@ -33,8 +33,6 @@ type DataProductResponse<T> = {
   limit: number;
   offset: number;
   has_next: boolean;
-  // The live response also carries billing metadata (credit_used, credit_balance).
-  // Intentionally omitted from this type: never render billing data in end-user UI.
 };
 
 export async function callDataProduct<T>(

@@ -21,7 +21,7 @@ Rows are grouped by theme: paths/keys → bbox/markers → sort/pagination → p
 | Sending only `sort.order` | Sort needs both field and order to be deterministic | Send `sort.field` and `sort.order` together (flattened route/tool inputs use `sort_field`/`sort_order`) |
 | Relying on server default ordering for list tabs | Generated routes should be explicit and stable | Send the documented sort explicitly (e.g., `contract_date desc` for realdeal) |
 | Assuming every product uses the same `limit`/`offset` range | Pagination support and caps differ by product | Read the product-specific pagination rule from the API Reference |
-| Fetching all list rows on initial render | Large residential lists can be slow and credit-heavy | Load the first page with documented pagination, then continue only when the UI asks for more |
+| Fetching all list rows on initial render | Large residential lists can be slow and request-heavy | Load the first page with documented pagination, then continue only when the UI asks for more |
 | Building area options from one `unit_details` page | Large complexes return only the first page, often sorted by area | Paginate, or derive area options from the product that matches the UI purpose |
 | Reading lease value from `price` | Lease rows may use `deposit_price` | Branch by transaction type |
 | Converting `price_min`/`price_max` or `deposit_min`/`deposit_max` to 만원 | Filters compare directly against KRW price columns | Send filter values in KRW, the same unit as response price fields |

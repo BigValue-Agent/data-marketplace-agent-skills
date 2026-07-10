@@ -4,7 +4,6 @@
 window.api = (() => {
   const C = window.APP_CONFIG;
   const cache = new Map(); // key: route+body → response (단지 단위 데이터는 세션 내 불변으로 취급)
-  let lastCreditBalance = null;
 
   // 계약 route — minimum_service_contract의 core/lazy route 문자열과 1:1
   const ROUTES = {
@@ -42,10 +41,6 @@ window.api = (() => {
     }
     const json = await res.json();
     if (!json.success) throw new Error(`API 실패: ${route}`);
-    if (typeof json.credit_balance === "number") {
-      lastCreditBalance = json.credit_balance;
-      document.dispatchEvent(new CustomEvent("credit:update", { detail: lastCreditBalance }));
-    }
     if (useCache) cache.set(key, { json, expiresAt: ttlMs ? Date.now() + ttlMs : null });
     return json;
   }
@@ -71,8 +66,8 @@ window.api = (() => {
   }
 
   // 3. 지도 마커 (bbox는 0.1도 이내로 호출자에서 클램프 — offset 페이지네이션 금지 상품)
-  // 마커는 가장 비싼 호출이다 — 같은 뷰(동일 bbox+유형)의 재조회(유형 필터 왕복,
-  // 직후 재렌더)가 idle마다 재과금되지 않도록 짧은 TTL 캐시를 둔다.
+  // 같은 뷰(동일 bbox+유형)의 재조회(유형 필터 왕복, 직후 재렌더)가 idle마다
+  // 반복되지 않도록 짧은 TTL 캐시를 둔다.
   async function markers(bbox, residentialType, { signal } = {}) {
     const body = { bbox, limit: C.MARKER_LIMIT };
     if (residentialType) body.filters = { residential_type: residentialType };
@@ -236,6 +231,5 @@ window.api = (() => {
     searchComplex, complexProfile, markers, nearbyMarkers, complexShape, buildings, units,
     noticePricesByJpk, noticePricesSample, realdealPage, realdealCollect,
     estimateBand, estimatesByJpk,
-    get creditBalance() { return lastCreditBalance; },
   };
 })();

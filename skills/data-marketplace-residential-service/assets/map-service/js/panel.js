@@ -166,7 +166,7 @@ window.panel = (() => {
       cur = {
         key: complexKey, profile, buildings, pyeongs, repPy, viewType, typeMismatch,
         // 기준 평형별 최근 6개월 매매/전세 수집 Promise 메모 — 게이지·주변 비교·전세가율이
-        // 같은 Promise를 공유해 중복 호출과 기준 숫자 불일치를 막고, 평형을 오가도 재과금이 없다.
+        // 같은 Promise를 공유해 중복 호출과 기준 숫자 불일치를 막는다.
         focusDealsPromises: new Map(),
         focusJeonsePromises: new Map(),
       };
@@ -206,6 +206,8 @@ window.panel = (() => {
   // ── 골격 렌더 ─────────────────────────────────
   function renderShell() {
     const p = cur.profile;
+    // 헤더는 단지 "정체성"까지만 — 용적률·건폐율·주차·난방은 단지 개요 섹션으로 이관
+    // (호갱노노 헤더 문법: 첫 화면은 압축, 공부 수치는 하단 섹션)
     const badges = [
       // 주상복합: 지금 보는 유형 외의 유형이 같은 단지에 있음을 명시 (세대수 등은 단지 전체 값)
       cur.typeMismatch && `복합 단지 · <b>${F.esc(p.residential_type)}</b> 포함`,
@@ -213,18 +215,15 @@ window.panel = (() => {
       p.complex_dong_count != null && `<b>${F.count(p.complex_dong_count)}</b>개동`,
       p.use_approval_date && `${F.dateYm(p.use_approval_date)} <b>(${p.complex_age_number ?? "—"}년차)</b>`,
       p.max_ground_floor_count != null && `최고 <b>${p.max_ground_floor_count}층</b>`,
-      p.floorarea_rate != null && `용적률 <b>${p.floorarea_rate}%</b>`,
-      p.buildingcoverage_rate != null && `건폐율 <b>${p.buildingcoverage_rate}%</b>`,
-      p.complex_parking_count != null && p.complex_household_count &&
-        `주차 세대당 <b>${(p.complex_parking_count / p.complex_household_count).toFixed(2)}대</b>`,
-      p.heating_division_name && `<b>${F.esc(p.heating_division_name)}</b>`,
     ].filter(Boolean).map((t) => `<span class="p-badge">${t}</span>`).join("");
+    const TYPE_BADGE_CLS = { "연립다세대": " villa", "오피스텔": " officetel" };
+    const typeBadgeCls = TYPE_BADGE_CLS[cur.viewType || p.residential_type] || "";
 
     bodyEl.innerHTML = `
       <div class="p-head">
         <div class="p-head-top">
           <h2 class="p-name">${F.esc(p.complex_name || p.road_name_address || "이름 없는 단지")}</h2>
-          <span class="p-type-badge">${F.esc(cur.viewType || p.residential_type || "")}</span>
+          <span class="p-type-badge${typeBadgeCls}">${F.esc(cur.viewType || p.residential_type || "")}</span>
           <button type="button" class="p-close" id="p-close" aria-label="패널 닫기">×</button>
         </div>
         <div class="p-addr">
@@ -338,8 +337,8 @@ window.panel = (() => {
   function renderGaugeSkeleton() {
     document.getElementById("sec-gauge").innerHTML = `
       <div class="gauge-lead">
-        <span class="gl-label">가격 수준계</span>
-        <div class="skel" style="height:30px;width:120px"></div>
+        <span class="gl-eyebrow">가격 수준계</span>
+        <div class="skel" style="height:40px;width:150px"></div>
       </div>
       <div class="skel" style="height:110px;margin-top:14px"></div>`;
   }
@@ -404,7 +403,7 @@ window.panel = (() => {
     const el = document.getElementById("sec-gauge");
     if (!vals.length) {
       el.innerHTML = `
-        <div class="gauge-lead"><span class="gl-label">가격 수준계</span></div>
+        <div class="gauge-lead"><span class="gl-eyebrow">가격 수준계</span></div>
         <div class="chart-empty" style="height:90px">최근 거래·시세 데이터가 아직 없는 단지예요.</div>`;
       return;
     }
@@ -422,6 +421,7 @@ window.panel = (() => {
             <div class="gauge-band deal" style="left:${pct(dealMin)};width:${width(dealMin, dealMax)}"></div>
             ${dealAvg != null ? `<div class="gauge-point deal" style="left:${pct(dealAvg)}" title="평균 ${F.price(dealAvg)}"></div>` : ""}
           </div>
+          <div class="gauge-val deal">${dealAvg != null ? F.price(dealAvg, { compact: true }) : "—"}</div>
         </div>`);
     }
     if (est && est.min != null && est.max != null) {
@@ -432,6 +432,7 @@ window.panel = (() => {
             <div class="gauge-band est" style="left:${pct(est.min)};width:${width(est.min, est.max)}"></div>
             <div class="gauge-point est" style="left:${pct(est.avg)}" title="평균 ${F.price(est.avg)}"></div>
           </div>
+          <div class="gauge-val est">${F.price(est.avg, { compact: true })}</div>
         </div>`);
     }
     if (noticeAvg != null) {
@@ -441,6 +442,7 @@ window.panel = (() => {
           <div class="gauge-track">
             <div class="gauge-point notice" style="left:${pct(noticeAvg)}" title="평균 ${F.price(noticeAvg)}"></div>
           </div>
+          <div class="gauge-val notice">${F.price(noticeAvg, { compact: true })}</div>
         </div>`);
     }
 
@@ -492,13 +494,17 @@ window.panel = (() => {
 
     el.innerHTML = `
       <div class="gauge-lead">
+        <span class="gl-eyebrow">${leadLabel}</span>
         <span class="gl-price">${F.price(leadPrice)}</span>
-        <span class="gl-label">${leadLabel}</span>
       </div>
-      ${subSegs.length ? `<div class="gauge-lead-sub">${subSegs.join(" · ")}</div>` : ""}
+      ${subSegs.length ? `<div class="gauge-stats">${subSegs.map((s) => `<span class="stat-chip">${s}</span>`).join("")}</div>` : ""}
       <div class="gauge">
         ${lanes.join("")}
-        <div class="gauge-scale"><span>${F.price(lo, { compact: true })}</span><span>${F.price(hi, { compact: true })}</span></div>
+        <div class="gauge-row gauge-scale-row">
+          <div></div>
+          <div class="gauge-scale"><span>${F.price(lo, { compact: true })}</span><span>${F.price(hi, { compact: true })}</span></div>
+          <div></div>
+        </div>
       </div>
       <p class="gauge-note">
         <i class="c-deal">실거래</i>는 신고 기반 체결가,
@@ -535,7 +541,7 @@ window.panel = (() => {
       return;
     }
     try {
-      // 후보 마커는 api 세션 캐시에 남으므로 평형 변경으로 다시 와도 재과금이 없다.
+      // 후보 마커는 api 세션 캐시에 남으므로 평형 변경으로 돌아와도 다시 호출하지 않는다.
       const around = await A.nearbyMarkers(p.latitude, p.longitude, vt);
       if (token !== openToken || gen !== nearbyGen) return;
       const candidates = around
@@ -914,15 +920,22 @@ window.panel = (() => {
   // ── 단지 개요 ─────────────────────────────────
   function renderOverview() {
     const p = cur.profile;
+    // 헤더에서 이관된 공부 수치(용적률·건폐율·주차 세대당·난방)는 여기가 정위치다
     const rows = [
       ["대지면적", p.land_area != null ? `${F.area(p.land_area)} (${F.area(p.land_area, { forceUnit: F.getAreaUnit() === "pyeong" ? "m2" : "pyeong" })})` : "—"],
       ["지목 · 용도지역", `${p.land_purpose_name || "—"} · ${p.purpose_region_division_1_name || "—"}`],
       ["개별공시지가", p.land_recent_notice_price != null ? `${F.price(p.land_recent_notice_price)}/㎡ <small style="color:var(--ink-3)">(${p.land_recent_notice_year}년)</small>` : "—"],
+      ["용적률 · 건폐율", (p.floorarea_rate != null || p.buildingcoverage_rate != null)
+        ? `${p.floorarea_rate != null ? `${p.floorarea_rate}%` : "—"} · ${p.buildingcoverage_rate != null ? `${p.buildingcoverage_rate}%` : "—"}` : "—"],
       ["건물 구조", p.representative_title_structure_name || "—"],
       ["주용도", p.representative_title_etc_purpose_name || p.representative_title_purpose_name || "—"],
+      ["난방", p.heating_division_name || "—"],
       ["연면적 합계", p.sum_title_total_floor_area != null ? F.area(p.sum_title_total_floor_area) : "—"],
       ["총 호수", p.complex_ho_count != null ? `${F.count(p.complex_ho_count)}호` : "—"],
-      ["주차대수", p.complex_parking_count != null ? `${F.count(p.complex_parking_count)}대` : "—"],
+      ["주차대수", p.complex_parking_count != null
+        ? `${F.count(p.complex_parking_count)}대${p.complex_household_count
+          ? ` <small style="color:var(--ink-3)">(세대당 ${(p.complex_parking_count / p.complex_household_count).toFixed(2)}대)</small>` : ""}`
+        : "—"],
       ["시공사", p.constructor_name || "—"],
       ["시행사", p.developer_name || "—"],
     ];

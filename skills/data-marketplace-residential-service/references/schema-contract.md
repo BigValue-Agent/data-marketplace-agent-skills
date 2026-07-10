@@ -24,7 +24,6 @@ The skill should say which role to use and which key to carry forward. The API R
 - bbox marker responses return rows nearest the bbox center first and truncate outward when the limit is hit.
 - All Data Product responses are wrapped; returned rows are in `data`.
 - The wrapper also carries `row_count`, `total_available` (may be null), `limit`, `offset`, and `has_next`. Use `total_available` for "N건" headers and page math; when it is null, fall back to `has_next`-only pagination.
-- The wrapper carries billing metadata (`credit_used`, `credit_balance`); never render it in end-user UI.
 
 ## Stable Key Rules
 

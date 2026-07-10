@@ -194,7 +194,7 @@ async function handleApi(req, res, url) {
     });
   }
   try {
-    // 응답 envelope(success/data/has_next/credit_balance)를 가공 없이 그대로 전달한다
+    // 업스트림 응답 envelope를 가공 없이 그대로 전달한다
     const upstream = await upstreamQuery(`${API_BASE}/api/v1/data-products/residential/${slug}/query`, {
       headers: { "X-API-KEY": API_KEY, "Content-Type": "application/json" },
       body: body || "{}",

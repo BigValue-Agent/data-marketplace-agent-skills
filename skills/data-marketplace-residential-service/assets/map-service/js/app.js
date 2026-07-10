@@ -158,11 +158,4 @@
     e.target.textContent = next === "pyeong" ? "평" : "㎡";
     if (window.panel.isOpen()) window.panel.rerender();
   });
-
-  // ── 크레딧 잔액 ──────────────────────────────
-  const creditEl = document.getElementById("credit-balance");
-  document.addEventListener("credit:update", (e) => {
-    creditEl.hidden = false;
-    creditEl.textContent = `크레딧 ${Math.round(e.detail).toLocaleString()}`;
-  });
 })();

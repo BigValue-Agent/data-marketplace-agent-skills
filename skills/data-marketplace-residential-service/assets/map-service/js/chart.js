@@ -85,6 +85,11 @@ window.dealChart = (() => {
     tip.className = "chart-tip";
     tip.style.display = "none";
     container.appendChild(tip);
+    // 호버 크로스헤어 — 캔버스 재드로우 대신 DOM 요소로 (mousemove마다 redraw 회피)
+    const cross = document.createElement("div");
+    cross.className = "chart-cross";
+    cross.style.display = "none";
+    container.appendChild(cross);
     const volCanvas = document.createElement("canvas");
     volCanvas.className = "chart-canvas vol";
     volCanvas.dataset.testid = "volume-bars";
@@ -179,9 +184,41 @@ window.dealChart = (() => {
         ctx.fillText(String(yy), x, H - PAD.b + 6);
       }
 
-      // 시리즈(산점 + 월평균 라인 + 마지막 평균점) — 기본/겹침 공용
+      // 흰 후광 텍스트 — 산점 위에서도 라벨이 읽히게 한다
+      const haloText = (txt, x, y, fillColor, { align = "center", baseline = "bottom" } = {}) => {
+        ctx.font = '700 10.5px "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
+        ctx.textAlign = align; ctx.textBaseline = baseline;
+        ctx.lineWidth = 3; ctx.lineJoin = "round";
+        ctx.strokeStyle = "rgba(255,255,255,0.92)";
+        ctx.strokeText(txt, x, y);
+        ctx.fillStyle = fillColor;
+        ctx.fillText(txt, x, y);
+        ctx.font = FONT;
+      };
+      const clampX = (x) => Math.min(Math.max(x, PAD.l + 28), W - PAD.r - 28);
+
+      // 시리즈(산점 + 월평균 라인 + 마지막 평균점·값 라벨) — 기본/겹침 공용
       screenPts = [];
-      const drawSeries = (seriesPts, seriesAvg, seriesColor, seriesType) => {
+      const drawSeries = (seriesPts, seriesAvg, seriesColor, seriesType, { fill = false } = {}) => {
+        // 평균선 아래 은은한 area fill — 단일 시리즈일 때만 (겹침 모드는 두 라인 간격이 주인공)
+        if (fill && seriesAvg.length > 1) {
+          const inR = seriesAvg.filter((a) => a.t >= xMin && a.t <= xMax);
+          if (inR.length > 1) {
+            const g = ctx.createLinearGradient(0, PAD.t, 0, H - PAD.b);
+            g.addColorStop(0, `${seriesColor}2e`);
+            g.addColorStop(1, `${seriesColor}00`);
+            ctx.beginPath();
+            inR.forEach((a, i) => {
+              const x = sx(a.t), y = sy(a.v);
+              if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.lineTo(sx(inR[inR.length - 1].t), H - PAD.b);
+            ctx.lineTo(sx(inR[0].t), H - PAD.b);
+            ctx.closePath();
+            ctx.fillStyle = g;
+            ctx.fill();
+          }
+        }
         ctx.fillStyle = seriesColor; ctx.globalAlpha = 0.28;
         for (const p of seriesPts) {
           const x = sx(p.t), y = sy(p.v);
@@ -202,13 +239,34 @@ window.dealChart = (() => {
         }
         const lastA = seriesAvg[seriesAvg.length - 1];
         if (lastA) {
+          const lx = sx(lastA.t), ly = sy(lastA.v);
           ctx.fillStyle = seriesColor;
-          ctx.beginPath(); ctx.arc(sx(lastA.t), sy(lastA.v), 4, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2); ctx.fill();
           ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.stroke();
+          // 마지막 월평균 값 라벨 — "지금 얼마"를 축을 읽지 않고도 알게 한다
+          const txt = window.fmt.price(lastA.v, { compact: true });
+          const rightRoom = lx + 10 + ctx.measureText(txt).width < W - PAD.r;
+          haloText(txt, rightRoom ? lx + 8 : lx - 8, ly, seriesColor,
+            { align: rightRoom ? "left" : "right", baseline: "middle" });
         }
       };
-      drawSeries(pts, baseAvg, color, dealType);
+      drawSeries(pts, baseAvg, color, dealType, { fill: !ovPts.length });
       if (ovPts.length) drawSeries(ovPts, ovAvg, ovColor, overlay.dealType);
+
+      // 최고/최저 어노테이션 — 기본 시리즈만 (겹침까지 표기하면 과밀)
+      if (pts.length >= 3) {
+        const maxP = pts.reduce((a, b) => (b.v > a.v ? b : a));
+        const minP = pts.reduce((a, b) => (b.v < a.v ? b : a));
+        if (maxP.v > minP.v) {
+          for (const [p, label, dir] of [[maxP, "최고", -1], [minP, "최저", 1]]) {
+            const x = sx(p.t), y = sy(p.v);
+            ctx.beginPath(); ctx.arc(x, y, 4.5, 0, Math.PI * 2);
+            ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
+            haloText(`${label} ${window.fmt.price(p.v, { compact: true })}`,
+              clampX(x), y + dir * 8, color, { baseline: dir < 0 ? "bottom" : "top" });
+          }
+        }
+      }
 
       // 범례 — 겹침일 때만 (단일 시리즈는 세그먼트 색이 곧 범례다)
       if (ovPts.length) {
@@ -231,7 +289,9 @@ window.dealChart = (() => {
         const d = (s.x - mx) ** 2 + (s.y - my) ** 2;
         if (d < bestD) { bestD = d; best = s; }
       }
-      if (!best) { tip.style.display = "none"; return; }
+      if (!best) { tip.style.display = "none"; cross.style.display = "none"; return; }
+      cross.style.display = "block";
+      cross.style.left = `${best.x}px`;
       const d = best.p.raw;
       const sType = best.type || dealType; // 겹침 모드에서는 점이 속한 시리즈 기준으로 표기
       const priceTxt = sType === "월세"
@@ -242,7 +302,7 @@ window.dealChart = (() => {
       tip.style.top = `${best.y}px`;
       tip.style.display = "block";
     }
-    function onLeave() { tip.style.display = "none"; }
+    function onLeave() { tip.style.display = "none"; cross.style.display = "none"; }
 
     canvas.addEventListener("mousemove", onMove);
     canvas.addEventListener("mouseleave", onLeave);

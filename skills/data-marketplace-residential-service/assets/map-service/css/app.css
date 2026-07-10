@@ -113,10 +113,13 @@ button { font-family: inherit; cursor: pointer; }
   border-top: 1px solid var(--line-2);
 }
 .search-results li {
-  padding: 10px 6px; display: flex; align-items: center; gap: 10px;
+  padding: 10px 6px 10px 9px; display: flex; align-items: center; gap: 10px;
   border-radius: 8px; cursor: pointer;
 }
-.search-results li:hover, .search-results li.is-active { background: var(--tint-2); }
+.search-results li:hover, .search-results li.is-active {
+  background: var(--tint-2);
+  box-shadow: inset 2.5px 0 0 var(--brand);
+}
 .search-results .sr-type {
   flex: none; font-size: 11px; font-weight: 700; padding: 3px 7px; border-radius: 6px;
   background: var(--tint); color: var(--brand-deep);
@@ -165,11 +168,13 @@ button { font-family: inherit; cursor: pointer; }
   padding: 14px 18px 12px; border-radius: var(--r-card) var(--r-card) 0 0;
 }
 .p-head-top { display: flex; align-items: flex-start; gap: 8px; }
-.p-name { font-size: 20px; font-weight: 900; letter-spacing: -0.02em; flex: 1; min-width: 0; }
+.p-name { font-size: 22px; font-weight: 900; letter-spacing: -0.025em; flex: 1; min-width: 0; }
 .p-type-badge {
   flex: none; margin-top: 3px; font-size: 11px; font-weight: 700;
   background: var(--tint); color: var(--brand-deep); border-radius: 6px; padding: 3px 8px;
 }
+.p-type-badge.villa { background: #eef2fb; color: #3757a8; }
+.p-type-badge.officetel { background: #fdf1e6; color: #b4550a; }
 .p-close {
   flex: none; border: 0; background: transparent; font-size: 20px; color: var(--ink-3);
   width: 28px; height: 28px; border-radius: 8px; line-height: 1;
@@ -193,27 +198,39 @@ button { font-family: inherit; cursor: pointer; }
 }
 .p-sec-title .p-sec-sub { font-size: 11.5px; font-weight: 500; color: var(--ink-3); }
 
-/* ── 시그니처: 가격 수준계 ── */
-.gauge-hero { padding: 16px 18px 20px; }
-.gauge-lead { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.gauge-lead .gl-label { font-size: 12.5px; color: var(--ink-2); font-weight: 600; }
+/* ── 시그니처: 가격 수준계 ──
+   위계: eyebrow(기준 라벨) → 대형 리드 숫자 → 스탯 칩 → 3레인 게이지(우측 값 병기) */
+.gauge-hero { padding: 18px 18px 20px; }
+.gauge-lead { display: flex; flex-direction: column; gap: 3px; }
+.gauge-lead .gl-eyebrow { font-size: 11.5px; font-weight: 600; color: var(--ink-3); letter-spacing: -0.005em; }
+.gauge-lead .gl-eyebrow b { font-weight: 700; color: var(--ink-2); }
 .gauge-lead .gl-price {
-  font-size: 30px; font-weight: 900; letter-spacing: -0.03em;
+  font-size: 40px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.06;
   font-variant-numeric: tabular-nums; color: var(--brand-deep);
 }
 .gauge-lead .gl-meta { font-size: 12px; color: var(--ink-3); }
-.gauge-lead-sub { margin-top: 4px; font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-.gauge-lead-sub b { font-weight: 700; }
-.gauge-lead-sub b.up { color: var(--danger); }
-.gauge-lead-sub b.down { color: var(--deal-jeonse); }
-.gauge-lead-sub small { color: var(--ink-3); font-size: 11px; }
+.gauge-stats { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.stat-chip {
+  background: var(--paper); border-radius: 8px; padding: 5px 10px;
+  font-size: 11.5px; color: var(--ink-2); font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+}
+.stat-chip b { font-weight: 800; color: var(--ink); }
+.stat-chip b.up { color: var(--danger); }
+.stat-chip b.down { color: var(--deal-jeonse); }
+.stat-chip small { color: var(--ink-3); font-size: 10.5px; }
 .gauge {
   margin-top: 14px; position: relative;
   padding: 2px 0 0;
 }
-.gauge-row { display: grid; grid-template-columns: 64px 1fr; align-items: center; gap: 10px; margin-top: 10px; }
+.gauge-row { display: grid; grid-template-columns: 64px 1fr 64px; align-items: center; gap: 10px; margin-top: 10px; }
 .gauge-row-label { font-size: 12px; font-weight: 700; color: var(--ink-2); text-align: left; }
 .gauge-row-label small { display: block; font-weight: 500; color: var(--ink-3); font-size: 10.5px; }
+.gauge-val { font-size: 12px; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
+.gauge-val.deal { color: var(--deal-sale); }
+.gauge-val.est { color: var(--est); }
+.gauge-val.notice { color: var(--notice); }
+.gauge-scale-row { margin-top: 2px; }
 .gauge-track { position: relative; height: 22px; }
 .gauge-track::before {
   content: ""; position: absolute; left: 0; right: 0; top: 50%;
@@ -291,13 +308,20 @@ button { font-family: inherit; cursor: pointer; }
   transform: translate(-50%, -130%); z-index: 2; font-variant-numeric: tabular-nums;
 }
 .chart-tip b { font-weight: 800; }
+/* 호버 크로스헤어 — 플롯 영역(PAD.t~H-PAD.b)에만 걸친다 */
+.chart-cross {
+  position: absolute; top: 12px; height: 154px; width: 0;
+  border-left: 1px dashed var(--ink-3); opacity: 0.55;
+  pointer-events: none; z-index: 1;
+}
 
-/* 실거래 테이블 */
+/* 실거래 테이블 — 가격 열은 우측 정렬 (숫자 자릿수 스캔성) */
 .deal-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-variant-numeric: tabular-nums; }
 .deal-table th {
   text-align: left; font-size: 11.5px; font-weight: 600; color: var(--ink-3);
   padding: 8px 6px; border-bottom: 1px solid var(--line);
 }
+.deal-table th:nth-child(2), .deal-table td:nth-child(2) { text-align: right; }
 .deal-table td { padding: 10px 6px; border-bottom: 1px solid var(--line-2); font-size: 13px; }
 .deal-table .dt-price { font-weight: 800; }
 .deal-table .dt-price.sale { color: var(--deal-sale); }
@@ -317,7 +341,7 @@ button { font-family: inherit; cursor: pointer; }
   border: 1px solid var(--line); border-radius: 10px; background: #fff;
   font-size: 13px; font-weight: 600; color: var(--ink-2);
 }
-.btn-more:hover { border-color: var(--brand); color: var(--brand); }
+.btn-more:hover { border-color: var(--brand); color: var(--brand); background: var(--tint-2); }
 .btn-more[disabled] { opacity: 0.5; cursor: default; }
 
 /* 주변 단지 비교 */
@@ -456,52 +480,61 @@ button.nb-row:hover { background: var(--tint-2); }
 }
 
 /* ── 데이터 출처 ── */
-.data-credit {
+.data-source {
   position: fixed; right: var(--gutter); bottom: 6px; z-index: 15;
   font-size: 10.5px; color: var(--ink-3);
   display: flex; gap: 8px; align-items: center;
   background: rgba(255,255,255,0.82); border-radius: 6px; padding: 3px 8px;
 }
-.credit-chip { color: var(--brand-deep); font-weight: 700; font-variant-numeric: tabular-nums; }
 
-/* ── 지도 마커 (CustomOverlay) ── */
+/* ── 지도 마커 (CustomOverlay) ──
+   버블 = 잉크 다크 필 단일 스타일(지도 타일 위 대비 극대화 — 실서비스 가격 필 문법),
+   유형 구분 = 좌측 인셋 컬러 바 (다크 필 위에서도 판독 가능).
+   마커 요소는 일반 HTML이라 카카오 CustomOverlay/네이버 HTML 마커/Leaflet divIcon
+   어디에 부착해도 이 스타일이 그대로 적용된다. */
 .mk {
   position: relative;
   display: inline-flex; flex-direction: column; align-items: stretch;
-  background: #fff; border: 1.5px solid var(--ink);
-  border-radius: 10px; box-shadow: var(--shadow-1);
+  background: var(--ink); border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(20, 33, 27, 0.28), 0 8px 20px rgba(20, 33, 27, 0.16);
   cursor: pointer; user-select: none;
   transform: translateY(-4px);
-  transition: transform 0.1s;
+  transition: transform 0.1s, box-shadow 0.1s;
   line-height: 1.2;
 }
-.mk:hover { transform: translateY(-7px); z-index: 10; }
+.mk:hover {
+  transform: translateY(-7px); z-index: 10;
+  box-shadow: 0 4px 8px rgba(20, 33, 27, 0.32), 0 14px 30px rgba(20, 33, 27, 0.22);
+}
 .mk::after {
   content: ""; position: absolute; left: 50%; bottom: -5px; margin-left: -4px;
   width: 8px; height: 8px; background: inherit;
-  border-right: 1.5px solid var(--ink); border-bottom: 1.5px solid var(--ink);
+  border-right: 1.5px solid; border-bottom: 1.5px solid;
+  border-color: inherit;
   transform: rotate(45deg);
   border-radius: 0 0 2px 0;
 }
 .mk-name {
-  font-size: 10.5px; font-weight: 600; color: var(--ink-2);
-  padding: 3px 8px 0; max-width: 128px;
+  font-size: 10.5px; font-weight: 600; color: rgba(255, 255, 255, 0.72);
+  padding: 3px 9px 0; max-width: 128px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .mk-price {
-  font-size: 13px; font-weight: 800; padding: 0 8px 4px; color: var(--ink);
+  font-size: 13px; font-weight: 800; padding: 0 9px 4px; color: #fff;
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
-.mk-price small { font-size: 10px; font-weight: 600; color: var(--ink-3); margin-left: 3px; }
-.mk.compact .mk-price { padding: 3px 8px 4px; }
-.mk.villa { border-color: #3757a8; }
-.mk.villa::after { border-color: #3757a8; }
-.mk.officetel { border-color: #b4550a; }
-.mk.officetel::after { border-color: #b4550a; }
-.mk.is-selected { background: var(--brand-deep); border-color: var(--brand-deep); }
-.mk.is-selected::after { border-color: var(--brand-deep); }
+.mk-price small { font-size: 10px; font-weight: 600; color: rgba(255, 255, 255, 0.62); margin-left: 3px; }
+.mk.compact .mk-price { padding: 3px 9px 4px; }
+/* 유형 액센트 — 좌측 인셋 바 (아파트는 바 없음 = 기본) */
+.mk.villa { box-shadow: inset 3px 0 0 #6c8fe0, 0 2px 5px rgba(20, 33, 27, 0.28), 0 8px 20px rgba(20, 33, 27, 0.16); }
+.mk.officetel { box-shadow: inset 3px 0 0 #e8964a, 0 2px 5px rgba(20, 33, 27, 0.28), 0 8px 20px rgba(20, 33, 27, 0.16); }
+.mk.is-selected {
+  background: var(--brand-deep); border-color: var(--brand-deep);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--brand), 0 10px 24px rgba(10, 74, 56, 0.35);
+}
 .mk.is-selected .mk-name { color: rgba(255,255,255,0.75); }
-.mk.is-selected .mk-price { color: #fff; }
+.mk.is-selected .mk-price { color: #fff; font-weight: 800; }
 .mk.is-selected .mk-price small { color: rgba(255,255,255,0.7); }
 
 .mk-dot {
@@ -533,10 +566,16 @@ button.nb-row:hover { background: var(--tint-2); }
 /* ── 반응형 ── */
 @media (max-width: 760px) {
   :root { --panel-w: calc(100vw - 24px); }
-  .panel { top: auto; bottom: 0; left: 0; right: 0; width: 100%; max-height: 62vh; border-radius: 16px 16px 0 0; }
-  .unit-sheet { left: 0; right: 0; width: 100%; top: auto; bottom: 0; max-height: 70vh; border-radius: 16px 16px 0 0; }
+  .panel { top: auto; bottom: 0; left: 0; right: 0; width: 100%; max-height: 62vh; border-radius: 20px 20px 0 0; }
+  .unit-sheet { left: 0; right: 0; width: 100%; top: auto; bottom: 0; max-height: 70vh; border-radius: 20px 20px 0 0; }
+  /* 바텀시트 그랩 핸들 — 마크업 무수정(::before), 시트 어포던스 */
+  .panel::before, .unit-sheet::before {
+    content: ""; display: block; flex: none;
+    width: 36px; height: 4px; border-radius: 999px;
+    background: var(--line); margin: 8px auto 4px;
+  }
   .brand-tag { display: none; }
-  .data-credit { display: none; }
+  .data-source { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
