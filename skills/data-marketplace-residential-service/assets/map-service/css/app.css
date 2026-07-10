@@ -51,7 +51,11 @@ body {
 button { font-family: inherit; cursor: pointer; }
 :focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
 
-#map { position: fixed; inset: 0; background: #e9ede9; }
+#map {
+  position: fixed; inset: 0;
+  width: 100vw; height: 100vh;
+  background: #e9ede9;
+}
 
 /* ── 지도 폴백 ── */
 .map-fallback {
