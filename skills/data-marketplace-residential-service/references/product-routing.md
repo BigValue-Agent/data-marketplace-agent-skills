@@ -10,14 +10,16 @@ Use this as a decision table for product selection and combination. Exact filter
 | Shape layer | Residential complex area | Need polygon or boundary display | representative coordinates fallback | references/api/residential-complex-shapes.md |
 | Building/dong summary | Residential building/dong summary | Need internal building/dong markers or building-level summaries | `ppk`, `complex_key` | references/api/residential-buildings.md |
 | Unit detail | Residential unit detail | Need dong/ho/area drill-down | `jpk`, `ppk`, `residential_type` | references/api/residential-units.md |
-| Notice price | Residential notice price | Price tab or unit-level notice price | `complex_key` for complex-level tabs; `ppk`/`jpk` after building or unit selection; optional year/month filters | references/api/residential-notice-prices.md |
-| Realdeal | Residential realdeal history | Price tab confirms transaction data | transaction filters | references/api/residential-realdeal.md |
-| Estimated price | Residential estimated price detail | Price tab or unit-level estimated price detail | `complex_key` for complex-level lists; `ppk`/`jpk` after building or unit selection; optional ym/price filters | references/api/residential-estimated-prices.md |
+| Notice price | Residential notice price | Need the selected unit's official price | `ppk`, `jpk`; latest row first | references/api/residential-notice-prices.md |
+| Realdeal | Residential realdeal history | Need transactions for the selected private-area/deal/period scope | `complex_key`, `residential_type`, private-area range, deal type, period | references/api/residential-realdeal.md |
+| Estimated price | Residential estimated price detail | Need the selected unit's BigValue estimate | `ppk`, `jpk`; latest row first | references/api/residential-estimated-prices.md |
 
 ## Selection Rules
 
 - Use residential complex profile as the main source for detail header/profile sections.
+- Use matching-type profile `recent_month6_*` fields for the default whole-complex price summary; do not recreate it from paged rows.
 - Use separate marker, shape, building/unit, and price products only when those screen areas are needed.
+- For generated services, keep notice and estimated prices at unit scope. Their broader API filters remain contract capabilities, not the default screen aggregation strategy.
 - Prefer type markers for map viewport loading; do not use realdeal as complete marker coverage.
 - Prefer explicit user selection when name search returns multiple candidates.
 - For name search, preserve returned order because candidates are relevance-first by internal `match_score DESC`, then `complex_name` and `complex_key`; `match_score` is not exposed.

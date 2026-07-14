@@ -19,7 +19,7 @@ Use this checklist when verifying a generated residential map, detail, price, or
 ## Source Review Order
 
 1. Read `references/ui-recipes.md` for the service flow.
-2. Read the API Reference for the core products you are wiring first; read the lazy price-tab, building, and unit contracts when implementing those screens.
+2. Read the API Reference for the core products you are wiring first; read realdeal, building/unit, and unit-price contracts when implementing those screens.
 3. Adapt `assets/map-service/` instead of writing screens from scratch; if the assets are unavailable, follow `references/ui-recipes.md`.
 4. Read `references/code-patterns.md` and `references/pitfalls.md` as needed for the specific code pattern or pitfall in question; re-check pitfalls before finalizing.
 5. Sample verification calls go directly to the Data Marketplace API from server-side code when credentials are available.
@@ -41,9 +41,9 @@ Route names are recommended examples; keep the role-to-route mapping even if nam
 | `/api/markers` | Residential type marker (`complex-type-markers`) | Current viewport markers or selected-complex type breakdown |
 | `/api/complex-detail` | Residential complex profile (`complexes`) | Main complex profile |
 | `/api/complex-shape` | Residential complex area (`complex-shapes`) | Selected complex boundary |
-| `/api/prices?tab=realdeal` | Residential realdeal history (`realdeal`) | Transaction rows |
-| `/api/prices?tab=notice` | Residential notice price (`notice-prices`) | Notice price rows |
-| `/api/prices?tab=estimated` | Residential estimated price detail (`estimated-prices`) | BigValue estimated price rows |
+| `/api/prices?tab=realdeal` | Residential realdeal history (`realdeal`) | Selected-area transaction rows |
+| `/api/prices?tab=notice` | Residential notice price (`notice-prices`) | Selected-unit latest notice price |
+| `/api/prices?tab=estimated` | Residential estimated price detail (`estimated-prices`) | Selected-unit latest BigValue estimate |
 | `/api/buildings` | Residential building/dong summary (`buildings`) | Building or dong summary rows |
 | `/api/units` | Residential unit detail (`units`) | Unit, ho, floor, and area rows |
 
@@ -56,10 +56,11 @@ One representative complex through this chain is sufficient live verification; d
 3. Load bbox markers with top-level `bbox`.
 4. Load complex detail by `complex_key`.
 5. Load shape and handle empty shape fallback.
-6. Open realdeal, notice, and estimated-price tabs separately.
-7. Verify sale, lease, and monthly-rent price labels separately.
-8. Load building summaries.
+6. Verify the matching-type profile recent-six-month summary and its `standard_ym`.
+7. Load buildings, choose the largest valid-area pyeong, and verify overlapping private-area bands share one realdeal scope.
+8. Load the selected-area realdeal first page and verify sale, lease, and monthly-rent labels separately.
 9. Load unit rows with `limit` and `offset`.
+10. Select a unit and load latest notice and estimated prices with `ppk + jpk`.
 
 ## UI/UX Verification Flow
 
@@ -69,12 +70,12 @@ One representative complex through this chain is sufficient live verification; d
 4. Price bubbles use loaded marker/profile fields and handle null price labels.
 5. Selecting a marker or candidate opens a detail drawer by `complex_key`.
 6. The detail drawer includes a realdeal chart or volume chart when transaction rows are available.
-7. Every chart or computed summary from fetched rows says it is based on loaded rows.
-8. Price tabs are lazy and separate: realdeal, notice prices, estimated prices.
-9. Building/unit sections are lazy and carry `ppk` and `jpk` as strings.
+7. The whole-complex price summary comes from matching-type profile `recent_month6_*`, not paged detail rows.
+8. Realdeal uses an observed private-area scope and a period derived from profile `standard_ym`; list and chart share the first page.
+9. Building/unit sections are lazy and carry `ppk` and `jpk` as strings; notice and estimated prices load only for a selected unit.
 10. Shape layer uses the complex area product only for selected complex boundaries.
-11. A missing selected-pyeong price stays empty under that pyeong label; a user-selected wider fallback is recomputed and labeled `단지 전체 기준`.
-12. Notice and estimated prices display the standard year-month from returned rows, and a single snapshot does not create a change/trend UI.
+11. A pyeong with no observed private area stays unavailable; whole-complex realdeal is used only when the complex has no pyeong information.
+12. Notice and estimated prices display the standard year-month from returned rows, and one unit's grade is not promoted to a complex grade.
 13. Profile distance fields render as distance only, without walking/driving time or an N-minute catchment.
 14. Empty or unsupported GeoJSON omits the boundary only and keeps markers, detail, building, and unit UI usable.
 15. Out-of-policy pyeong, area, and floor fixtures render as `확인 필요` and do not enter normal selectors or derived metrics; raw rows and stable keys remain available.
@@ -93,13 +94,14 @@ One representative complex through this chain is sufficient live verification; d
 - The selected marker and matching list item expose a selected class or equivalent selected state.
 - A programmatic map pan followed by map idle keeps the same detail drawer open.
 - A stale detail, marker, price, building, or unit response does not overwrite the currently selected complex.
-- The realdeal tab renders either `data-testid="transaction-chart"` or a realdeal-specific empty state.
-- Notice and estimated-price tabs switch independently and do not reuse realdeal rows.
+- The realdeal section renders either `data-testid="price-trend-chart"` or a realdeal-specific empty/error state.
+- A rapid pyeong, deal-type, or period change cannot let an older realdeal response overwrite the current selection.
+- Selected-unit notice and estimated-price requests can fail independently and do not reuse realdeal rows.
 - An area or pyeong card click updates the selected state and filters the chart/table when area data is available.
 - A building card click carries `ppk` as a string and renders unit rows or a unit-specific empty state.
 - Empty shape data keeps the detail drawer usable and does not throw a browser console error.
 - Unsupported `GeometryCollection` and invalid-coordinate shapes also keep the detail drawer usable without a console error.
-- A single-snapshot fixture shows its response standard year-month without change/trend UI.
+- A single-unit snapshot shows its response standard year-month without a complex/pyeong aggregate or representative grade.
 - Profile distance fields do not produce `도보`, `차량 N분`, or `N분 생활권` text.
 - Extreme pyeong/area/floor fixture values do not appear as normal marker, selector, floor, or unit-price inputs.
 
@@ -108,12 +110,12 @@ One representative complex through this chain is sufficient live verification; d
 When local browser execution or port binding is blocked, these checks still apply.
 
 - Run a grep-level source check for `/api/buildings`, `/api/units` (or their equivalents), and the building/unit product usages.
-- Run a grep-level source check for the hook names `price-level-gauge`, `nearby-comparison-panel`, `jeonse-ratio-chip`, `building-card`, `unit-drilldown-panel`, and `price-trend-chart` — as `data-testid` attribute literals or runtime `dataset.testid` assignments; the bundled chart module uses the latter for canvas hooks (definitions: `references/ui-recipes.md` Detail Drawer Tabs / Price Chart Pattern / Derived Metrics).
+- Run a grep-level source check for `transaction-chart`, `building-card`, `unit-drilldown-panel`, and `price-trend-chart` as `data-testid` attribute literals or runtime `dataset.testid` assignments.
 - Run a grep-level source check for `unit-panel-placeholder`, `unit-empty-state`, and `unit-row`.
-- Marker bubble rendering uses `complex_name`, `recent_month6_average_realdeal_price`, and `representative_pyeong_number` together, or documents fallback behavior when price/pyeong is null.
+- Marker bubble rendering labels `recent_month6_average_realdeal_price` as a whole-complex summary and does not pair it with a type-specific pyeong claim.
 - The marker API wrapper must be limit-only: send top-level `bbox`, optional `filters.residential_type`, `fields`, and `limit`; do not send `offset` in marker request bodies because marker responses are center-distance truncated with `has_next`, not offset-paged. For the all-types view, one unfiltered request (all types share one limit, so a dense type can crowd out others) and the bundled template's per-type parallel requests (balanced coverage with more requests, cushioned by the marker TTL cache) are both acceptable — pick one deliberately.
 - If a bundled reference template was used, preserve module boundaries when the stack allows it (`data-policy`, `api`, `map`, `panel`, `chart`, `format`, and `proxy` layers). If a framework requires a different file shape, prove equivalent structure with the DOM hooks above.
-- If `assets/map-service/` is used, preserve its proxy boundary, module boundaries, price-level-gauge, nearby-comparison-panel, building route, and lazy unit drilldown behavior unless the target framework requires an equivalent structure.
+- If `assets/map-service/` is used, preserve its proxy boundary, module responsibilities, building route, scoped realdeal flow, and lazy unit drilldown unless the target framework requires an equivalent structure.
 - Only when the template's interaction logic was reimplemented or heavily modified (not a verbatim template adaptation), use jsdom or pure DOM event tests for marker click → drawer open, tab switching, and area filter behavior.
 - A blocked local server, sandboxed network, or port binding failure is not a reason to skip static source checks.
 
@@ -130,6 +132,9 @@ When local browser execution or port binding is blocked, these checks still appl
 - Do not use the complex area product (`complex_area`) as a viewport bbox shape product.
 - Do not use the complex profile product (`complex_profile`) as the base bbox marker product.
 - Use the estimated-prices product for current 산출시세 flows; do not describe it with removed product names.
+- Do not calculate a complex/pyeong notice or estimated price from a limited page of unit rows.
+- Do not derive realdeal periods from the browser's current date; use profile `standard_ym`.
+- Do not require a three-source price gauge, representative unit grade, or automatic whole-complex pyeong fallback.
 
 ## Do Not Overfit
 

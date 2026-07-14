@@ -1,4 +1,3 @@
-// 숫자·날짜 포맷 유틸 — 모든 가격은 원 단위 정수로 들어온다
 window.fmt = (() => {
   const EOK = 100000000; // 1억
   const MAN = 10000; // 1만
@@ -53,10 +52,18 @@ window.fmt = (() => {
     return `${s.slice(0, 4)}.${s.slice(4, 6)}`;
   }
 
-  function monthsAgoStart(months) {
-    const d = new Date();
-    d.setMonth(d.getMonth() - months);
-    return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}01`;
+  // 상품 기준월을 끝월로 하는 포함 기간. 브라우저 현재 날짜가 바뀌어도 같은
+  // 상품 스냅숏은 같은 조회 범위를 사용한다. 202606의 6개월은 20260101~20260630.
+  function productPeriod(standardYm, months) {
+    const value = String(standardYm ?? "");
+    if (!/^\d{6}$/.test(value) || !Number.isInteger(months) || months <= 0) return null;
+    const year = Number(value.slice(0, 4));
+    const monthIndex = Number(value.slice(4, 6)) - 1;
+    if (monthIndex < 0 || monthIndex > 11) return null;
+    const start = new Date(Date.UTC(year, monthIndex - (months - 1), 1));
+    const end = new Date(Date.UTC(year, monthIndex + 1, 0));
+    const ymd = (date) => `${date.getUTCFullYear()}${String(date.getUTCMonth() + 1).padStart(2, "0")}${String(date.getUTCDate()).padStart(2, "0")}`;
+    return { dateFrom: ymd(start), dateTo: ymd(end) };
   }
 
   // 면적: 전역 단위 설정(평/㎡)에 따름
@@ -83,17 +90,11 @@ window.fmt = (() => {
     return `약 ${Math.round(meters).toLocaleString()}m`;
   }
 
-  function trend(pct) {
-    if (pct > 0) return `<b class="up">▲${pct}%</b>`;
-    if (pct < 0) return `<b class="down">▼${Math.abs(pct)}%</b>`;
-    return "<b>보합</b>";
-  }
-
   function esc(s) {
     return String(s ?? "").replace(/[&<>"']/g, (c) => ({
       "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
     })[c]);
   }
 
-  return { price, rent, dateShort, dateYm, ym, monthsAgoStart, area, count, distance, trend, esc, setAreaUnit, getAreaUnit };
+  return { price, rent, dateShort, dateYm, ym, productPeriod, area, count, distance, esc, setAreaUnit, getAreaUnit };
 })();

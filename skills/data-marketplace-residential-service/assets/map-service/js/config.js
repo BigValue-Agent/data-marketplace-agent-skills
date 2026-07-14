@@ -3,7 +3,7 @@
 window.APP_CONFIG = {
   // 서비스 이름 — 각색 시 브랜드로 교체
   APP_NAME: "주거 지도",
-  APP_TAGLINE: "단지의 모든 가격, 한 화면에",
+  APP_TAGLINE: "단지 정보와 가격 흐름을 한눈에",
 
   // 카카오맵 JavaScript 키 (https://developers.kakao.com 에서 발급, 도메인 등록 필요)
   KAKAO_MAP_KEY: "YOUR_KAKAO_MAP_KEY",
@@ -25,7 +25,7 @@ window.APP_CONFIG = {
   MARKER_CACHE_TTL_MS: 60_000,
 
   // 아래 레벨 값들은 "표시 밀도" 튜닝 전용 (호출 가드 아님):
-  // 이 레벨 이하(확대)면 풀 핀(단지명+가격+평형), 그 위는 컴팩트 핀, 그 위는 도트
+  // 이 레벨 이하(확대)면 풀 핀(단지명+단지 평균), 그 위는 컴팩트 핀, 그 위는 도트
   FULL_PIN_LEVEL: 4,
   COMPACT_PIN_LEVEL: 6,
   // 이 레벨 이하(확대)면 선택 단지의 동 라벨 표시

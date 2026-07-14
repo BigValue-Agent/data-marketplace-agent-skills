@@ -13,11 +13,13 @@ Flow:
 3. Preserve returned order: candidates are relevance-first by internal `match_score DESC`, then `complex_name` and `complex_key`; `match_score` is not exposed.
 4. After selection, carry `complex_key` forward as a string.
 5. Load the residential complex profile by `complex_key`.
-6. Load realdeal, notice-price, or estimated-price detail only when the user opens that price tab.
+6. Use matching-type profile `recent_month6_*` fields for the default whole-complex summary.
+7. Load buildings to establish the pyeong/private-area scope, then load realdeal for the selected scope.
+8. Load notice and estimated prices only after a unit supplies `ppk + jpk`.
 
 Decision notes:
 
-- Do not jump directly from a name string to realdeal or notice-price detail.
+- Do not jump directly from a name string to realdeal or unit-price detail.
 - If multiple candidates share a similar name, preserve region/address labels so the UI can disambiguate.
 - Do not client-sort candidates by name, distance, or residential type before user selection; the server order is the relevance ranking.
 - Do not silently pick the first candidate when the name is ambiguous; show region/address labels and let the user confirm.
@@ -47,5 +49,7 @@ Decision notes:
 ## Fallbacks
 
 - If polygon/shape rows are empty, use representative coordinates.
-- If a price detail call returns no rows, show an empty or disabled tab state.
+- If pyeong rows exist but the selected pyeong has no observed private area, show the realdeal scope as unavailable; do not widen it automatically.
+- Only when a complex has no pyeong information may realdeal use a whole-complex scope.
+- If a price call returns no rows, distinguish a valid empty result from a request failure.
 - If a mixed complex has multiple residential types, keep type tabs explicit.

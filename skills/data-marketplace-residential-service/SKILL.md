@@ -1,6 +1,6 @@
 ---
 name: data-marketplace-residential-service
-description: "Use when an AI code generator needs to generate Data Marketplace residential real-estate API code or build property service flows: complex search, map markers, detail panels, price tabs, realdeal/notice-price/estimated-price lists, unit drill-down, and safe server-side Data Product API integration."
+description: "Use when an AI code generator needs to generate Data Marketplace residential real-estate API code or build property service flows: complex search, map markers, profile summaries, scoped realdeal views, building/unit drill-down, unit prices, and safe server-side Data Product API integration."
 ---
 
 # Data Marketplace Residential Service
@@ -26,7 +26,7 @@ Never invent real keys. `DATA_MARKETPLACE_API_KEY` is a server-side secret — n
 | Search by complex name | Name search entry | `references/entrypoints.md#name-search-entry` |
 | Show markers for current map | Map bbox entry | `references/entrypoints.md#map-bbox-entry` |
 | Open selected complex detail | Detail panel recipe | `references/ui-recipes.md#detail-panel` |
-| Build price tab | Price tab recipe | `references/ui-recipes.md#price-tabs` |
+| Build a price flow | Price scope recipe | `references/ui-recipes.md#price-scope-and-reference-time` |
 | Show building/unit drill-down | Building/unit recipe | `references/ui-recipes.md#building-unit-drilldown` |
 | Validate exact product/filter/field use | API Reference plus minimal schema contract | `references/schema-contract.md` |
 | Verify a generated service before completion | Verification checklist | `references/verification-checklist.md` |
@@ -39,7 +39,8 @@ Name search:
 2. Let the caller select a candidate.
 3. Carry `complex_key` forward as a string.
 4. Load residential complex profile/detail.
-5. Load price details only when the user opens a price tab.
+5. Use profile `recent_month6_*` as the default whole-complex price summary.
+6. Load scoped realdeal rows after an area is known; load notice/estimated prices only after unit selection.
 
 Map:
 
@@ -70,9 +71,12 @@ Map:
 - Keep each bbox latitude/longitude span at or below 0.1 degrees; for wider viewports, render a zoom-in guide instead of calling.
 - For offset-unsupported products, `has_next=true` is not a next-page signal. For bbox marker queries it means rows were truncated around the bbox center; zoom in or shrink the bbox and re-call.
 - For sort-supported products, send `sort.field` and `sort.order` together explicitly; do not rely on server default ordering, and never send an order without a field.
-- Label any client-side aggregate (average, per-pyeong price, jeonse ratio, min/max summary) as computed from loaded rows only; paged product rows are not a whole-complex summary.
-- Keep each price result inside one explicit scope: complex, residential type, area/pyeong, deal type, and requested period. Do not silently widen a missing selected-area result; if the user explicitly chooses a wider fallback, change the label with the scope.
-- Do not derive `private_area` from `pyeong_number`. If a selected pyeong has no observed private area, do not issue area-filtered price queries; keep the affected surfaces unavailable until the user explicitly selects the whole-complex scope.
+- Use profile `recent_month6_*` as the default whole-complex price summary; do not replace it with averages or ranges from paged detail rows. If the selected residential type differs from the profile type, do not present the profile price as that type's price.
+- Keep realdeal rows inside one explicit scope: complex, residential type, observed private-area band, deal type, and requested period. Label paged-row charts and tables as partial when `has_next` is true.
+- Build pyeong options from `buildings.units_summary`. Select the valid-area pyeong with the most units by default, and merge overlapping private-area bands for realdeal. Do not offer an automatic whole-complex pyeong fallback when pyeong data exists.
+- Do not derive `private_area` from `pyeong_number`. If the selected pyeong has no observed private area, keep area-filtered realdeal unavailable; only complexes with no pyeong information may use a whole-complex realdeal view.
+- Derive preset realdeal periods from profile `standard_ym`, not the browser's current date.
+- In generated services, show notice and estimated prices at unit scope after `ppk + jpk` is known. Fetch the latest row from each product in parallel. The current unit-price products expose one standard month per unit, so do not generate history or trend UI unless multiple standard months are actually returned. Do not create complex/pyeong averages, a three-source price gauge, or a representative grade from paged unit rows.
 - Display notice and estimated prices with the standard year-month returned by each product. A single snapshot is current evidence, not a change rate or trend.
 - Treat nearby `*_distance` values as distance only. Do not derive walking/driving time or an N-minute catchment without route or travel-time data.
 - Validate display/derived-metric inputs and GeoJSON before use. Preserve raw API rows, but do not treat unsupported shapes or out-of-policy pyeong/area/floor values as normal display or aggregate inputs.
@@ -109,9 +113,11 @@ This is the quick summary; the full completion audit lives in `references/verifi
 - Large list calls use documented pagination when supported and do not fetch all pages on initial render.
 - Map marker calls send `bbox` + `limit` only (no offset); wide-viewport and `has_next=true` paths render a zoom-in guide.
 - Sort-supported list routes send explicit `sort.field` + `sort.order`.
-- Charts and computed summaries from fetched rows carry a loaded-rows caption.
-- Price tabs (realdeal / notice / estimated) load lazily and validate independently per product.
-- Price-result scope and response standard year-month labels match the rows used in each calculation.
+- The whole-complex price summary comes only from matching-type profile `recent_month6_*` fields.
+- Realdeal uses an observed private-area band and profile `standard_ym`; list and chart share the same first page and fetch more only after user intent.
+- Overlapping pyeong options that map to the same private-area band share one realdeal scope.
+- Notice and estimated prices are unit-level `ppk + jpk` lookups; their actual response year-month is shown and each product can fail independently.
+- No generated complex/pyeong price gauge, paged-row representative price, or representative unit grade remains.
 - Profile distance values remain distances; no travel time is derived without route data.
 - The shared data policy and boundary-only fallback remain active after template adaptation.
 - No live listings/brokers/news/calculator sections are generated without an explicitly provided extra source.

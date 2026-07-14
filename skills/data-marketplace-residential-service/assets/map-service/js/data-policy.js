@@ -1,4 +1,3 @@
-// API 원본은 보존하고, 화면 표시와 파생계산에 사용할 수 있는 값만 판정한다.
 window.dataPolicy = (() => {
   const DISPLAY_LIMITS = Object.freeze({
     pyeong: Object.freeze({ minExclusive: 0, maxInclusive: 1000 }),
@@ -39,87 +38,76 @@ window.dataPolicy = (() => {
     };
   }
 
-  const standardYearMonth = (value) => {
-    if (typeof value !== "string" && typeof value !== "number") return null;
-    const normalized = String(value);
-    return /^\d{6}$/.test(normalized) ? normalized : null;
-  };
+  // 첫 실거래 화면은 전용면적을 안전하게 조회할 수 있는 평형 중 호수가 가장
+  // 많은 평형을 선택한다. 모든 평형의 면적이 없으면 최다 호수 평형을 선택
+  // 상태로만 남겨 조회 불가를 표시하고, 단지 전체 범위로 조용히 넓히지 않는다.
+  function representativePyeong(pyeongs) {
+    const all = Array.isArray(pyeongs) ? pyeongs : [];
+    const withArea = all.filter((pyeong) => pyeongAreaRange(pyeong).areaMin != null);
+    return [...(withArea.length ? withArea : all)]
+      .sort((left, right) =>
+        (Number(right.ho) || 0) - (Number(left.ho) || 0) || left.py - right.py)[0] || null;
+  }
 
-  function latestSnapshot(rows, field) {
-    if (!Array.isArray(rows) || typeof field !== "string") {
-      return { standardYm: null, rows: [] };
+  // 전용면적 필터 범위가 겹치는 공급평형(예: 32·33평이 모두 전용 84.9㎡)을
+  // 하나의 실거래 조회 밴드로 묶는다. 실거래 상품에는 공급평형 키가 없어
+  // 전용면적으로만 조회할 수 있고, 겹치는 평형을 따로 조회하면 같은 거래가
+  // 양쪽에 중복 집계된다.
+  function pyeongBands(pyeongs) {
+    const ranged = (Array.isArray(pyeongs) ? pyeongs : [])
+      .map((pyeong) => ({ pyeong, range: pyeongAreaRange(pyeong) }))
+      .filter((entry) => entry.range.areaMin != null)
+      .sort((a, b) => a.range.areaMin - b.range.areaMin);
+    const bands = [];
+    for (const { pyeong, range } of ranged) {
+      const last = bands[bands.length - 1];
+      if (last && range.areaMin <= last.filterMax) {
+        last.pys.push(pyeong.py);
+        last.areaMin = Math.min(last.areaMin, pyeong.areaMin);
+        last.areaMax = Math.max(last.areaMax, pyeong.areaMax);
+        last.filterMax = Math.max(last.filterMax, range.areaMax);
+      } else {
+        bands.push({
+          pys: [pyeong.py],
+          areaMin: pyeong.areaMin,
+          areaMax: pyeong.areaMax,
+          filterMin: range.areaMin,
+          filterMax: range.areaMax,
+        });
+      }
     }
-    const candidates = rows
-      .map((row) => standardYearMonth(row?.[field]))
-      .filter((value) => value !== null);
-    if (!candidates.length) return { standardYm: null, rows: [] };
-
-    const standardYm = candidates.reduce((latest, value) => value > latest ? value : latest);
-    return {
-      standardYm,
-      rows: rows.filter((row) => standardYearMonth(row?.[field]) === standardYm),
-    };
+    return bands;
   }
 
-  function noticeSummary(rows, { pyeong = null, areaMin = null, areaMax = null } = {}) {
-    const snapshot = latestSnapshot(rows, "notice_standard_ym");
-    const validAreaRange = validUnitArea(areaMin) && validUnitArea(areaMax) && areaMin <= areaMax;
-    const scoped = pyeong == null
-      ? snapshot.rows
-      : validPyeong(pyeong)
-        ? snapshot.rows.filter((row) => {
-            if (row?.pyeong_number === pyeong) return true;
-            // 유효한 다른 평형번호를 면적만으로 현재 평형에 편입하지 않는다.
-            if (validPyeong(row?.pyeong_number)) return false;
-            return validAreaRange && validUnitArea(row?.private_area) &&
-              row.private_area >= areaMin && row.private_area <= areaMax;
-          })
-        : [];
-    const prices = scoped.map((row) => row?.notice_price).filter(validPrice);
-    return {
-      standardYm: snapshot.standardYm,
-      average: prices.length ? prices.reduce((sum, value) => sum + value, 0) / prices.length : null,
-      count: prices.length,
-      scope: pyeong == null ? "complex" : "pyeong",
-    };
+  function profilePriceEvidence(fallback, { typeMismatch = false } = {}) {
+    // 단지 전체 대표값은 상품이 미리 집계한 최근 6개월 프로필 요약을 정본으로 쓴다.
+    // 상세 API 첫 페이지 rows는 목록·차트용이며 단지 전체 통계를 덮어쓰지 않는다.
+    if (!typeMismatch && validPrice(fallback?.avg)) {
+      const avg = fallback.avg;
+      return {
+        min: validPrice(fallback.min) ? fallback.min : avg,
+        max: validPrice(fallback.max) ? fallback.max : avg,
+        avg,
+        count: finite(fallback.count) && fallback.count >= 0 ? fallback.count : 0,
+        unitAvg: null,
+        unitCount: 0,
+        source: "profile",
+        scope: "complex",
+      };
+    }
+    return null;
   }
 
-  function dealStats(rows) {
-    if (!Array.isArray(rows)) return null;
-    const active = rows.filter((row) => !row?.cancel_date && validPrice(row?.price));
-    if (!active.length) return null;
+  const keyPart = (value) => value == null ? "" : String(value);
 
-    const prices = active.map((row) => row.price);
-    const unitPrices = active
-      .filter((row) => validUnitArea(row?.private_area))
-      .map((row) => row.price / (row.private_area / 3.305785));
-    return {
-      min: Math.min(...prices),
-      max: Math.max(...prices),
-      avg: prices.reduce((sum, value) => sum + value, 0) / prices.length,
-      count: prices.length,
-      unitAvg: unitPrices.length
-        ? unitPrices.reduce((sum, value) => sum + value, 0) / unitPrices.length
-        : null,
-      unitCount: unitPrices.length,
-    };
-  }
-
-  function priceEvidence(stats, fallback, { scope, typeMismatch }) {
-    if (stats) return { ...stats, source: "rows", scope };
-    if (scope !== "complex" || typeMismatch || !validPrice(fallback?.avg)) return null;
-
-    const avg = fallback.avg;
-    return {
-      min: validPrice(fallback.min) ? fallback.min : avg,
-      max: validPrice(fallback.max) ? fallback.max : avg,
-      avg,
-      count: finite(fallback.count) && fallback.count >= 0 ? fallback.count : 0,
-      unitAvg: null,
-      unitCount: 0,
-      source: "profile",
-      scope: "complex",
-    };
+  // 실거래는 거래유형과 조회 기간까지 같을 때만 같은 rows로 취급한다.
+  function realdealScopeKey({
+    complexKey, residentialType, areaMin, areaMax, dealDivision, dateFrom, dateTo,
+  }) {
+    return [
+      "realdeal", complexKey, residentialType, areaMin, areaMax,
+      dealDivision, dateFrom, dateTo,
+    ].map(keyPart).join("|");
   }
 
   const sameCoordinate = (left, right) => left[0] === right[0] && left[1] === right[1];
@@ -153,10 +141,10 @@ window.dataPolicy = (() => {
     validCoordinate,
     distanceMeters,
     pyeongAreaRange,
-    latestSnapshot,
-    noticeSummary,
-    dealStats,
-    priceEvidence,
+    representativePyeong,
+    pyeongBands,
+    profilePriceEvidence,
+    realdealScopeKey,
     geoJsonOuterRings,
   };
 })();

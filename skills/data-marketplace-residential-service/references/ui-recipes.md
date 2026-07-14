@@ -19,8 +19,7 @@ Use these recipes to compose product calls into residential service screens.
 - Price Chart Pattern
 - Area Summary And Filtering
 - Price Scope And Reference Time
-- Derived Metrics And Estimates
-- Price Tabs
+- Unit Price Detail
 - Building Unit Drilldown
 - Route Blueprint
 - Unsupported UI Sections
@@ -48,7 +47,7 @@ Use these recipes to compose product calls into residential service screens.
 2. Validate all four bbox values.
 3. Load type markers with a documented limit; markers do not support offset paging. The residential type marker product is the default bbox marker source.
 4. Render one marker row per `complex_key + residential_type`.
-5. On click, load parent detail and keep the selected `residential_type` for price or unit tabs.
+5. On click, load parent detail and keep the selected `residential_type` for profile, realdeal, and unit scopes.
 6. Do not call the complex profile product for every marker in the viewport.
 7. If the viewport span exceeds 0.1 degrees per axis, render a zoom-in guide state instead of loading markers.
 8. When a marker response returns `has_next=true`, only complexes near the viewport center are shown and outer edges are truncated; tell the user to zoom in for full coverage, do not offset-page, and do not present the visible markers as complete coverage.
@@ -59,17 +58,17 @@ Use these recipes to compose product calls into residential service screens.
 2. On marker, candidate, or list selection, apply the selected class immediately, open the detail drawer immediately, and render a skeleton profile shell before network calls finish.
 3. When selection pans the map, the next programmatic idle reload must not clear the selected marker, selected list row, or open detail drawer.
 4. Repainted marker layers must restore selected state by `complex_key + residential_type`, not by DOM node identity.
-5. Detail, shape, price, building, and unit responses must check the current `activeComplexKey` and request sequence before writing to the DOM.
-6. Empty or failed tab responses should render tab-local empty/error states while keeping the detail drawer open.
+5. Detail, shape, realdeal, building, and unit responses must check the current selection and request sequence before writing to the DOM.
+6. Empty or failed sections should render local empty/error states while keeping the detail drawer open.
 7. Expose stable DOM hooks for smoke testing; the canonical hook list lives in `references/verification-checklist.md`.
 
 ## Price Bubble Map
 
 1. Use this only when the map needs a complex name plus recent price-like label.
 2. Load residential type markers with bbox and a narrow field set.
-3. Prefer `complex_key`, `residential_type`, `latitude`, `longitude`, `complex_name`, `complex_household_count`, `recent_month6_average_realdeal_price`, and `representative_pyeong_number`.
+3. Prefer `complex_key`, `residential_type`, `latitude`, `longitude`, `complex_name`, `complex_household_count`, and `recent_month6_average_realdeal_price`.
 4. Treat recent price fields as optional; show a fallback label when they are null.
-5. A price bubble should identify the complex: show `complex_name` with the recent price label and `representative_pyeong_number` when available.
+5. A price bubble should identify the complex and label the price as the complex profile's recent-six-month summary; do not imply it is a residential-type price.
 6. For long names, use visual truncation/ellipsis; do not drop the name entirely.
 7. Load complex profile only after marker selection when the UI needs full detail data.
 
@@ -85,21 +84,21 @@ Use these recipes to compose product calls into residential service screens.
 
 1. Use residential complex profile as the main profile source for the detail panel.
 2. Use it for address, coordinates, scale, approval/parking/heating, nearby facilities, school context, constructor/developer, representative land info, and title-part summary.
-3. Load price detail products only when a price tab is opened.
-4. Add shape layer only if map boundary is visible.
-5. Load building/unit products only when the user opens that drill-down.
-6. If shape is missing, keep the panel usable with representative coordinates.
-7. Treat nearby `*_distance` fields as distance only; do not turn them into walking/driving time without route or travel-time data.
+3. Use matching-type `recent_month6_*` fields for the default whole-complex price summary; hide that price when the selected type differs from the profile type.
+4. Load realdeal only after the selected private-area scope is known. Load notice and estimated prices only after unit selection.
+5. Add shape layer only if map boundary is visible.
+6. Load building/unit products only when the user opens that drill-down.
+7. If shape is missing, keep the panel usable with representative coordinates.
+8. Treat nearby `*_distance` fields as distance only; do not turn them into walking/driving time without route or travel-time data.
 
 ## Detail Drawer Order
 
 1. Hero: complex name, address, type, household count, map focus.
-2. Price chart: latest realdeal rows first, then loaded-row trend or volume summary.
-3. Price tabs: realdeal, notice prices, estimated prices.
-4. Area or pyeong controls: derive only from loaded price/unit rows unless a dedicated API provides more.
-5. Building/dong section: building summaries.
-6. Unit/ho section: unit details after `ppk` or `jpk` is known.
-7. Land/title summary: complex profile land and title-part fields.
+2. Whole-complex summary: matching-type profile `recent_month6_*` fields.
+3. Pyeong controls and scoped realdeal chart/list.
+4. Building/dong section: building summaries.
+5. Unit/ho section: selected-unit notice and estimated prices after `ppk + jpk` is known.
+6. Land/title summary: complex profile land and title-part fields.
 
 ## Detail Drawer Tabs
 
@@ -107,17 +106,14 @@ Use this neutral tab architecture for full residential map service generation.
 
 | Tab | Products | Required components |
 |---|---|---|
-| 가격 | realdeal history, notice prices, estimated prices | price_evidence_panel, price-trend-chart, volume-bars |
-| 평형 | realdeal history, unit details | area-summary-card, area_axis_filter |
-| 동/호 | building summaries, unit details | building-card, unit-drilldown-panel |
+| 가격 | complex profile, realdeal history | whole-complex profile summary, price-trend-chart, volume-bars |
+| 평형 | building summaries, realdeal history | area-summary-card, area_axis_filter |
+| 동/호 | building summaries, unit details, notice prices, estimated prices | building-card, unit-drilldown-panel |
 | 단지정보 | complex profile | complex-detail-drawer, profile-stat-strip |
 
 입지 is recommended when the complex profile has useful location facts. If location data is limited, merge 입지 into 단지정보 instead of blocking the drawer.
 
-Signature components for full-service prompts:
-
-- `price-level-gauge`: a price surface that compares realdeal, estimated, and notice prices together for the selected complex/area; separate price tabs alone do not satisfy it.
-- `nearby-comparison-panel`: a drawer panel comparing the selected complex against nearby marker rows plus same-area realdeal evidence; do not omit it as an optional enhancement in full-service builds.
+When nearby comparison is requested, load one marker query lazily and label prices as whole-complex profile summaries. Do not present them as same-area comparisons.
 
 ## Full-Service Minimum
 
@@ -128,52 +124,45 @@ The detailed completeness criteria and DOM evidence list live in `references/ver
 ## Price Chart Pattern
 
 1. Use realdeal history for transaction charts.
-2. Before drawing the chart, fetch enough rows once for shape inspection: `sort.field=contract_date`, `sort.order=desc`, `limit 50~100` (`contract_date desc`).
+2. Fetch the first page once with `sort.field=contract_date`, `sort.order=desc`, and `limit=100`; share those rows between the chart and list.
 3. Trend chart fields are `contract_date`, `deal_division_name`, `private_area`, `price`, `deposit_price`, and `cancel_date`.
 4. Use a single-axis chart for one price semantic at a time: sale uses `price`, lease uses `deposit_price`.
 5. Do not mix monthly-rent `deposit_price` and monthly-rent `price` on the same y-axis; show monthly-rent rows as a table or dual-value labels instead.
 6. Expose the amount-axis trend as `data-testid="price-trend-chart"`.
 7. Monthly volume bars can group loaded `contract_date` rows by year-month and should expose `data-testid="volume-bars"`.
 8. Monthly volume bars are secondary evidence; they do not replace the price trend chart when sale rows exist.
-9. Chart captions must state: `불러온 rows 기준`.
-10. Cancelled rows should be visually marked or excluded with a clear note.
+9. Derive preset periods from profile `standard_ym`, not the browser date, and apply the same `date_from`/`date_to` to the chart.
+10. Fix the chart's right edge to `date_to`. When results are partial (`has_next` or the offset cap), start the left edge at the earliest loaded row instead of `date_from`; pad minimum width only toward the past and never beyond the product standard month.
+11. When more rows exist, label the first-page view as partial and fetch more only after explicit user intent.
+12. Cancelled rows should be visually marked or excluded with a clear note.
 
 ## Area Summary And Filtering
 
-1. Derive area or pyeong cards from loaded realdeal `private_area` rows and, when opened, unit-detail area fields.
+1. Derive pyeong cards from `buildings.units_summary`, not a limited realdeal or unit-detail page.
 2. A card click should set a visible selected state and filter the realdeal chart and transaction table by that area.
-3. Treat `area_axis_filter` as a cross-panel axis, not a local card filter: the representative price, price-trend-chart, volume-bars, and transaction table should update together.
-4. When refetching, use documented `private_area_min`/`private_area_max` for realdeal rows and `pyeong_number` or `pyeong_type_name` for unit rows.
-5. If only one page of rows is loaded, label area summaries as loaded-row summaries.
-6. Do not infer a complete complex-wide area universe from one limited price or unit page.
-7. Do not derive `private_area` from `pyeong_number`. If a selected pyeong has no observed private area, do not issue area-filtered price queries and show the affected surfaces as unavailable; query all areas only after the user explicitly selects the whole-complex scope.
-8. Use only values accepted by the shared display policy in area selectors, labels, filters, and derived calculations; preserve rejected raw rows for inspection.
+3. Default to the valid-observed-area pyeong with the largest `ho_count` total.
+4. Merge pyeongs whose observed private-area bands overlap into one realdeal scope, while keeping supply-pyeong labels visible.
+5. Treat `area_axis_filter` as a cross-panel axis: the price-trend-chart, volume-bars, and transaction table should update together.
+6. When refetching, use documented `private_area_min`/`private_area_max` for realdeal rows and `pyeong_number` or `pyeong_type_name` for unit rows.
+7. Do not derive `private_area` from `pyeong_number`. When pyeong data exists but lacks an observed private area, keep scoped realdeal unavailable; only a truly pyeong-less complex may use whole-complex realdeal.
+8. Use only values accepted by the shared display policy in selectors, labels, filters, and calculations; preserve rejected raw rows for inspection.
 
 ## Price Scope And Reference Time
 
-1. Treat `complex_key + residential_type + area/pyeong + deal type + requested period` as one price scope.
-2. A selected-area empty result stays `해당 평형 자료 없음`; do not reuse a whole-complex value under the selected-area label.
-3. If the user explicitly requests a wider fallback, recompute every connected price surface and change the label to `단지 전체 기준`.
-4. Show notice and estimated prices with the standard year-month returned in the rows.
-5. One standard year-month is a single snapshot. Render change or trend only when multiple periods actually exist for the same stable unit key, and label the loaded-row basis.
+1. The default whole-complex summary is the matching-type profile `recent_month6_*` snapshot. Do not rebuild it from paged rows.
+2. Treat `complex_key + residential_type + observed private-area band + deal type + requested period` as one realdeal scope.
+3. Anchor preset periods to profile `standard_ym`; label the screen with that product reference month and actual contract dates.
+4. A selected-area empty result stays `해당 평형 자료 없음`; do not reuse a whole-complex value under the selected-area label.
+5. Keep sale/lease overlay optional and cache it independently by scope, deal type, and period.
 
-## Derived Metrics And Estimates
+## Unit Price Detail
 
-1. Derived metrics are app-side calculations from loaded rows, not new API summary fields.
-2. `평당가` can be calculated from sale `price` and `private_area`; label it as `불러온 rows 기준`.
-3. `전세가율` is valid only when sale rows with `price` and lease rows with `deposit_price` exist for the same area bucket. Apply a minimum-sample guard per side, show the sample counts, and omit the segment honestly when the guard fails; expose the segment as `data-testid="jeonse-ratio-chip"`.
-4. Notice-price change requires multiple standard year-months for the same `jpk`; one returned snapshot must remain a current-price display.
-5. Estimated-price range width can use `upperlimit_sise_price - lowerlimit_sise_price` when both fields exist.
-6. Tax, brokerage-fee, or acquisition-cost calculators are optional UI estimates and must be labeled `단순 추정`.
-
-## Price Tabs
-
-1. Call realdeal, notice-price, or estimated-price detail only after the user opens that tab.
-2. Include `residential_type` when the user selected a type marker.
-3. Show an empty state if the selected price detail product returns no rows.
-4. Render sale, lease, and monthly-rent values with transaction-type-aware labels.
-5. For realdeal or notice-price lists, load the first page when the tab opens and request more pages only on scroll, "more", or explicit pagination.
-6. Show `notice_standard_ym` and `sise_production_standard_ym` from the actual returned rows; do not substitute the current calendar month.
+1. Load notice and estimated prices only after a selected unit provides `ppk + jpk`.
+2. Request the latest row from both products in parallel and render their failures independently.
+3. Show `notice_standard_ym` and `sise_production_standard_ym` from the returned rows; do not substitute the current calendar month.
+4. Show the estimate grade only as that unit's grade. Do not promote it to a complex or pyeong grade.
+5. Treat the current unit-price products as single snapshots: show the latest row and do not generate history or trend UI unless multiple standard months are actually returned. Do not calculate complex/pyeong averages or a three-source gauge from paged unit rows.
+6. Tax, brokerage-fee, or acquisition-cost calculators are optional and must be labeled `단순 추정`.
 
 ## Building Unit Drilldown
 

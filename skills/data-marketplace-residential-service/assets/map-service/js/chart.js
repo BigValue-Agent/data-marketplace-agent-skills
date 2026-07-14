@@ -1,4 +1,3 @@
-// 실거래 차트 — 금액축(산점 + 월평균 라인)과 거래량 바를 분리 렌더, 외부 의존성 없는 캔버스 구현
 window.dealChart = (() => {
   const D = window.dataPolicy;
   const COLORS = {
@@ -37,6 +36,41 @@ window.dealChart = (() => {
       .sort((a, b) => a.t - b.t);
   }
 
+  const MIN_SPAN_MONTHS = 6;
+
+  // "20260630" → toPoints와 같은 월 인덱스 좌표. 브라우저 현재 날짜를 쓰지 않는다.
+  function dateToT(yyyymmdd) {
+    const s = String(yyyymmdd ?? "");
+    if (!/^\d{8}$/.test(s)) return null;
+    const y = +s.slice(0, 4), m = +s.slice(4, 6), day = +s.slice(6, 8);
+    if (m < 1 || m > 12) return null;
+    return (y - 1970) * 12 + (m - 1) + (day - 1) / 31;
+  }
+
+  // X축 도메인 — 월간 스냅숏 상품의 커버리지를 축이 그대로 말하게 한다.
+  //  · 오른쪽 끝: 항상 상품 조회 종료일(기준월 말일). 마지막 거래일로 줄이지 않는다.
+  //    끝쪽 빈 구간은 "이 스냅숏에 등록된 거래가 없음"을 뜻한다(신고 지연분은 다음 스냅숏).
+  //  · 왼쪽 끝: 선택 기간을 모두 불러왔을 때만(!hasNext && !truncated) 조회 시작일.
+  //    부분 로드면 불러온 첫 거래일 — 안 가져온 과거를 거래 없던 기간처럼 그리지 않는다.
+  //  · 최소 표시 폭 확보는 과거 방향으로만, 조회 시작일 앞으로는 넘지 않는다.
+  //    어떤 경우에도 스냅숏 이후(미래) 월이 축에 생기지 않는다.
+  function axisDomain(points, { dateFrom = null, dateTo = null, hasNext = false, truncated = false } = {}) {
+    if (!points.length) return null;
+    const boundFrom = dateToT(dateFrom);
+    const boundTo = dateToT(dateTo);
+    const complete = !hasNext && !truncated;
+    let xMin = points[0].t;
+    let xMax = points[points.length - 1].t;
+    if (boundTo != null) xMax = Math.max(xMax, boundTo);
+    if (boundFrom != null && complete) xMin = Math.min(xMin, boundFrom);
+    if (xMax - xMin < MIN_SPAN_MONTHS) {
+      let expanded = xMax - MIN_SPAN_MONTHS;
+      if (boundFrom != null && expanded < boundFrom) expanded = boundFrom;
+      xMin = Math.min(xMin, expanded);
+    }
+    return { xMin, xMax };
+  }
+
   function niceTicks(min, max, n = 4) {
     const span = max - min || 1;
     const step0 = span / n;
@@ -59,21 +93,18 @@ window.dealChart = (() => {
 
   // container에 캔버스+툴팁 렌더. 반환: destroy()
   // overlay: {deals, dealType, label} — 기본 시리즈와 같은 축 위에 겹쳐 그리는 보조 시리즈
-  // (예: 매매 위에 전세 보증금 — 두 라인의 간격이 전세가율의 시각화다).
-  function render(container, deals, dealType, { monthsBack = null, overlay = null } = {}) {
+  // (예: 매매 위에 전세 보증금 — 두 상세 흐름을 같은 시간축에서 비교한다).
+  // dateFrom/dateTo/hasNext/truncated: 조회 창과 응답 완전성 — axisDomain이 축 경계를 정한다.
+  function render(container, deals, dealType, {
+    overlay = null, dateFrom = null, dateTo = null, hasNext = false, truncated = false,
+  } = {}) {
     container.innerHTML = "";
-    let pts = toPoints(deals, dealType);
-    let ovPts = overlay ? toPoints(overlay.deals, overlay.dealType) : [];
-    if (monthsBack) {
-      const now = new Date();
-      const nowT = (now.getFullYear() - 1970) * 12 + now.getMonth() + 1;
-      pts = pts.filter((p) => p.t >= nowT - monthsBack);
-      ovPts = ovPts.filter((p) => p.t >= nowT - monthsBack);
-    }
+    const pts = toPoints(deals, dealType);
+    const ovPts = overlay ? toPoints(overlay.deals, overlay.dealType) : [];
     if (!pts.length && !ovPts.length) {
       const empty = document.createElement("div");
       empty.className = "chart-empty";
-      empty.innerHTML = "이 조건의 거래가 없어요.<br/>기간을 넓히거나 다른 평형을 선택해 보세요.";
+      empty.innerHTML = "이 조건에 신고된 거래가 없어요.<br/>기간을 넓히거나 다른 평형을 선택해 보세요.";
       container.appendChild(empty);
       return { destroy() {} };
     }
@@ -115,8 +146,8 @@ window.dealChart = (() => {
       canvas.height = H * dpr;
       canvas.style.height = `${H}px`;
 
-      xMin = allPts[0].t; xMax = allPts[allPts.length - 1].t;
-      if (xMax - xMin < 6) { const c = (xMin + xMax) / 2; xMin = c - 3; xMax = c + 3; }
+      const domain = axisDomain(allPts, { dateFrom, dateTo, hasNext, truncated });
+      xMin = domain.xMin; xMax = domain.xMax;
       const vs = allPts.map((p) => p.v);
       yMin = Math.min(...vs); yMax = Math.max(...vs);
       if (yMin === yMax) { yMin *= 0.9; yMax *= 1.1; }
@@ -321,5 +352,5 @@ window.dealChart = (() => {
     };
   }
 
-  return { render, COLORS };
+  return { render, COLORS, axisDomain };
 })();

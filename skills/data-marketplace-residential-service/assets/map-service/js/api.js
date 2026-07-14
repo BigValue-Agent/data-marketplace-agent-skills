@@ -1,9 +1,5 @@
-// 빅밸류 데이터 마켓플레이스 주거형 상품 API 클라이언트
-// 브라우저는 Data Marketplace를 직접 호출하지 않는다 — server/proxy.mjs의
-// 계약(minimum_service_contract) route만 호출하고, 키는 프록시가 env로만 다룬다.
 window.api = (() => {
   const C = window.APP_CONFIG;
-  const D = window.dataPolicy;
   const cache = new Map(); // key: route+body → response (단지 단위 데이터는 세션 내 불변으로 취급)
 
   // 계약 route — minimum_service_contract의 core/lazy route 문자열과 1:1
@@ -90,7 +86,7 @@ window.api = (() => {
     };
     if (residentialType) body.filters = { residential_type: residentialType };
     const r = await query(ROUTES.markers, body);
-    return r.data;
+    return { rows: r.data, truncated: !!r.has_next };
   }
 
   // 4. 단지 경계 GeoJSON
@@ -102,7 +98,8 @@ window.api = (() => {
     return r.data[0] || null;
   }
 
-  // 5. 동/건물 목록 (단지 하나면 최대 300동으로 충분)
+  // 5. 동/건물 목록 — 첫 페이지(최대 300동)만. hasNext=true면 건물이 더 있다는 뜻인데,
+  // 헤더 숫자 하나를 정확히 세려고 추가 페이지를 자동 조회하지 않는다("N+"로 표기).
   // 주상복합 대응: residentialType을 주면 해당 유형의 동만 — 진입 유형과 평형/동 정보가 어긋나지 않게.
   async function buildings(complexKey, residentialType = null) {
     const filters = { complex_key: complexKey };
@@ -111,7 +108,7 @@ window.api = (() => {
       filters,
       limit: 300,
     });
-    return r.data;
+    return { rows: r.data, hasNext: !!r.has_next };
   }
 
   // 6. 호실 목록 (동 기준 페이지네이션)
@@ -124,27 +121,19 @@ window.api = (() => {
     return { rows: r.data, hasNext: r.has_next };
   }
 
-  // 7. 공시가격 — 호 기준 rows; 현재/이력 여부와 기준연월은 실제 응답으로 판단
-  async function noticePricesByJpk(jpk) {
+  // 7. 공시가격 — 210 상품은 최신 스냅숏만 보유하므로 호 선택 시 1건만 조회한다.
+  async function noticePricesByJpk(ppk, jpk) {
     const r = await query(ROUTES.notice, {
-      filters: { jpk },
+      filters: { ppk, jpk },
       sort: { field: "notice_standard_ym", order: "desc" },
-      limit: 30,
+      limit: 1,
     });
     return r.data;
   }
 
-  // 7b. 단지 대표 공시가 (최신 기준월 상위 rows)
-  async function noticePricesSample(complexKey, { limit = 100, residentialType = null } = {}) {
-    const filters = { complex_key: complexKey };
-    if (residentialType) filters.residential_type = residentialType;
-    const r = await query(ROUTES.notice, {
-      filters,
-      sort: { field: "notice_standard_ym", order: "desc" },
-      limit,
-    });
-    return r.data;
-  }
+  // 공시가격에 단지/평형 대표값 함수를 두지 않는다 — 상세 상품에는 집계가 없고
+  // 전용면적 필터도 없어, 일부 행 평균은 대단지에서 전체를 대표하지 못한다.
+  // 공시가격은 호(ppk+jpk) 단위로만 조회한다.
 
   // 8. 실거래 — 한 페이지
   async function realdealPage(complexKey, {
@@ -168,77 +157,23 @@ window.api = (() => {
     return { rows: r.data, hasNext: r.has_next };
   }
 
-  // 8b. 실거래 다건 수집 (차트용) — offset 상한과 페이지 수를 제한.
-  // truncated=true면 조건에 해당하는 거래가 더 있지만 최신순으로 잘렸다는 뜻.
-  async function realdealCollect(complexKey, opts = {}, { maxPages = 5, signal = null } = {}) {
-    const all = [];
-    let truncated = false;
-    for (let p = 0; p < maxPages; p++) {
-      const { rows, hasNext } = await realdealPage(complexKey, {
-        ...opts, limit: 100, offset: p * 100, signal,
-      });
-      all.push(...rows);
-      truncated = hasNext;
-      if (!hasNext || rows.length === 0) break;
-    }
-    return { rows: all, truncated };
-  }
+  // 실거래 다건 자동 수집 함수를 두지 않는다 — 순차 페이지 대기가 첫 화면을 늦추고
+  // 단지 하나에 수백 행을 내려받게 된다. 목록·차트는 첫 페이지(100건)를
+  // 공유하고, 추가 페이지는 사용자가 "더 보기"를 눌렀을 때만 이어서 조회한다.
 
-  // 9. 산출시세 — 평형(면적 범위) 밴드: 정렬 트릭으로 min/max 정확값 + 샘플 평균
-  async function estimateBand(complexKey, { areaMin = null, areaMax = null, residentialType = null } = {}) {
-    const filters = { complex_key: complexKey };
-    if (residentialType) filters.residential_type = residentialType;
-    if (areaMin != null) filters.private_area_min = areaMin;
-    if (areaMax != null) filters.private_area_max = areaMax;
-    // 최신 기준월 파악 겸 샘플 (기본 정렬: 기준월 desc)
-    const sample = await query(ROUTES.estimated, {
-      filters,
-      sort: { field: "sise_production_standard_ym", order: "desc" },
-      limit: 100,
-    });
-    const snapshot = D.latestSnapshot(sample.data, "sise_production_standard_ym");
-    if (!snapshot.standardYm) return null;
-    const latest = snapshot.rows.filter((row) =>
-      D.validUnitArea(row.private_area) && D.validPrice(row.sise_price));
-    if (!latest.length) return null;
-    const filtersYm = { ...filters, sise_production_standard_ym: snapshot.standardYm };
-    const [lo, hi] = await Promise.all([
-      query(ROUTES.estimated, { filters: filtersYm, sort: { field: "sise_price", order: "asc" }, limit: 1 }),
-      query(ROUTES.estimated, { filters: filtersYm, sort: { field: "sise_price", order: "desc" }, limit: 1 }),
-    ]);
-    const prices = latest.map((row) => row.sise_price);
-    const validBandRow = (row) => row && D.validUnitArea(row.private_area) && D.validPrice(row.sise_price);
-    const loRow = lo.data.find(validBandRow);
-    const hiRow = hi.data.find(validBandRow);
-    const lowerPrices = latest.map((row) =>
-      D.validPrice(row.lowerlimit_sise_price) ? row.lowerlimit_sise_price : row.sise_price);
-    const upperPrices = latest.map((row) =>
-      D.validPrice(row.upperlimit_sise_price) ? row.upperlimit_sise_price : row.sise_price);
-    return {
-      standardYm: snapshot.standardYm,
-      min: loRow?.sise_price ?? Math.min(...prices),
-      max: hiRow?.sise_price ?? Math.max(...prices),
-      avg: prices.reduce((sum, value) => sum + value, 0) / prices.length,
-      lowerAvg: lowerPrices.reduce((sum, value) => sum + value, 0) / lowerPrices.length,
-      upperAvg: upperPrices.reduce((sum, value) => sum + value, 0) / upperPrices.length,
-      sampleCount: latest.length,
-      grade: latest[0]?.sise_grade ?? null,
-    };
-  }
-
-  // 9b. 산출시세 — 호 기준 rows; 현재/이력 여부와 기준연월은 실제 응답으로 판단
-  async function estimatesByJpk(jpk) {
+  // 9. 산출시세 — 210 상품은 최신 스냅숏만 보유하므로 호 선택 시 1건만 조회한다.
+  async function estimatesByJpk(ppk, jpk) {
     const r = await query(ROUTES.estimated, {
-      filters: { jpk },
+      filters: { ppk, jpk },
       sort: { field: "sise_production_standard_ym", order: "desc" },
-      limit: 30,
+      limit: 1,
     });
     return r.data;
   }
 
   return {
     searchComplex, complexProfile, markers, nearbyMarkers, complexShape, buildings, units,
-    noticePricesByJpk, noticePricesSample, realdealPage, realdealCollect,
-    estimateBand, estimatesByJpk,
+    noticePricesByJpk, realdealPage,
+    estimatesByJpk,
   };
 })();

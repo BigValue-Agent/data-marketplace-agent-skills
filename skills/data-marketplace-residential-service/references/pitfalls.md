@@ -26,12 +26,14 @@ Rows are grouped by theme: paths/keys → bbox/markers → sort/pagination → p
 | Reading lease value from `price` | Lease rows may use `deposit_price` | Branch by transaction type |
 | Converting `price_min`/`price_max` or `deposit_min`/`deposit_max` to 만원 | Filters compare directly against KRW price columns | Send filter values in KRW, the same unit as response price fields |
 | Inventing `date_from`/`date_to` when the user did not specify a period | Fabricated date windows silently exclude real transactions | Omit date filters unless the user provides a period; use the documented sort for "latest rows" requests |
-| Treating loaded rows as a whole-complex summary | `realdeal`, `notice-prices`, and `estimated-prices` return paged rows | Label aggregates as loaded-row summaries; no summary product exists |
-| Treating `estimated-prices` as a complex-level summary | It returns unit-level detail rows | Aggregate explicitly client-side or show row-level values |
-| Widening a selected pyeong silently | The value and label describe different populations | Keep `해당 평형 자료 없음`, or relabel an explicitly widened scope as `단지 전체 기준` |
+| Rebuilding a whole-complex summary from detail rows | Realdeal and unit-price products are paged and can be truncated | Use matching-type profile `recent_month6_*` fields for the default summary |
+| Treating `estimated-prices` as a complex/pyeong representative price | It returns unit-level detail rows | Show the selected unit's value after `ppk + jpk` is known |
+| Widening a selected pyeong silently | The value and label describe different populations | Keep the selected-area view unavailable; use whole-complex realdeal only when no pyeong information exists |
+| Deriving a realdeal period from the browser date | Monthly product snapshots age independently of today | Anchor presets to profile `standard_ym` |
+| Showing one unit's grade as a complex grade | Grade belongs to the selected unit row | Show it only in the selected-unit detail |
 | Treating one snapshot as a trend | No time comparison exists | Display the returned standard year-month as current evidence |
 | Turning raw distance into walking time | No route, entrance, or crossing data exists | Display distance only |
 | Trusting every numeric/GeoJSON value | Extreme values distort UI and unsupported shapes can throw | Apply the shared display policy, show `확인 필요`, and keep non-boundary UI usable |
 | Assuming `polygon_geojson` always exists | Some complexes have no shape row | Use representative coordinate fallback |
 | Assuming `pyeong_type_name` (units) / `area_type` (notice-prices) always exists | Some rows lack the type label | Display numeric area fields safely |
-| Reusing one validation rule across price tabs | Realdeal, notice, and estimated-price products accept different required keys and filters | Split validation per product/tab |
+| Reusing one validation rule across price products | Realdeal, notice, and estimated-price products accept different required keys and filters | Split validation per product |

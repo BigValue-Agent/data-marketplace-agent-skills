@@ -1,4 +1,4 @@
-// 단지 상세 패널 — 프로필, 가격 수준계, 실거래, 평형/동/호, 입지, 개요
+// 단지 상세 패널 — 프로필, 단지 실거래 요약·상세, 평형/동/호, 입지, 개요
 window.panel = (() => {
   const F = window.fmt;
   const A = window.api;
@@ -10,13 +10,13 @@ window.panel = (() => {
   const sheetEl = document.getElementById("unit-sheet");
 
   let openToken = 0; // 최신 open 호출만 렌더하도록 하는 가드
-  let cur = null; // {key, profile, buildings, pyeongs, repPy, viewType, typeMismatch, focusDealPromises}
-  let deal = null; // {division, pyeong, range, rows, offset, hasNext, chart}
+  let cur = null; // 선택 단지 프로필·동/평형·유형 경계·지연 조회 상태
+  let deal = null; // {division, pyeong, range, rows, offset, shown, hasNext, overlayJeonse}
 
   const unitAreaText = (value) => D.validUnitArea(value) ? F.area(value) : "확인 필요";
   const pyeongText = (value) => D.validPyeong(value) ? `${value}평` : "평형 확인 필요";
   const floorText = (value) => D.validFloor(value) ? `${value}층` : "층 확인 필요";
-  const areaMessage = "전용면적 정보가 없어 이 평형 가격을 조회할 수 없어요. 전체를 선택하면 단지 전체 거래를 볼 수 있어요.";
+  const areaMessage = "전용면적 정보가 없어 이 평형의 실거래를 조회할 수 없어요.";
 
   const moduleContext = {
     F, A, D, Async, bodyEl, sheetEl,
@@ -26,16 +26,21 @@ window.panel = (() => {
     isCurrentOpen: (token) => token === openToken,
     pyeongFilterRange,
     areaMessage,
-    renderGaugeSkeleton,
     renderAreaUnavailable,
     getFocusPyeong: focusPyObj,
+    getFocusBand: () => bandOf(focusPyObj()),
+    formatPyeongBand: bandLabel,
     formatUnitArea: unitAreaText,
     formatPyeong: pyeongText,
     formatFloor: floorText,
     openComplex: open,
   };
   const priceModule = window.createPanelPriceModule(moduleContext);
-  const unitsModule = window.createPanelUnitsModule({ ...moduleContext, onSelectPyeong: selectPyeong });
+  const unitsModule = window.createPanelUnitsModule({
+    ...moduleContext,
+    onSelectPyeong: selectPyeong,
+    retryBuildings: () => loadBuildings(openToken),
+  });
 
   // buildings.units_summary → 평형 목록
   function aggregatePyeongs(buildings) {
@@ -59,19 +64,29 @@ window.panel = (() => {
     return [...m.values()].sort((a, b) => a.py - b.py);
   }
 
-  function pyeongFilterRange(p) {
-    return D.pyeongAreaRange(p);
+  // 실거래 목록·차트는 공급평형이 아니라 전용면적 밴드가 조회 단위다.
+  // 32·33평처럼 같은 밴드에 속한 평형은 같은 범위로 조회해 중복 집계를 막는다.
+  function bandOf(p) {
+    if (!cur || !p) return null;
+    return cur.bands.find((band) => band.pys.includes(p.py)) || null;
   }
 
-  function renderGaugeSkeleton() {
-    const el = bodyEl.querySelector("#sec-gauge");
-    if (!el) return;
-    el.innerHTML = `
-      <div class="gauge-lead">
-        <span class="gl-eyebrow">가격 수준계</span>
-        <div class="skel" style="height:40px;width:150px"></div>
-      </div>
-      <div class="skel" style="height:110px;margin-top:14px"></div>`;
+  function pyeongFilterRange(p) {
+    const band = bandOf(p);
+    return band
+      ? { areaMin: band.filterMin, areaMax: band.filterMax }
+      : D.pyeongAreaRange(p);
+  }
+
+  // 밴드 라벨: 단독 평형은 "33평", 전용면적이 겹치는 평형은 "전용 84.9㎡대 · 공급 32/33평"
+  function bandLabel(p) {
+    if (!p) return null;
+    const band = bandOf(p);
+    if (!band || band.pys.length <= 1) return `${p.py}평`;
+    const pys = [...band.pys].sort((a, b) => a - b);
+    const lo = F.area(band.areaMin, { forceUnit: "m2" });
+    const hi = F.area(band.areaMax, { forceUnit: "m2" });
+    return `전용 ${lo === hi ? lo : `${lo}~${hi}`}대 · 공급 ${pys.join("/")}평`;
   }
 
   function renderAreaUnavailable() {
@@ -83,12 +98,14 @@ window.panel = (() => {
     if (more) { more.hidden = true; more.disabled = false; }
   }
 
-  // null은 사용자가 명시적으로 고른 전체 범위다. 대표평형으로 다시 넓혀 해석하지 않는다.
+  // null은 평형 정보가 없는 단지의 단지 전체 fallback에서만 사용한다.
   function focusPyObj() {
     return cur.pyeongs.find((x) => x.py === deal.pyeong) || null;
   }
 
   // 진입 residentialType은 혼합 단지의 패널 전체 조회 기준이다.
+  // 첫 화면은 프로필 1건만 기다린다 — 경계·동 목록은 백그라운드로 받아
+  // 도착하는 대로 지도 경계·평형/동 영역·주거동 배지를 채운다.
   async function open(complexKey, residentialType = null) {
     const token = ++openToken;
     panelEl.hidden = false;
@@ -103,12 +120,7 @@ window.panel = (() => {
       </div>`;
 
     try {
-      const [profile, shape, buildings] = await Promise.all([
-        A.complexProfile(complexKey),
-        A.complexShape(complexKey).catch(() => null),
-        // 진입 유형이 있으면 그 유형의 동만 — 주상복합에서 다른 유형의 평형/동이 섞이지 않게
-        A.buildings(complexKey, residentialType).catch(() => []),
-      ]);
+      const profile = await A.complexProfile(complexKey);
       if (token !== openToken) return;
       if (!profile) throw new Error("단지 정보가 없어요");
 
@@ -116,28 +128,34 @@ window.panel = (() => {
       // 혼합 단지의 전체 요약을 선택 유형의 값으로 오인하지 않는다.
       const typeMismatch = !!(viewType && profile.residential_type && viewType !== profile.residential_type);
 
-      const pyeongs = aggregatePyeongs(buildings);
-      const repPy = pyeongs.length
-        ? pyeongs.reduce((a, b) => (b.ho > a.ho ? b : a))
-        : null;
       cur = {
-        key: complexKey, profile, buildings, pyeongs, repPy, viewType, typeMismatch,
-        // 게이지·주변 비교·전세가율이 같은 거래유형·평형 요청을 공유한다.
-        focusDealPromises: new Map(),
+        key: complexKey, profile, viewType, typeMismatch,
+        // 동 목록 도착 전 상태 — 평형/동 영역은 스켈레톤으로 표시된다.
+        buildings: [], pyeongs: [], bands: [],
+        buildingsReady: false, buildingsHasNext: false, buildingsError: false,
+        // 매매/전세 비교에서 재사용하는 전세 rows (기간·면적 scope 키 포함)
+        jeonseRows: null,
       };
       deal = {
-        division: "매매", pyeong: repPy?.py ?? null, range: 36,
-        overlayJeonse: false, rows: [], offset: 0, hasNext: false,
+        division: "매매", pyeong: null, range: 36,
+        overlayJeonse: false, rows: [], offset: 0, shown: 0,
+        hasNext: false, truncated: false,
+        overlayError: false, overlayHasNext: false, overlayTruncated: false,
       };
 
       window.mapCtl.select(complexKey);
-      window.mapCtl.showPolygon(shape ? shape.polygon_geojson : null);
-      window.mapCtl.setDongLabels(buildings);
+      window.mapCtl.showPolygon(null);
 
       renderShell();
-      priceModule.hydrateGauge(token);
-      priceModule.loadDeals(token, { reset: true });
-      priceModule.hydrateNearby(token);
+      priceModule.hydrateSummary(); // 프로필 요약 기반 — 추가 호출 없음
+      priceModule.observeNearby(token); // 주변 비교는 화면에 보일 때만 조회
+
+      A.complexShape(complexKey).then((shape) => {
+        if (token !== openToken || !shape) return;
+        window.mapCtl.showPolygon(shape.polygon_geojson);
+      }).catch(() => {});
+
+      loadBuildings(token);
     } catch (e) {
       if (token !== openToken) return;
       console.error(e);
@@ -149,6 +167,43 @@ window.panel = (() => {
         </div>`;
       bodyEl.querySelector("#p-retry").addEventListener("click", () => open(complexKey, residentialType));
     }
+  }
+
+  async function loadBuildings(token) {
+    if (!cur || token !== openToken) return;
+    cur.buildingsReady = false;
+    cur.buildingsError = false;
+    updateBuildingCounts();
+    unitsModule.renderPyeongControls();
+    unitsModule.renderDongGrid();
+    try {
+      const { rows, hasNext } = await A.buildings(cur.key, cur.viewType);
+      if (!cur || token !== openToken) return;
+      cur.buildings = rows;
+      cur.buildingsHasNext = hasNext;
+      cur.buildingsReady = true;
+      cur.pyeongs = aggregatePyeongs(rows);
+      cur.bands = D.pyeongBands(cur.pyeongs);
+      // 전용면적이 있는 최다 호수 평형을 첫 화면에 선택한다. 평형 정보가 전혀
+      // 없는 단지만 null을 유지해 단지 전체 실거래로 fallback한다.
+      deal.pyeong = D.representativePyeong(cur.pyeongs)?.py ?? null;
+      window.mapCtl.setDongLabels(rows);
+    } catch (error) {
+      if (!cur || token !== openToken) return;
+      console.error(error);
+      cur.buildings = [];
+      cur.pyeongs = [];
+      cur.bands = [];
+      cur.buildingsHasNext = false;
+      cur.buildingsReady = true;
+      cur.buildingsError = true;
+      window.mapCtl.setDongLabels([]);
+    }
+    updateBuildingCounts();
+    unitsModule.renderPyeongControls();
+    unitsModule.renderDongGrid();
+    if (cur.buildingsError) priceModule.renderDealDependencyError();
+    else priceModule.onPyeongChange();
   }
 
   function close() {
@@ -167,10 +222,13 @@ window.panel = (() => {
       // 주상복합: 지금 보는 유형 외의 유형이 같은 단지에 있음을 명시 (세대수 등은 단지 전체 값)
       cur.typeMismatch && `복합 단지 · <b>${F.esc(p.residential_type)}</b> 포함`,
       p.complex_household_count != null && `<b>${F.count(p.complex_household_count)}</b>세대`,
-      p.complex_dong_count != null && `<b>${F.count(p.complex_dong_count)}</b>개동`,
+      // 상품 계약의 범위를 확장 해석하지 않고 프로필 필드명을 그대로 설명한다.
+      p.complex_dong_count != null && `단지 동 수 <b>${F.count(p.complex_dong_count)}</b>동`,
       p.use_approval_date && `${F.dateYm(p.use_approval_date)} <b>(${p.complex_age_number ?? "—"}년차)</b>`,
       p.max_ground_floor_count != null && `최고 <b>${floorText(p.max_ground_floor_count)}</b>`,
-    ].filter(Boolean).map((t) => `<span class="p-badge">${t}</span>`).join("");
+    ].filter(Boolean).map((t) => `<span class="p-badge">${t}</span>`).join("")
+      // 주거동 수는 동 목록이 백그라운드로 도착한 뒤 채운다 (초기 화면을 막지 않음)
+      + `<span class="p-badge" id="dong-badge" hidden></span>`;
     const TYPE_BADGE_CLS = { "연립다세대": " villa", "오피스텔": " officetel" };
     const typeBadgeCls = TYPE_BADGE_CLS[cur.viewType || p.residential_type] || "";
 
@@ -188,10 +246,10 @@ window.panel = (() => {
         <div class="p-badges">${badges}</div>
       </div>
 
-      <section class="gauge-hero" id="sec-gauge" data-testid="price-level-gauge"></section>
+      <section class="price-summary" id="sec-price-summary" data-testid="complex-realdeal-summary"></section>
 
       <section class="p-sec" id="sec-deals">
-        <h3 class="p-sec-title">실거래가 <span class="p-sec-sub">국토교통부 · ${F.ym(p.standard_ym)} 기준</span></h3>
+        <h3 class="p-sec-title">실거래가 <span class="p-sec-sub">국토교통부 · 데이터 기준 ${F.ym(p.standard_ym)}</span></h3>
         <div class="deal-seg" role="group" aria-label="거래유형">
           ${["매매", "전세", "월세"].map((d) =>
             `<button type="button" data-deal="${d}" class="${d === "매매" ? "is-on" : ""}">${d}</button>`).join("")}
@@ -199,32 +257,33 @@ window.panel = (() => {
         <div class="py-chips" id="py-chips"></div>
         <!-- 실거래 상품 적재 범위가 최근 3년이므로 "전체 기간" 같은 라벨은 두지 않는다 -->
         <div class="range-toggle" role="group" aria-label="조회 기간">
-          <button type="button" data-range="6">6개월</button>
-          <button type="button" data-range="12">1년</button>
           <button type="button" data-range="36" class="is-on">3년</button>
+          <button type="button" data-range="12">1년</button>
+          <button type="button" data-range="6">6개월</button>
           <button type="button" id="jeonse-overlay" class="overlay-toggle" aria-pressed="false"
-                  title="매매 차트 위에 전세 보증금을 겹쳐 매매·전세 간격을 봅니다">전세 겹쳐보기</button>
+                  title="매매 차트 위에 전세 보증금을 겹쳐 매매·전세 간격을 봅니다">매매/전세</button>
           <span class="p-sec-sub" id="chart-basis" style="margin-left:auto;align-self:center"></span>
         </div>
         <div class="chart-wrap" id="deal-chart" data-testid="transaction-chart"><div class="chart-empty">거래 내역을 불러오는 중…</div></div>
+        <p class="load-note" id="deal-load-note" hidden></p>
         <table class="deal-table" aria-label="실거래 내역">
           <thead><tr><th>계약일</th><th>가격</th><th>층</th><th>전용</th></tr></thead>
           <tbody id="deal-tbody"></tbody>
         </table>
-        <button type="button" class="btn-more" id="deal-more" hidden>실거래 더보기</button>
+        <button type="button" class="btn-more" id="deal-more" hidden>실거래 더 보기</button>
       </section>
 
       <section class="p-sec" id="sec-nearby" data-testid="nearby-comparison-panel">
-        <h3 class="p-sec-title">주변 단지 시세 비교 <span class="p-sec-sub" id="nearby-sub">반경 1.2km</span></h3>
-        <div id="nearby-body"><div class="skel" style="height:130px"></div></div>
+        <h3 class="p-sec-title">주변 단지 실거래 비교 <span class="p-sec-sub" id="nearby-sub">반경 1.2km</span></h3>
+        <div id="nearby-body"><p class="sec-note" style="margin:0">주변 단지를 불러오는 중…</p></div>
       </section>
 
       <section class="p-sec" id="sec-py">
-        <h3 class="p-sec-title">평형 · 동 정보 <span class="p-sec-sub">${F.count(cur.buildings.length)}개동</span></h3>
+        <h3 class="p-sec-title">평형 · 동 정보 <span class="p-sec-sub" id="py-count-sub">동 목록 불러오는 중…</span></h3>
         <div class="py-cards" id="py-cards"></div>
         <div style="height:12px"></div>
         <div class="dong-grid" id="dong-grid"></div>
-        <p class="sec-note" data-testid="unit-panel-placeholder">동을 선택하면 호실별 면적과 호별 시세·공시가격을 볼 수 있어요.</p>
+        <p class="sec-note" data-testid="unit-panel-placeholder">동과 호를 선택하면 AI 산출시세와 신뢰등급, 공시가격을 확인할 수 있어요.</p>
       </section>
 
       <section class="p-sec" id="sec-loc">
@@ -233,7 +292,7 @@ window.panel = (() => {
       </section>
 
       <section class="p-sec" id="sec-overview">
-        <h3 class="p-sec-title">단지 개요 <span class="p-sec-sub">토지·건축물 공부 기준</span></h3>
+        <h3 class="p-sec-title">단지 개요 <span class="p-sec-sub">토지대장·건축물대장 기준</span></h3>
         <dl class="info-rows" id="overview-rows"></dl>
         <p class="sec-note">기준시점 ${F.ym(p.standard_ym)} · 빅밸류 데이터 마켓플레이스 주거형 상품</p>
       </section>
@@ -251,14 +310,35 @@ window.panel = (() => {
     unitsModule.renderDongGrid();
     renderLocation();
     renderOverview();
-    renderGaugeSkeleton();
+  }
+
+  // 프로필 단지 동 수와 선택 유형의 동 상품 행 수를 구분한다. 첫 페이지가 잘리면
+  // 추가 페이지를 자동 조회하지 않고 "N+"로 표시한다.
+  function updateBuildingCounts() {
+    if (!cur) return;
+    const badge = bodyEl.querySelector("#dong-badge");
+    const sub = bodyEl.querySelector("#py-count-sub");
+    const count = new Set(cur.buildings.map((b) => b.ppk)).size;
+    const suffix = cur.buildingsHasNext ? `${F.count(count)}+` : `${F.count(count)}동`;
+    const typeLabel = cur.viewType || "주거";
+    if (badge) {
+      badge.hidden = !cur.buildingsReady || cur.buildingsError || count === 0;
+      if (count > 0) badge.innerHTML = `${F.esc(typeLabel)} 주거동 <b>${suffix}</b>`;
+    }
+    if (sub) {
+      sub.textContent = !cur.buildingsReady
+        ? "동 목록 불러오는 중…"
+        : cur.buildingsError
+          ? "동 정보 조회 실패"
+          : count > 0 ? `주거동 ${suffix}` : "동 정보 없음";
+    }
   }
 
   function selectPyeong(nextPyeong) {
-    const prev = focusPyObj()?.py ?? null;
+    if (!deal || deal.pyeong === nextPyeong) return;
     deal.pyeong = nextPyeong;
     unitsModule.renderPyeongControls();
-    priceModule.onPyeongChange(prev);
+    priceModule.onPyeongChange();
   }
 
   // 입지·학군
@@ -304,7 +384,7 @@ window.panel = (() => {
       ["건물 구조", p.representative_title_structure_name || "—"],
       ["주용도", p.representative_title_etc_purpose_name || p.representative_title_purpose_name || "—"],
       ["난방", p.heating_division_name || "—"],
-      ["연면적 합계", p.sum_title_total_floor_area != null ? F.area(p.sum_title_total_floor_area) : "—"],
+      ["주거동 연면적 합계", p.sum_title_total_floor_area != null ? F.area(p.sum_title_total_floor_area) : "—"],
       ["총 호수", p.complex_ho_count != null ? `${F.count(p.complex_ho_count)}호` : "—"],
       ["주차대수", p.complex_parking_count != null
         ? `${F.count(p.complex_parking_count)}대${p.complex_household_count

@@ -3,8 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>주거 지도 — 단지의 모든 가격, 한 화면에</title>
+<title>주거 지도 — 단지 정보와 가격 흐름을 한눈에</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='22' y='22' width='56' height='56' rx='14' fill='%230e6b4f' transform='rotate(45 50 50)'/%3E%3C/svg%3E" />
+<!-- Pretendard 웹폰트 — css 폰트 스택의 1순위. 로드 실패 시 시스템 폰트로 자동 폴백 (표현 전용, 데이터 호출 아님) -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
 <link rel="stylesheet" href="css/app.css" />
 </head>
 <body>
@@ -25,7 +28,7 @@
     <a class="brand" href="./" aria-label="홈">
       <span class="brand-dot" aria-hidden="true"></span><span id="brand-name">주거 지도</span>
     </a>
-    <span class="brand-tag" id="brand-tag">단지의 모든 가격, 한 화면에</span>
+    <span class="brand-tag" id="brand-tag">단지 정보와 가격 흐름을 한눈에</span>
   </div>
   <div class="search-box" role="combobox" aria-expanded="false" aria-haspopup="listbox" id="search-combo">
     <svg class="search-icon" viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="6" fill="none" stroke="currentColor" stroke-width="2"/><line x1="13.5" y1="13.5" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -48,7 +51,7 @@
 </aside>
 
 <!-- 호실 상세 시트 -->
-<section class="unit-sheet" id="unit-sheet" hidden aria-label="동·호실 상세" data-testid="unit-drilldown-panel"></section>
+<section class="unit-sheet" id="unit-sheet" hidden aria-label="동·호 정보" data-testid="unit-drilldown-panel"></section>
 
 <!-- 우측 컨트롤 -->
 <nav class="map-tools" aria-label="지도 도구">
@@ -67,7 +70,7 @@
 
 <!-- 데이터 출처 -->
 <footer class="data-source" id="data-source">
-  <span>실거래가 국토교통부 · 산출시세/공시 빅밸류 데이터 마켓플레이스</span>
+  <span>실거래가: 국토교통부 · 산출시세·공시가격: 빅밸류 데이터 마켓플레이스</span>
 </footer>
 
 <script src="js/config.js"></script>

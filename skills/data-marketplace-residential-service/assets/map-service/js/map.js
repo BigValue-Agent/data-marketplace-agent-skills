@@ -1,4 +1,3 @@
-// 지도 컨트롤러 — 카카오맵 로드, 마커 풀, span 기반 줌 전략, 폴리곤/동 라벨
 window.mapCtl = (() => {
   const C = window.APP_CONFIG;
   const F = window.fmt;
@@ -98,7 +97,7 @@ window.mapCtl = (() => {
     if (!map) return;
     if (!shouldFetchMarkers()) {
       clearOverlays();
-      notice("지도를 확대하면 단지 시세가 표시됩니다", { sticky: true });
+      notice("지도를 확대하면 단지 가격 정보가 보여요.", { sticky: true });
       return;
     }
     const mode = markerDensity();
@@ -124,7 +123,7 @@ window.mapCtl = (() => {
       renderMarkers(rows, mode);
       if (truncated) {
         // has_next=true: 응답이 지도 중심거리순 상위로 잘렸다는 뜻 — 다음 페이지는 없다(offset 미지원), 확대 유도
-        notice("지도 중심 주변 단지만 표시 중 — 확대하면 전체가 보여요");
+        notice("지도 중심 주변 단지만 표시 중 — 확대하면 더 자세히 볼 수 있어요.");
       } else if (clamped) {
         notice("넓은 영역은 중심부 단지만 표시해요");
       } else {
@@ -148,20 +147,26 @@ window.mapCtl = (() => {
     } else {
       el.className = `mk${mode === "compact" ? " compact" : ""}${typeCls ? ` ${typeCls}` : ""}`;
       el.dataset.testid = "price-bubble-marker";
+      // 금액과 세대수는 있을 때만 표기한다 — 없는 값은 빈칸이 아니라 단계적으로 대체:
+      // 금액+세대 → 금액만 → 세대만 → 단지명만. 가격 스코프 설명은 호버 툴팁에 남긴다.
       const price = row.recent_month6_average_realdeal_price;
-      const priceTxt = D.validPrice(price)
+      const household = row.complex_household_count;
+      const hasPrice = D.validPrice(price);
+      const hasHousehold = Number.isFinite(household) && household > 0;
+      const mainTxt = hasPrice
         ? F.price(price, { compact: true })
-        : `${F.count(row.complex_household_count)}세대`;
-      const py = D.validPyeong(row.representative_pyeong_number)
-        ? row.representative_pyeong_number
-        : null;
+        : hasHousehold ? `${F.count(household)}세대` : F.esc(name);
+      const subTxt = hasPrice && hasHousehold ? `<small>${F.count(household)}세대</small>` : "";
+      const valueLine = (hasPrice || hasHousehold)
+        ? `<span class="mk-price">${mainTxt}${subTxt}</span>`
+        : "";
       if (mode === "full") {
-        el.innerHTML =
-          `<span class="mk-name">${F.esc(name)}</span>` +
-          `<span class="mk-price">${priceTxt}${py ? `<small>${py}평</small>` : ""}</span>`;
+        el.innerHTML = `<span class="mk-name">${F.esc(name)}</span>${valueLine}`;
       } else {
-        el.innerHTML = `<span class="mk-price">${priceTxt}${py ? `<small>${py}평</small>` : ""}</span>`;
-        el.title = name;
+        el.innerHTML = valueLine || `<span class="mk-price">${F.esc(name)}</span>`;
+        el.title = hasPrice
+          ? `${name} · 단지 전체 최근 6개월 실거래 평균 ${F.price(price, { compact: true })}`
+          : name;
       }
     }
     el.addEventListener("click", (e) => {
