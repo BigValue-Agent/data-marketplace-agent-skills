@@ -73,6 +73,11 @@ One representative complex through this chain is sufficient live verification; d
 8. Price tabs are lazy and separate: realdeal, notice prices, estimated prices.
 9. Building/unit sections are lazy and carry `ppk` and `jpk` as strings.
 10. Shape layer uses the complex area product only for selected complex boundaries.
+11. A missing selected-pyeong price stays empty under that pyeong label; a user-selected wider fallback is recomputed and labeled `단지 전체 기준`.
+12. Notice and estimated prices display the standard year-month from returned rows, and a single snapshot does not create a change/trend UI.
+13. Profile distance fields render as distance only, without walking/driving time or an N-minute catchment.
+14. Empty or unsupported GeoJSON omits the boundary only and keeps markers, detail, building, and unit UI usable.
+15. Out-of-policy pyeong, area, and floor fixtures render as `확인 필요` and do not enter normal selectors or derived metrics; raw rows and stable keys remain available.
 
 ## Full-Service Incomplete Checks
 
@@ -93,6 +98,10 @@ One representative complex through this chain is sufficient live verification; d
 - An area or pyeong card click updates the selected state and filters the chart/table when area data is available.
 - A building card click carries `ppk` as a string and renders unit rows or a unit-specific empty state.
 - Empty shape data keeps the detail drawer usable and does not throw a browser console error.
+- Unsupported `GeometryCollection` and invalid-coordinate shapes also keep the detail drawer usable without a console error.
+- A single-snapshot fixture shows its response standard year-month without change/trend UI.
+- Profile distance fields do not produce `도보`, `차량 N분`, or `N분 생활권` text.
+- Extreme pyeong/area/floor fixture values do not appear as normal marker, selector, floor, or unit-price inputs.
 
 ## Static Source Checks
 
@@ -103,7 +112,7 @@ When local browser execution or port binding is blocked, these checks still appl
 - Run a grep-level source check for `unit-panel-placeholder`, `unit-empty-state`, and `unit-row`.
 - Marker bubble rendering uses `complex_name`, `recent_month6_average_realdeal_price`, and `representative_pyeong_number` together, or documents fallback behavior when price/pyeong is null.
 - The marker API wrapper must be limit-only: send top-level `bbox`, optional `filters.residential_type`, `fields`, and `limit`; do not send `offset` in marker request bodies because marker responses are center-distance truncated with `has_next`, not offset-paged. For the all-types view, one unfiltered request (all types share one limit, so a dense type can crowd out others) and the bundled template's per-type parallel requests (balanced coverage with more requests, cushioned by the marker TTL cache) are both acceptable — pick one deliberately.
-- If a bundled reference template was used, preserve module boundaries when the stack allows it (`api`, `map`, `panel`, `chart`, `format`, and `proxy` layers). If a framework requires a different file shape, prove equivalent structure with the DOM hooks above.
+- If a bundled reference template was used, preserve module boundaries when the stack allows it (`data-policy`, `api`, `map`, `panel`, `chart`, `format`, and `proxy` layers). If a framework requires a different file shape, prove equivalent structure with the DOM hooks above.
 - If `assets/map-service/` is used, preserve its proxy boundary, module boundaries, price-level-gauge, nearby-comparison-panel, building route, and lazy unit drilldown behavior unless the target framework requires an equivalent structure.
 - Only when the template's interaction logic was reimplemented or heavily modified (not a verbatim template adaptation), use jsdom or pure DOM event tests for marker click → drawer open, tab switching, and area filter behavior.
 - A blocked local server, sandboxed network, or port binding failure is not a reason to skip static source checks.

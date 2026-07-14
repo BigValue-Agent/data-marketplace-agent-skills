@@ -35,7 +35,9 @@ The skill should say which role to use and which key to carry forward. The API R
 
 ## Known Data Shape Rules
 
-- `polygon_geojson` may be absent; use representative coordinates as fallback.
+- Notice and estimated price screens use the standard year-month returned by their rows. One standard year-month is a single snapshot, not a trend or change rate.
+- Validate `polygon_geojson` as `Polygon` or `MultiPolygon`, including closed rings, finite `[lng, lat]` numbers, and coordinate ranges. If it is absent, a `GeometryCollection`, or otherwise unsupported, omit the boundary only and keep the raw row, marker, and detail panel usable.
+- Preserve raw pyeong, unit-area, and floor values, but use them in selectors, labels, filters, or derived metrics only when they pass the shared template display policy. Show `확인 필요` instead of presenting an ineligible value as normal.
 - `pyeong_type_name` (units) or `area_type` (notice-prices) may be missing; show available area values instead of inventing a type label.
 - For realdeal rows, sale `price`, monthly rent `price`, and lease `deposit_price` have different meanings.
 

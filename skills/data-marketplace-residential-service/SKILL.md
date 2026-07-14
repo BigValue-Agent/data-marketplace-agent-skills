@@ -71,6 +71,11 @@ Map:
 - For offset-unsupported products, `has_next=true` is not a next-page signal. For bbox marker queries it means rows were truncated around the bbox center; zoom in or shrink the bbox and re-call.
 - For sort-supported products, send `sort.field` and `sort.order` together explicitly; do not rely on server default ordering, and never send an order without a field.
 - Label any client-side aggregate (average, per-pyeong price, jeonse ratio, min/max summary) as computed from loaded rows only; paged product rows are not a whole-complex summary.
+- Keep each price result inside one explicit scope: complex, residential type, area/pyeong, deal type, and requested period. Do not silently widen a missing selected-area result; if the user explicitly chooses a wider fallback, change the label with the scope.
+- Do not derive `private_area` from `pyeong_number`. If a selected pyeong has no observed private area, do not issue area-filtered price queries; keep the affected surfaces unavailable until the user explicitly selects the whole-complex scope.
+- Display notice and estimated prices with the standard year-month returned by each product. A single snapshot is current evidence, not a change rate or trend.
+- Treat nearby `*_distance` values as distance only. Do not derive walking/driving time or an N-minute catchment without route or travel-time data.
+- Validate display/derived-metric inputs and GeoJSON before use. Preserve raw API rows, but do not treat unsupported shapes or out-of-policy pyeong/area/floor values as normal display or aggregate inputs.
 - Do not generate live UI sections for listings, brokers, auctions, news, favorites, alerts, loan calculators, school/academy rankings, or recommendation scores unless the caller explicitly provides another data source; render disabled placeholders or omit them.
 - Read returned rows from `result.data`, not from the response object itself.
 - Do not use row `id` as a stable external URL key.
@@ -106,4 +111,7 @@ This is the quick summary; the full completion audit lives in `references/verifi
 - Sort-supported list routes send explicit `sort.field` + `sort.order`.
 - Charts and computed summaries from fetched rows carry a loaded-rows caption.
 - Price tabs (realdeal / notice / estimated) load lazily and validate independently per product.
+- Price-result scope and response standard year-month labels match the rows used in each calculation.
+- Profile distance values remain distances; no travel time is derived without route data.
+- The shared data policy and boundary-only fallback remain active after template adaptation.
 - No live listings/brokers/news/calculator sections are generated without an explicitly provided extra source.

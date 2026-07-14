@@ -1,5 +1,6 @@
 // 실거래 차트 — 금액축(산점 + 월평균 라인)과 거래량 바를 분리 렌더, 외부 의존성 없는 캔버스 구현
 window.dealChart = (() => {
+  const D = window.dataPolicy;
   const COLORS = {
     "매매": "#0e6b4f",
     "전세": "#1d63d8",
@@ -16,7 +17,7 @@ window.dealChart = (() => {
     const pts = [];
     for (const d of deals) {
       const v = valueOf(d, dealType);
-      if (v == null || !d.contract_date || d.cancel_date) continue;
+      if (!D.validPrice(v) || !d.contract_date || d.cancel_date) continue;
       const s = String(d.contract_date);
       const y = +s.slice(0, 4), m = +s.slice(4, 6), day = +s.slice(6, 8);
       pts.push({ t: (y - 1970) * 12 + (m - 1) + (day - 1) / 31, v, raw: d });
@@ -297,7 +298,8 @@ window.dealChart = (() => {
       const priceTxt = sType === "월세"
         ? window.fmt.rent(d.deposit_price, d.price)
         : window.fmt.price(valueOf(d, sType), { compact: true });
-      tip.innerHTML = `${ovPts.length ? `<b>${sType}</b> · ` : ""}${window.fmt.dateShort(d.contract_date)} · ${window.fmt.area(d.private_area)} ${d.floor_name ? `· ${window.fmt.esc(d.floor_name)}층` : ""}<br/><b>${priceTxt}</b>`;
+      const areaTxt = D.validUnitArea(d.private_area) ? window.fmt.area(d.private_area) : "면적 확인 필요";
+      tip.innerHTML = `${ovPts.length ? `<b>${sType}</b> · ` : ""}${window.fmt.dateShort(d.contract_date)} · ${areaTxt} ${d.floor_name ? `· ${window.fmt.esc(d.floor_name)}층` : ""}<br/><b>${priceTxt}</b>`;
       tip.style.left = `${best.x}px`;
       tip.style.top = `${best.y}px`;
       tip.style.display = "block";

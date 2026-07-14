@@ -18,6 +18,7 @@ Use these recipes to compose product calls into residential service screens.
 - Full-Service Minimum
 - Price Chart Pattern
 - Area Summary And Filtering
+- Price Scope And Reference Time
 - Derived Metrics And Estimates
 - Price Tabs
 - Building Unit Drilldown
@@ -77,7 +78,8 @@ Use these recipes to compose product calls into residential service screens.
 1. Use the complex area product only for the selected complex boundary after a `complex_key` is known.
 2. The complex area product does not support viewport bbox loading.
 3. Shape loading should be lazy and should not block the detail drawer.
-4. If `polygon_geojson` is missing, keep the detail panel usable and center the map on marker/profile coordinates.
+4. Validate `Polygon`/`MultiPolygon`, closed rings, and finite in-range coordinates before drawing.
+5. If `polygon_geojson` is missing or unsupported (including `GeometryCollection`), omit the boundary only; keep the detail panel usable and center the map on marker/profile coordinates.
 
 ## Detail Panel
 
@@ -87,6 +89,7 @@ Use these recipes to compose product calls into residential service screens.
 4. Add shape layer only if map boundary is visible.
 5. Load building/unit products only when the user opens that drill-down.
 6. If shape is missing, keep the panel usable with representative coordinates.
+7. Treat nearby `*_distance` fields as distance only; do not turn them into walking/driving time without route or travel-time data.
 
 ## Detail Drawer Order
 
@@ -143,14 +146,23 @@ The detailed completeness criteria and DOM evidence list live in `references/ver
 4. When refetching, use documented `private_area_min`/`private_area_max` for realdeal rows and `pyeong_number` or `pyeong_type_name` for unit rows.
 5. If only one page of rows is loaded, label area summaries as loaded-row summaries.
 6. Do not infer a complete complex-wide area universe from one limited price or unit page.
-7. If area fields are sparse, keep the transaction table usable and show an all-area fallback.
+7. Do not derive `private_area` from `pyeong_number`. If a selected pyeong has no observed private area, do not issue area-filtered price queries and show the affected surfaces as unavailable; query all areas only after the user explicitly selects the whole-complex scope.
+8. Use only values accepted by the shared display policy in area selectors, labels, filters, and derived calculations; preserve rejected raw rows for inspection.
+
+## Price Scope And Reference Time
+
+1. Treat `complex_key + residential_type + area/pyeong + deal type + requested period` as one price scope.
+2. A selected-area empty result stays `해당 평형 자료 없음`; do not reuse a whole-complex value under the selected-area label.
+3. If the user explicitly requests a wider fallback, recompute every connected price surface and change the label to `단지 전체 기준`.
+4. Show notice and estimated prices with the standard year-month returned in the rows.
+5. One standard year-month is a single snapshot. Render change or trend only when multiple periods actually exist for the same stable unit key, and label the loaded-row basis.
 
 ## Derived Metrics And Estimates
 
 1. Derived metrics are app-side calculations from loaded rows, not new API summary fields.
 2. `평당가` can be calculated from sale `price` and `private_area`; label it as `불러온 rows 기준`.
 3. `전세가율` is valid only when sale rows with `price` and lease rows with `deposit_price` exist for the same area bucket. Apply a minimum-sample guard per side, show the sample counts, and omit the segment honestly when the guard fails; expose the segment as `data-testid="jeonse-ratio-chip"`.
-4. Notice-price change should compare the same `jpk` when available; otherwise label the comparison as loaded-row based.
+4. Notice-price change requires multiple standard year-months for the same `jpk`; one returned snapshot must remain a current-price display.
 5. Estimated-price range width can use `upperlimit_sise_price - lowerlimit_sise_price` when both fields exist.
 6. Tax, brokerage-fee, or acquisition-cost calculators are optional UI estimates and must be labeled `단순 추정`.
 
@@ -161,6 +173,7 @@ The detailed completeness criteria and DOM evidence list live in `references/ver
 3. Show an empty state if the selected price detail product returns no rows.
 4. Render sale, lease, and monthly-rent values with transaction-type-aware labels.
 5. For realdeal or notice-price lists, load the first page when the tab opens and request more pages only on scroll, "more", or explicit pagination.
+6. Show `notice_standard_ym` and `sise_production_standard_ym` from the actual returned rows; do not substitute the current calendar month.
 
 ## Building Unit Drilldown
 

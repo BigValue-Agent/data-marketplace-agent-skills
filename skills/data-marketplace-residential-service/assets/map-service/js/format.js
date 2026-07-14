@@ -53,6 +53,12 @@ window.fmt = (() => {
     return `${s.slice(0, 4)}.${s.slice(4, 6)}`;
   }
 
+  function monthsAgoStart(months) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - months);
+    return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}01`;
+  }
+
   // 면적: 전역 단위 설정(평/㎡)에 따름
   let areaUnit = "pyeong"; // 'pyeong' | 'm2'
   function setAreaUnit(u) { areaUnit = u; }
@@ -71,11 +77,16 @@ window.fmt = (() => {
     return n == null ? "—" : Number(n).toLocaleString();
   }
 
-  // 거리 → "도보 8분 (516m)"
-  function walk(meters) {
-    if (meters == null || isNaN(meters)) return "—";
-    const min = Math.max(1, Math.round(meters / 67)); // 도보 4km/h
-    return `도보 ${min}분 · ${Math.round(meters).toLocaleString()}m`;
+  // 경로 정보가 없는 profile 값은 이동시간으로 추정하지 않고 원래 거리만 표시한다.
+  function distance(meters) {
+    if (typeof meters !== "number" || !Number.isFinite(meters) || meters < 0) return "—";
+    return `약 ${Math.round(meters).toLocaleString()}m`;
+  }
+
+  function trend(pct) {
+    if (pct > 0) return `<b class="up">▲${pct}%</b>`;
+    if (pct < 0) return `<b class="down">▼${Math.abs(pct)}%</b>`;
+    return "<b>보합</b>";
   }
 
   function esc(s) {
@@ -84,5 +95,5 @@ window.fmt = (() => {
     })[c]);
   }
 
-  return { price, rent, dateShort, dateYm, ym, area, count, walk, esc, setAreaUnit, getAreaUnit };
+  return { price, rent, dateShort, dateYm, ym, monthsAgoStart, area, count, distance, trend, esc, setAreaUnit, getAreaUnit };
 })();

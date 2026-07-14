@@ -3,6 +3,7 @@
 // 계약(minimum_service_contract) route만 호출하고, 키는 프록시가 env로만 다룬다.
 window.api = (() => {
   const C = window.APP_CONFIG;
+  const D = window.dataPolicy;
   const cache = new Map(); // key: route+body → response (단지 단위 데이터는 세션 내 불변으로 취급)
 
   // 계약 route — minimum_service_contract의 core/lazy route 문자열과 1:1
@@ -123,7 +124,7 @@ window.api = (() => {
     return { rows: r.data, hasNext: r.has_next };
   }
 
-  // 7. 공시가격 — jpk(호) 기준 연도별 이력
+  // 7. 공시가격 — 호 기준 rows; 현재/이력 여부와 기준연월은 실제 응답으로 판단
   async function noticePricesByJpk(jpk) {
     const r = await query(ROUTES.notice, {
       filters: { jpk },
@@ -195,29 +196,37 @@ window.api = (() => {
       sort: { field: "sise_production_standard_ym", order: "desc" },
       limit: 100,
     });
-    const rows = sample.data;
-    if (!rows.length) return null;
-    const latestYm = rows[0].sise_production_standard_ym;
-    const latest = rows.filter((r) => r.sise_production_standard_ym === latestYm);
-    const filtersYm = { ...filters, sise_production_standard_ym: latestYm };
+    const snapshot = D.latestSnapshot(sample.data, "sise_production_standard_ym");
+    if (!snapshot.standardYm) return null;
+    const latest = snapshot.rows.filter((row) =>
+      D.validUnitArea(row.private_area) && D.validPrice(row.sise_price));
+    if (!latest.length) return null;
+    const filtersYm = { ...filters, sise_production_standard_ym: snapshot.standardYm };
     const [lo, hi] = await Promise.all([
       query(ROUTES.estimated, { filters: filtersYm, sort: { field: "sise_price", order: "asc" }, limit: 1 }),
       query(ROUTES.estimated, { filters: filtersYm, sort: { field: "sise_price", order: "desc" }, limit: 1 }),
     ]);
-    const avg = latest.reduce((s, r) => s + r.sise_price, 0) / latest.length;
+    const prices = latest.map((row) => row.sise_price);
+    const validBandRow = (row) => row && D.validUnitArea(row.private_area) && D.validPrice(row.sise_price);
+    const loRow = lo.data.find(validBandRow);
+    const hiRow = hi.data.find(validBandRow);
+    const lowerPrices = latest.map((row) =>
+      D.validPrice(row.lowerlimit_sise_price) ? row.lowerlimit_sise_price : row.sise_price);
+    const upperPrices = latest.map((row) =>
+      D.validPrice(row.upperlimit_sise_price) ? row.upperlimit_sise_price : row.sise_price);
     return {
-      standardYm: latestYm,
-      min: lo.data[0]?.sise_price ?? null,
-      max: hi.data[0]?.sise_price ?? null,
-      avg,
-      lowerAvg: latest.reduce((s, r) => s + (r.lowerlimit_sise_price || r.sise_price), 0) / latest.length,
-      upperAvg: latest.reduce((s, r) => s + (r.upperlimit_sise_price || r.sise_price), 0) / latest.length,
+      standardYm: snapshot.standardYm,
+      min: loRow?.sise_price ?? Math.min(...prices),
+      max: hiRow?.sise_price ?? Math.max(...prices),
+      avg: prices.reduce((sum, value) => sum + value, 0) / prices.length,
+      lowerAvg: lowerPrices.reduce((sum, value) => sum + value, 0) / lowerPrices.length,
+      upperAvg: upperPrices.reduce((sum, value) => sum + value, 0) / upperPrices.length,
       sampleCount: latest.length,
       grade: latest[0]?.sise_grade ?? null,
     };
   }
 
-  // 9b. 호(jpk) 산출시세 이력
+  // 9b. 산출시세 — 호 기준 rows; 현재/이력 여부와 기준연월은 실제 응답으로 판단
   async function estimatesByJpk(jpk) {
     const r = await query(ROUTES.estimated, {
       filters: { jpk },

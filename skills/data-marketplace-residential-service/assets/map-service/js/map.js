@@ -2,6 +2,7 @@
 window.mapCtl = (() => {
   const C = window.APP_CONFIG;
   const F = window.fmt;
+  const D = window.dataPolicy;
 
   let map = null;
   let handlers = { onMarkerClick: null, onViewChange: null };
@@ -148,10 +149,12 @@ window.mapCtl = (() => {
       el.className = `mk${mode === "compact" ? " compact" : ""}${typeCls ? ` ${typeCls}` : ""}`;
       el.dataset.testid = "price-bubble-marker";
       const price = row.recent_month6_average_realdeal_price;
-      const priceTxt = price
+      const priceTxt = D.validPrice(price)
         ? F.price(price, { compact: true })
         : `${F.count(row.complex_household_count)}세대`;
-      const py = row.representative_pyeong_number;
+      const py = D.validPyeong(row.representative_pyeong_number)
+        ? row.representative_pyeong_number
+        : null;
       if (mode === "full") {
         el.innerHTML =
           `<span class="mk-name">${F.esc(name)}</span>` +
@@ -175,13 +178,14 @@ window.mapCtl = (() => {
     if (mode === "compact") {
       // 넓은 줌에서는 시세 없는 소규모 단지를 걸러 밀도를 낮춘다
       const filtered = rows.filter((r) =>
-        r.recent_month6_average_realdeal_price || (r.complex_household_count || 0) >= 300);
+        D.validPrice(r.recent_month6_average_realdeal_price) || (r.complex_household_count || 0) >= 300);
       if (filtered.length >= 20) rows = filtered;
     }
     if (rows.length <= cap) return rows;
     return [...rows]
       .sort((a, b) =>
-        ((b.recent_month6_average_realdeal_price ? 1 : 0) - (a.recent_month6_average_realdeal_price ? 1 : 0)) ||
+         ((D.validPrice(b.recent_month6_average_realdeal_price) ? 1 : 0) -
+          (D.validPrice(a.recent_month6_average_realdeal_price) ? 1 : 0)) ||
         ((b.complex_household_count || 0) - (a.complex_household_count || 0)))
       .slice(0, cap);
   }
@@ -199,7 +203,8 @@ window.mapCtl = (() => {
     const byKey = new Map();
     for (const row of rows) {
       const kept = byKey.get(row.complex_key);
-      if (!kept || (!kept.recent_month6_average_realdeal_price && row.recent_month6_average_realdeal_price)) {
+      if (!kept || (!D.validPrice(kept.recent_month6_average_realdeal_price) &&
+          D.validPrice(row.recent_month6_average_realdeal_price))) {
         byKey.set(row.complex_key, row);
       }
     }
@@ -211,7 +216,7 @@ window.mapCtl = (() => {
     const rows = prioritize(allRows, mode);
     const seen = new Set();
     for (const row of rows) {
-      if (row.latitude == null || row.longitude == null) continue;
+      if (!D.validCoordinate(row.longitude, row.latitude)) continue;
       const key = markerKey(row);
       seen.add(key);
       const existing = overlays.get(key);
@@ -222,7 +227,9 @@ window.mapCtl = (() => {
         position: new kakao.maps.LatLng(row.latitude, row.longitude),
         content: el,
         yAnchor: mode === "dot" ? 0.5 : 1,
-        zIndex: row.complex_key === selectedKey ? 100 : (row.recent_month6_average_realdeal_price ? 5 : 2),
+        zIndex: row.complex_key === selectedKey
+          ? 100
+          : (D.validPrice(row.recent_month6_average_realdeal_price) ? 5 : 2),
         clickable: true,
       });
       overlay.setMap(map);
@@ -251,7 +258,9 @@ window.mapCtl = (() => {
       if (!o.el.classList) continue;
       const isSelected = o.row.complex_key === selectedKey;
       o.el.classList.toggle("is-selected", isSelected);
-      o.overlay.setZIndex(isSelected ? 100 : (o.row.recent_month6_average_realdeal_price ? 5 : 2));
+      o.overlay.setZIndex(isSelected
+        ? 100
+        : (D.validPrice(o.row.recent_month6_average_realdeal_price) ? 5 : 2));
     }
   }
 
@@ -270,10 +279,11 @@ window.mapCtl = (() => {
 
   function showPolygon(geojson) {
     hidePolygon();
-    if (!geojson) return;
+    const rings = D.geoJsonOuterRings(geojson);
+    if (!rings) return false;
     const { kakao } = window;
-    const polys = geojson.type === "MultiPolygon" ? geojson.coordinates : [geojson.coordinates];
-    const paths = polys.map((rings) => rings[0].map(([lng, lat]) => new kakao.maps.LatLng(lat, lng)));
+    const paths = rings.map((ring) =>
+      ring.map(([lng, lat]) => new kakao.maps.LatLng(lat, lng)));
     polygon = new kakao.maps.Polygon({
       path: paths,
       strokeWeight: 2.5,
@@ -284,6 +294,7 @@ window.mapCtl = (() => {
       zIndex: 1,
     });
     polygon.setMap(map);
+    return true;
   }
 
   function hidePolygon() {
@@ -302,10 +313,11 @@ window.mapCtl = (() => {
     if (!map || !dongRows || map.getLevel() > C.DONG_LABEL_LEVEL) return;
     const { kakao } = window;
     for (const b of dongRows) {
-      if (b.latitude == null || b.longitude == null) continue;
+      if (!D.validCoordinate(b.longitude, b.latitude)) continue;
       const el = document.createElement("div");
       el.className = "dong-label";
-      el.innerHTML = `${F.esc(b.dong_name)}동${b.ground_floor_count ? ` <small>${b.ground_floor_count}층</small>` : ""}`;
+      const floor = D.validFloor(b.ground_floor_count) ? ` <small>${b.ground_floor_count}층</small>` : "";
+      el.innerHTML = `${F.esc(b.dong_name)}동${floor}`;
       const ov = new kakao.maps.CustomOverlay({
         position: new kakao.maps.LatLng(b.latitude, b.longitude),
         content: el, yAnchor: 0.5, zIndex: 50, clickable: false,
@@ -317,9 +329,11 @@ window.mapCtl = (() => {
 
   // ── 뷰 이동/도구 ─────────────────────────────
   function panTo(lat, lng, level = null) {
+    if (!map || !D.validCoordinate(lng, lat)) return false;
     const { kakao } = window;
     if (level != null && map.getLevel() !== level) map.setLevel(level);
     map.panTo(new kakao.maps.LatLng(lat, lng));
+    return true;
   }
 
   function zoom(delta) { map.setLevel(map.getLevel() + delta); }
