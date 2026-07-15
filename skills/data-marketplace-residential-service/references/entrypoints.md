@@ -27,7 +27,7 @@ Decision notes:
 
 ## Map Bbox Entry
 
-Use this when the user asks for a map, viewport markers, or Zigbang-like current-screen loading.
+Use this when the user asks for a map, viewport markers, or current-screen residential marker loading.
 
 Flow:
 
