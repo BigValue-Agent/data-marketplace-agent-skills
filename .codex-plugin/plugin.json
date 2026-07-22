@@ -1,18 +1,18 @@
 {
   "name": "bigvalue-realestate",
-  "version": "0.1.0",
-  "description": "Build residential real-estate services on BigValue Data Marketplace: codegen skill for complex search, map markers, price panels, and dong/ho drilldown.",
+  "version": "0.1.1",
+  "description": "아파트·오피스텔·연립다세대의 실거래가·AI 산출시세·공시가격 조회와 주거용 부동산 서비스(단지 검색·지도·동·호 상세) 개발을 돕는 부동산 데이터 스킬. Korean residential real-estate data for apartments, officetels & row houses and service codegen on BigValue Data Marketplace.",
   "author": {
     "name": "BigValue"
   },
   "repository": "https://github.com/BigValue-Agent/data-marketplace-agent-skills",
   "license": "SEE LICENSE IN LICENSE.md",
-  "keywords": ["real-estate", "data-marketplace", "codegen", "korea"],
+  "keywords": ["부동산", "아파트", "오피스텔", "연립다세대", "실거래가", "시세", "공시가격", "real-estate", "data-marketplace", "codegen", "korea"],
   "skills": "./skills/",
   "interface": {
-    "displayName": "BigValue Real Estate",
-    "shortDescription": "Residential real-estate service codegen skill",
-    "longDescription": "Guides AI code generators through BigValue Data Marketplace residential products: complex search, map markers, detail panels, price tabs, building/unit drilldown, and safe server-side API integration. MCP connection is configured separately during onboarding.",
+    "displayName": "빅밸류 부동산 (BigValue Real Estate)",
+    "shortDescription": "부동산 데이터 조회·서비스 개발 스킬 (실거래가·AI 산출시세·공시가격)",
+    "longDescription": "아파트·오피스텔·연립다세대의 실거래가·AI 산출시세·공시가격을 조회하고, 단지 검색·지도·동·호 상세 같은 주거용 부동산 서비스를 만들도록 AI 코드 생성기를 안내하는 스킬입니다. API 키와 서버 주소는 설치 후 setup 스킬로 연결합니다. / Guides AI code generators to query Korean residential real-estate data (apartments, officetels, row houses) and build services on BigValue Data Marketplace; the MCP connection is set up via the setup skill after install.",
     "developerName": "BigValue",
     "category": "Productivity"
   }

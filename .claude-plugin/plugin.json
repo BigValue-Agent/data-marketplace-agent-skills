@@ -1,25 +1,25 @@
 {
   "name": "bigvalue-realestate",
-  "displayName": "BigValue Real Estate",
-  "version": "0.1.0",
-  "description": "Build residential real-estate services on BigValue Data Marketplace: codegen skill (complex search, map markers, price panels, dong/ho drilldown) plus MCP tools for product contracts, recipes, templates, and live data.",
+  "displayName": "빅밸류 부동산 (BigValue Real Estate)",
+  "version": "0.1.1",
+  "description": "아파트·오피스텔·연립다세대의 실거래가·AI 산출시세·공시가격 조회와 주거용 부동산 서비스(단지 검색·지도·동·호 상세) 개발을 돕는 부동산 데이터 스킬·MCP 도구. Korean residential real-estate data for apartments, officetels & row houses (transactions, AI estimated & official prices) and service codegen on BigValue Data Marketplace.",
   "author": {
     "name": "BigValue"
   },
   "repository": "https://github.com/BigValue-Agent/data-marketplace-agent-skills",
   "license": "SEE LICENSE IN LICENSE.md",
-  "keywords": ["real-estate", "data-marketplace", "codegen", "mcp", "korea"],
+  "keywords": ["부동산", "아파트", "오피스텔", "연립다세대", "실거래가", "시세", "공시가격", "real-estate", "data-marketplace", "codegen", "mcp", "korea"],
   "userConfig": {
     "mcp_url": {
       "type": "string",
-      "title": "Data Marketplace MCP URL",
-      "description": "MCP server URL provided during onboarding (e.g. https://<host>/mcp)",
+      "title": "MCP 서버 주소 (MCP URL)",
+      "description": "제공받은 MCP 서버 주소를 입력하세요 (예: https://<host>/mcp). / MCP server URL provided at onboarding.",
       "required": true
     },
     "api_key": {
       "type": "string",
-      "title": "Data Marketplace API Key",
-      "description": "API key provided during onboarding. Stored securely; sent only as a Bearer header to the MCP server.",
+      "title": "API 키 (API Key)",
+      "description": "발급받은 API 키를 입력하세요. 안전하게 저장되며 MCP 서버 인증에만 쓰입니다. / Your API key; stored securely, used only for MCP auth.",
       "sensitive": true,
       "required": true
     }

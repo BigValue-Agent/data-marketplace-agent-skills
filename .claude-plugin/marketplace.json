@@ -3,14 +3,14 @@
   "owner": {
     "name": "BigValue"
   },
-  "description": "BigValue Data Marketplace plugins for AI code generators",
+  "description": "빅밸류 데이터 마켓플레이스 — AI 코드 생성기용 부동산 데이터·서비스 플러그인. BigValue Data Marketplace plugins for AI code generators.",
   "plugins": [
     {
       "name": "bigvalue-realestate",
       "source": "./",
-      "description": "Residential real-estate service codegen skill + Data Marketplace MCP tools",
+      "description": "아파트·오피스텔·연립다세대의 실거래가·AI 산출시세·공시가격 조회와 주거용 부동산 서비스(단지 검색·지도·동·호 상세) 개발을 돕는 부동산 데이터 스킬·MCP 도구. Korean residential real-estate data for apartments, officetels & row houses and service codegen on BigValue Data Marketplace.",
       "category": "productivity",
-      "tags": ["real-estate", "data-marketplace", "codegen", "korea"]
+      "tags": ["부동산", "아파트", "오피스텔", "연립다세대", "실거래가", "시세", "공시가격", "real-estate", "data-marketplace", "codegen", "korea"]
     }
   ]
 }
