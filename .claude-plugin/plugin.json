@@ -1,0 +1,27 @@
+{
+  "name": "bigvalue-realestate",
+  "displayName": "BigValue Real Estate",
+  "version": "0.1.0",
+  "description": "Build residential real-estate services on BigValue Data Marketplace: codegen skill (complex search, map markers, price panels, dong/ho drilldown) plus MCP tools for product contracts, recipes, templates, and live data.",
+  "author": {
+    "name": "BigValue"
+  },
+  "repository": "https://github.com/BigValue-Agent/data-marketplace-agent-skills",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "keywords": ["real-estate", "data-marketplace", "codegen", "mcp", "korea"],
+  "userConfig": {
+    "mcp_url": {
+      "type": "string",
+      "title": "Data Marketplace MCP URL",
+      "description": "MCP server URL provided during onboarding (e.g. https://<host>/mcp)",
+      "required": true
+    },
+    "api_key": {
+      "type": "string",
+      "title": "Data Marketplace API Key",
+      "description": "API key provided during onboarding. Stored securely; sent only as a Bearer header to the MCP server.",
+      "sensitive": true,
+      "required": true
+    }
+  }
+}

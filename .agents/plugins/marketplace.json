@@ -1,0 +1,20 @@
+{
+  "name": "bigvalue-agent-skills",
+  "interface": {
+    "displayName": "BigValue Agent Skills"
+  },
+  "plugins": [
+    {
+      "name": "bigvalue-realestate",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

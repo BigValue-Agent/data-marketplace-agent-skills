@@ -8,11 +8,42 @@ This skill helps coding agents compose Data Marketplace residential products for
 
 ## Installation
 
-Install with Node.js 18+.
+Pick **one** method per tool. Combining methods loads the same skill twice.
+
+### Option A — Claude Code plugin (recommended: skill + MCP tools + key setup in one step)
+
+Run these commands in Claude Code, in order:
+
+```text
+/plugin marketplace add BigValue-Agent/data-marketplace-agent-skills
+/plugin install bigvalue-realestate@bigvalue-agent-skills
+/reload-plugins
+/bigvalue-realestate:setup
+```
+
+During installation you will be prompted for the **MCP server URL** and **API key** provided at onboarding.
+The API key is kept in secure storage (OS keychain) and is only sent as the MCP server auth header.
+After `/reload-plugins`, both the skill and the Data Marketplace MCP tools (product contracts, recipes, templates, live queries) are active.
+The final `/bigvalue-realestate:setup` verifies the MCP connection actually works and guides configuration if it does not.
+
+### Option A-2 — Codex / ChatGPT desktop plugin (skill + manual MCP connection)
+
+```bash
+codex plugin marketplace add BigValue-Agent/data-marketplace-agent-skills
+```
+
+Then install `BigValue Real Estate` from the Plugins Directory in the ChatGPT desktop app (Work mode or Codex).
+This plugin bundles the skill; the MCP connection is guided by the `setup` skill — run `setup` after install to register the API key safely via the environment-variable-name method.
+
+### Option B — skill only (npx, for tools without plugin support)
+
+Use this only on tools that do not support plugins. Install with Node.js 18+.
 
 ```bash
 npx skills add BigValue-Agent/data-marketplace-agent-skills
 ```
+
+If you need the MCP connection, follow the per-tool registration steps from your onboarding guide.
 
 ## Skill
 

@@ -1,0 +1,16 @@
+{
+  "name": "bigvalue-agent-skills",
+  "owner": {
+    "name": "BigValue"
+  },
+  "description": "BigValue Data Marketplace plugins for AI code generators",
+  "plugins": [
+    {
+      "name": "bigvalue-realestate",
+      "source": "./",
+      "description": "Residential real-estate service codegen skill + Data Marketplace MCP tools",
+      "category": "productivity",
+      "tags": ["real-estate", "data-marketplace", "codegen", "korea"]
+    }
+  ]
+}

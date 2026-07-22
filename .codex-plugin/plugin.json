@@ -1,0 +1,19 @@
+{
+  "name": "bigvalue-realestate",
+  "version": "0.1.0",
+  "description": "Build residential real-estate services on BigValue Data Marketplace: codegen skill for complex search, map markers, price panels, and dong/ho drilldown.",
+  "author": {
+    "name": "BigValue"
+  },
+  "repository": "https://github.com/BigValue-Agent/data-marketplace-agent-skills",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "keywords": ["real-estate", "data-marketplace", "codegen", "korea"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "BigValue Real Estate",
+    "shortDescription": "Residential real-estate service codegen skill",
+    "longDescription": "Guides AI code generators through BigValue Data Marketplace residential products: complex search, map markers, detail panels, price tabs, building/unit drilldown, and safe server-side API integration. MCP connection is configured separately during onboarding.",
+    "developerName": "BigValue",
+    "category": "Productivity"
+  }
+}

@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>아파트 가격 진단</title>
+<style>
+/* ===== tokens ===== */
+:root{
+  --bg:#f4f6f9; --card:#ffffff; --ink:#191f28; --sub:#6b7684; --faint:#8b95a1;
+  --line:#e5e8eb; --zebra:#f9fafb;
+  --deal:#3182f6; --deal-s:#e8f1fe;
+  --sise:#7048e8; --sise-s:#f0ebfd;
+  --notice:#0ca678; --notice-s:#e6f7f1;
+  --warn:#b98004; --warn-s:#fdf3d8;
+  --shadow:0 1px 3px rgba(25,31,40,.06),0 8px 24px rgba(25,31,40,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e1116; --card:#171b22; --ink:#e9ecef; --sub:#98a2ad; --faint:#77818c;
+    --line:#2a313a; --zebra:#1c212a;
+    --deal:#6ba6ff; --deal-s:#1c2a40;
+    --sise:#9c82f5; --sise-s:#272040;
+    --notice:#3ecf9a; --notice-s:#123328;
+    --warn:#e5b800; --warn-s:#332b10;
+    --shadow:none;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#f4f6f9; --card:#ffffff; --ink:#191f28; --sub:#6b7684; --faint:#8b95a1;
+  --line:#e5e8eb; --zebra:#f9fafb;
+  --deal:#3182f6; --deal-s:#e8f1fe; --sise:#7048e8; --sise-s:#f0ebfd;
+  --notice:#0ca678; --notice-s:#e6f7f1; --warn:#b98004; --warn-s:#fdf3d8;
+  --shadow:0 1px 3px rgba(25,31,40,.06),0 8px 24px rgba(25,31,40,.05);
+}
+:root[data-theme="dark"]{
+  --bg:#0e1116; --card:#171b22; --ink:#e9ecef; --sub:#98a2ad; --faint:#77818c;
+  --line:#2a313a; --zebra:#1c212a;
+  --deal:#6ba6ff; --deal-s:#1c2a40; --sise:#9c82f5; --sise-s:#272040;
+  --notice:#3ecf9a; --notice-s:#123328; --warn:#e5b800; --warn-s:#332b10;
+  --shadow:none;
+}
+
+/* ===== base ===== */
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Pretendard Variable",Pretendard,
+    "Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
+  font-size:15px; line-height:1.55;
+}
+.wrap{max-width:860px;margin:0 auto;padding:20px 16px 48px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  box-shadow:var(--shadow);padding:20px}
+h2{font-size:15px;font-weight:700;letter-spacing:-.01em;margin-bottom:14px}
+h2 .sub{font-size:12px;font-weight:500;color:var(--sub);margin-left:6px}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+
+/* ===== sample ribbon ===== */
+.ribbon{display:flex;align-items:center;gap:8px;background:var(--warn-s);
+  color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);
+  border-radius:12px;padding:9px 14px;font-size:13px;font-weight:700;margin-bottom:14px}
+.ribbon[hidden]{display:none}
+
+/* ===== hero ===== */
+.hero{padding:6px 4px 18px}
+.hero .kicker{font-size:12px;font-weight:800;color:var(--sub);letter-spacing:.03em;margin-bottom:6px}
+.hero .addr{font-size:12.5px;color:var(--faint);margin-bottom:3px}
+.hero h1{font-size:23px;font-weight:800;letter-spacing:-.02em}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{font-size:12px;font-weight:600;color:var(--sub);background:var(--card);
+  border:1px solid var(--line);border-radius:999px;padding:3.5px 10px}
+.chip.warn{color:var(--warn);background:var(--warn-s);
+  border-color:color-mix(in srgb,var(--warn) 35%,transparent)}
+.verdict{margin-top:14px;font-size:16.5px;line-height:1.6;letter-spacing:-.01em}
+.verdict b{font-weight:800}
+.verdict .v-deal{color:var(--deal)} .verdict .v-sise{color:var(--sise)}
+.verdict .v-notice{color:var(--notice)}
+.verdict-pre{display:inline-block;font-size:13px;font-weight:700;color:var(--warn);
+  background:var(--warn-s);border-radius:8px;padding:1px 8px;margin-right:6px}
+
+/* ===== chart ===== */
+.chartbox{overflow-x:auto}
+.chartbox > svg{min-width:660px;display:block;width:100%;height:auto}
+.chart-note{font-size:12px;color:var(--faint);margin-top:10px}
+
+/* ===== axis cards ===== */
+.axes{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+.axis{padding:18px 18px 14px;border-top:3px solid var(--line)}
+.axis.deal{border-top-color:var(--deal)}
+.axis.sise{border-top-color:var(--sise)}
+.axis.notice{border-top-color:var(--notice)}
+.axis .ax-name{font-size:13px;font-weight:700}
+.axis .ax-when{font-size:11.5px;color:var(--faint);margin-top:1px}
+.axis .big{font-size:27px;font-weight:800;letter-spacing:-.02em;margin:10px 0 2px}
+.axis .big small{font-size:15px;font-weight:700}
+.axis .big.absent{color:var(--faint);font-size:20px}
+.axis .sub-line{font-size:12.5px;color:var(--sub)}
+.axis .kv{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px;
+  display:flex;flex-direction:column;gap:3px}
+.axis .kv div{display:flex;justify-content:space-between;font-size:12.5px}
+.axis .kv dt{color:var(--faint)} .axis .kv dd{font-weight:600}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.tag{font-size:11px;font-weight:700;border-radius:7px;padding:1.5px 7px;
+  color:var(--warn);background:var(--warn-s)}
+.gradechip{display:inline-block;font-size:11.5px;font-weight:800;border-radius:7px;
+  padding:1.5px 8px;color:var(--sise);background:var(--sise-s)}
+.src{font-size:11px;color:var(--faint);margin-top:12px;padding-top:8px;
+  border-top:1px solid var(--line)}
+
+/* ===== deals table ===== */
+.deals{margin-top:12px}
+table{width:100%;border-collapse:collapse}
+th{font-size:11.5px;font-weight:600;color:var(--faint);text-align:left;
+  padding:6px 8px;border-bottom:1px solid var(--line)}
+td{font-size:13.5px;padding:8px;border-bottom:1px solid var(--line)}
+tbody tr:nth-child(even){background:var(--zebra)}
+th.r,td.r{text-align:right}
+td.price{font-weight:700}
+.more-row td{color:var(--faint);font-size:12.5px;text-align:center}
+.note{font-size:12px;color:var(--faint);margin-top:8px}
+
+/* ===== footer ===== */
+.foot{margin-top:22px;padding:0 4px}
+.foot .notes p{font-size:12.5px;color:var(--sub);margin-bottom:6px;
+  padding-left:12px;position:relative}
+.foot .notes p::before{content:"";position:absolute;left:0;top:8px;width:4px;height:4px;
+  border-radius:50%;background:var(--faint)}
+.meta{font-size:11.5px;color:var(--faint);margin-top:12px;padding-top:10px;
+  border-top:1px solid var(--line)}
+
+@media (max-width:720px){
+  .axes{grid-template-columns:1fr}
+  .hero h1{font-size:20px}
+  .axis .big{font-size:24px}
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+  <div class="ribbon" id="sampleRibbon" hidden>예시 화면 — 실제 조회 데이터가 아닙니다</div>
+
+  <header class="hero">
+    <p class="kicker">아파트 가격 진단</p>
+    <p class="addr" id="addr"></p>
+    <h1 id="cxName">단지명</h1>
+    <div class="chips" id="chips"></div>
+    <p class="verdict" id="verdict"></p>
+  </header>
+
+  <section class="card">
+    <h2>세 가지 가격, 한 줄에서 <span class="sub" id="chartScope"></span></h2>
+    <div class="chartbox"><svg id="tri" role="img" aria-label="실거래·산출시세·공시가격 비교 차트"></svg></div>
+    <p class="chart-note" id="chartNote"></p>
+  </section>
+
+  <section class="axes">
+    <article class="card axis deal">
+      <p class="ax-name">실거래가 <span id="dealWhen" class="ax-when"></span></p>
+      <p class="big num" id="dealBig">—</p>
+      <p class="sub-line" id="dealSub"></p>
+      <div class="kv" id="dealKv"></div>
+      <div class="tags" id="dealTags"></div>
+      <p class="src">국토교통부 실거래 신고 기반</p>
+    </article>
+    <article class="card axis sise">
+      <p class="ax-name">AI 산출시세 <span id="siseWhen" class="ax-when"></span></p>
+      <p class="big num" id="siseBig">—</p>
+      <p class="sub-line" id="siseSub"></p>
+      <div class="kv" id="siseKv"></div>
+      <div class="tags" id="siseTags"></div>
+      <p class="src">빅밸류 AI 산출시세</p>
+    </article>
+    <article class="card axis notice">
+      <p class="ax-name">공시가격 <span id="noticeWhen" class="ax-when"></span></p>
+      <p class="big num" id="noticeBig">—</p>
+      <p class="sub-line" id="noticeSub"></p>
+      <div class="kv" id="noticeKv"></div>
+      <p class="src">주택 공시가격(정부 고시)</p>
+    </article>
+  </section>
+
+  <section class="card deals" id="dealsCard">
+    <h2>최근 매매 내역 <span class="sub" id="dealsScope"></span></h2>
+    <table>
+      <thead><tr><th>계약일</th><th>층</th><th class="r">전용면적</th><th class="r">거래가격</th></tr></thead>
+      <tbody id="dealRows"></tbody>
+    </table>
+    <p class="note" id="dealsNote"></p>
+  </section>
+
+  <footer class="foot">
+    <div class="notes">
+      <p>세 값은 성격이 다릅니다 — 실거래가는 과거에 신고된 계약, AI 산출시세는 현재 시점의 추정값, 공시가격은 과세 기준입니다. 하나의 "정답 가격"이 아니라 서로 다른 시점과 목적의 기준값입니다.</p>
+      <p>최근 1~2개월 계약은 신고 지연으로 아직 반영되지 않았을 수 있습니다.</p>
+      <p>산출시세와 공시가격은 각 기준월의 단일 값이며, 이 화면은 추세나 등락을 말하지 않습니다.</p>
+    </div>
+    <p class="meta num" id="meta"></p>
+  </footer>
+
+</main>
+
+<script type="application/json" id="dm-data">
+{
+  "sample": true,
+  "queriedAt": "2026-07-22",
+  "complex": { "name": "달빛마을 1단지", "type": "아파트", "householdCount": 1892,
+               "standardYm": "202606", "address": "서울 송파구 달빛로 123" },
+  "band": { "label": "전용 84㎡", "areaMin": 84.86, "areaMax": 84.99,
+            "pyeongLabel": "33·34평형 병합", "fallback": false },
+  "deal": { "from": "2025-07-01", "to": "2026-06-30", "monthsLabel": "최근 12개월",
+            "n": 9, "median": 1170000000, "min": 1080000000, "max": 1235000000,
+            "partial": false, "excludedCancelled": 1 },
+  "sise": { "ym": "202606", "bandMin": 1090000000, "bandMax": 1215000000,
+            "complete": true, "scopeLabel": "이 평형 호 전체 312호",
+            "rep": { "dongName": "103동", "hoName": "1204호", "price": 1152000000,
+                     "lower": 1094000000, "upper": 1210000000, "grade": "A" } },
+  "notice": { "ym": "202601", "year": 2026,
+              "rep": { "dongName": "103동", "hoName": "1204호", "price": 829000000 } },
+  "deals": [
+    { "date": "2026-06-14", "floor": "21", "area": 84.98, "price": 1235000000 },
+    { "date": "2026-05-30", "floor": "7",  "area": 84.98, "price": 1168000000 },
+    { "date": "2026-05-11", "floor": "15", "area": 84.86, "price": 1190000000 },
+    { "date": "2026-04-02", "floor": "3",  "area": 84.98, "price": 1080000000 },
+    { "date": "2026-02-19", "floor": "18", "area": 84.98, "price": 1170000000 },
+    { "date": "2026-01-08", "floor": "11", "area": 84.86, "price": 1155000000 },
+    { "date": "2025-11-27", "floor": "9",  "area": 84.98, "price": 1132000000 },
+    { "date": "2025-10-05", "floor": "24", "area": 84.98, "price": 1210000000 }
+  ],
+  "moreDeals": 1
+}
+</script>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- data ---------- */
+  var D;
+  try { D = JSON.parse(document.getElementById("dm-data").textContent); }
+  catch (e) { document.getElementById("verdict").textContent = "데이터 블록을 읽을 수 없습니다."; return; }
+
+  /* ---------- helpers ---------- */
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function el(id) { return document.getElementById(id); }
+  function comma(n) { return Number(n).toLocaleString("ko-KR"); }
+  /* 1170000000 -> "11억 7,000만원" */
+  function fmtFull(v) {
+    if (v == null || isNaN(v)) return "—";
+    var eok = Math.floor(v / 1e8);
+    var man = Math.round((v % 1e8) / 1e4);
+    if (man >= 10000) { eok += 1; man = 0; }
+    if (eok > 0 && man > 0) return comma(eok) + "억 " + comma(man) + "만원";
+    if (eok > 0) return comma(eok) + "억원";
+    return comma(man) + "만원";
+  }
+  /* 1170000000 -> "11.7억" */
+  function fmtC(v) {
+    if (v == null || isNaN(v)) return "—";
+    if (v >= 1e8) {
+      var e = v / 1e8;
+      var s = (e >= 100 ? Math.round(e) : Math.round(e * 10) / 10).toString();
+      return s.replace(/\.0$/, "") + "억";
+    }
+    return comma(Math.round(v / 1e4)) + "만";
+  }
+  function ymDot(ym) { return ym ? String(ym).slice(0, 4) + "." + String(ym).slice(4, 6) : "—"; }
+  function dateDot(d) { return d ? String(d).replace(/-/g, ".") : "—"; }
+  function pct(a, b) { return Math.round(Math.abs(a - b) / b * 1000) / 10; }
+
+  var deal = D.deal, sise = D.sise, notice = D.notice;
+
+  /* ---------- hero ---------- */
+  el("addr").textContent = D.complex.address || "";
+  el("cxName").textContent = D.complex.name || "단지";
+  var chips = [];
+  if (D.complex.type) chips.push(esc(D.complex.type));
+  if (D.band && D.band.label) {
+    chips.push(esc(D.band.label) + (D.band.pyeongLabel ? " · " + esc(D.band.pyeongLabel) : ""));
+  }
+  if (D.complex.householdCount) chips.push(comma(D.complex.householdCount) + "세대");
+  chips.push("조회 기준 " + ymDot(D.complex.standardYm));
+  el("chips").innerHTML = chips.map(function (c) { return '<span class="chip">' + c + "</span>"; }).join("");
+  if (D.band && D.band.fallback) {
+    el("chips").innerHTML += '<span class="chip warn">평형 정보 없음 · 단지 전체 기준</span>';
+  }
+  if (D.sample) el("sampleRibbon").hidden = false;
+
+  /* ---------- verdict (computed here, never by the data author) ---------- */
+  (function verdict() {
+    var parts = [], pre = "";
+    if (deal && deal.n > 0 && deal.n < 4) pre = '<span class="verdict-pre">표본 ' + deal.n + "건 · 참고용</span>";
+    if (deal && deal.partial) pre += '<span class="verdict-pre">일부 자료 기준</span>';
+
+    if (deal && sise) {
+      var m = deal.median, lo = sise.bandMin, hi = sise.bandMax;
+      var mTxt = '<b class="v-deal num">' + fmtC(m) + "</b>";
+      var bandTxt = '<span class="v-sise num">' + fmtC(lo) + "~" + fmtC(hi) + "</span>";
+      if (m < lo)      parts.push("최근 실거래 중위가 " + mTxt + "는 AI 산출시세 대역(" + bandTxt + ") 하단보다 <b>" + pct(m, lo) + "% 낮습니다</b>.");
+      else if (m > hi) parts.push("최근 실거래 중위가 " + mTxt + "는 AI 산출시세 대역(" + bandTxt + ") 상단보다 <b>" + pct(m, hi) + "% 높습니다</b>.");
+      else             parts.push("최근 실거래 중위가 " + mTxt + "는 AI 산출시세 대역(" + bandTxt + ") <b>안</b>에 있습니다.");
+    } else if (!deal && sise) {
+      parts.push("조회 기간에 매매 신고가 없어 <b>산출시세와 공시가격</b>을 중심으로 비교합니다.");
+    } else if (deal && !sise) {
+      parts.push("이 유형은 AI 산출시세 자료가 없어 <b>실거래 중심</b>으로 확인합니다. 최근 중위가는 <b class=\"v-deal num\">" + fmtC(deal.median) + "</b>입니다.");
+    }
+
+    if (notice && sise && sise.rep) {
+      var r = Math.round(notice.rep.price / sise.rep.price * 100);
+      parts.push('공시가격(<span class="v-notice num">' + fmtC(notice.rep.price) + "</span>)은 대표 호 산출시세의 <b>" + r + "%</b> 수준입니다.");
+    }
+    if (!parts.length) parts.push("표시할 가격 자료가 부족합니다.");
+    el("verdict").innerHTML = pre + parts.join(" ");
+  })();
+
+  /* ---------- strip chart ---------- */
+  (function chart() {
+    var lanes = [];
+    if (deal)   lanes.push("deal");
+    if (sise)   lanes.push("sise");
+    if (notice) lanes.push("notice");
+    if (!lanes.length) { el("tri").parentElement.parentElement.style.display = "none"; return; }
+
+    var vals = [];
+    if (deal)   vals.push(deal.min, deal.max, deal.median);
+    if (sise)   vals.push(sise.bandMin, sise.bandMax, sise.rep.price);
+    if (notice) vals.push(notice.rep.price);
+    var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+    if (lo === hi) { lo *= 0.95; hi *= 1.05; }
+    var pad = (hi - lo) * 0.07; lo -= pad; hi += pad;
+
+    var W = 680, X0 = 172, X1 = 656, LH = 62, TOP = 10, AXH = 34;
+    var H = TOP + lanes.length * LH + AXH;
+    function x(v) { return X0 + (v - lo) / (hi - lo) * (X1 - X0); }
+    function clampX(px, m) { return Math.max(X0 + m, Math.min(X1 - m, px)); }
+
+    /* nice ticks */
+    var range = hi - lo, rough = range / 4;
+    var mag = Math.pow(10, Math.floor(Math.log(rough) / Math.LN10));
+    var norm = rough / mag, step = (norm >= 5 ? 5 : norm >= 2.5 ? 2.5 : norm >= 2 ? 2 : 1) * mag;
+    var ticks = []; for (var t = Math.ceil(lo / step) * step; t <= hi; t += step) ticks.push(t);
+
+    var s = "";
+    /* gridlines + tick labels */
+    ticks.forEach(function (tv) {
+      var tx = x(tv);
+      s += '<line x1="' + tx + '" y1="' + TOP + '" x2="' + tx + '" y2="' + (H - AXH + 6) + '" stroke="var(--line)" stroke-width="1"/>';
+      s += '<text x="' + tx + '" y="' + (H - 10) + '" text-anchor="middle" font-size="11" fill="var(--faint)" class="num">' + fmtC(tv) + "</text>";
+    });
+
+    var meta = {
+      deal:   { title: "실거래가",     sub: deal ? esc(deal.monthsLabel) + " · " + deal.n + "건" : "", color: "var(--deal)" },
+      sise:   { title: "AI 산출시세",  sub: sise ? "기준 " + ymDot(sise.ym) : "",  color: "var(--sise)" },
+      notice: { title: "공시가격",     sub: notice ? "기준 " + ymDot(notice.ym) : "", color: "var(--notice)" }
+    };
+
+    lanes.forEach(function (k, i) {
+      var cy = TOP + i * LH + LH / 2 + 4, m = meta[k];
+      s += '<text x="8" y="' + (cy - 4) + '" font-size="12.5" font-weight="700" fill="var(--ink)">' + m.title + "</text>";
+      s += '<text x="8" y="' + (cy + 12) + '" font-size="10.5" fill="var(--faint)" class="num">' + m.sub + "</text>";
+
+      if (k === "deal") {
+        var xa = x(deal.min), xb = x(deal.max), xm = x(deal.median);
+        s += '<line x1="' + xa + '" y1="' + cy + '" x2="' + xb + '" y2="' + cy + '" stroke="' + m.color + '" stroke-opacity=".38" stroke-width="3" stroke-linecap="round"/>';
+        s += '<line x1="' + xa + '" y1="' + (cy - 6) + '" x2="' + xa + '" y2="' + (cy + 6) + '" stroke="' + m.color + '" stroke-opacity=".55" stroke-width="2"/>';
+        s += '<line x1="' + xb + '" y1="' + (cy - 6) + '" x2="' + xb + '" y2="' + (cy + 6) + '" stroke="' + m.color + '" stroke-opacity=".55" stroke-width="2"/>';
+        s += '<circle cx="' + xm + '" cy="' + cy + '" r="6.5" fill="' + m.color + '"/>';
+        s += '<text x="' + clampX(xm, 34) + '" y="' + (cy - 13) + '" text-anchor="middle" font-size="12" font-weight="800" fill="' + m.color + '" class="num">중위 ' + fmtC(deal.median) + "</text>";
+      }
+      if (k === "sise") {
+        var ba = x(sise.bandMin), bb = x(sise.bandMax), br = x(sise.rep.price);
+        s += '<rect x="' + ba + '" y="' + (cy - 8) + '" width="' + Math.max(bb - ba, 3) + '" height="16" rx="8" fill="' + m.color + '" fill-opacity=".16" stroke="' + m.color + '" stroke-opacity=".55" stroke-width="1.5"/>';
+        s += '<line x1="' + br + '" y1="' + (cy - 12) + '" x2="' + br + '" y2="' + (cy + 12) + '" stroke="' + m.color + '" stroke-width="2.5"/>';
+        s += '<text x="' + clampX(br, 44) + '" y="' + (cy - 16) + '" text-anchor="middle" font-size="12" font-weight="800" fill="' + m.color + '" class="num">대표 호 ' + fmtC(sise.rep.price) + "</text>";
+        s += '<text x="' + clampX(ba, 26) + '" y="' + (cy + 24) + '" text-anchor="middle" font-size="10.5" fill="var(--faint)" class="num">' + fmtC(sise.bandMin) + "</text>";
+        s += '<text x="' + clampX(bb, 26) + '" y="' + (cy + 24) + '" text-anchor="middle" font-size="10.5" fill="var(--faint)" class="num">' + fmtC(sise.bandMax) + "</text>";
+      }
+      if (k === "notice") {
+        var nx = x(notice.rep.price);
+        s += '<rect x="' + (nx - 7) + '" y="' + (cy - 7) + '" width="14" height="14" rx="3" transform="rotate(45 ' + nx + " " + cy + ')" fill="' + m.color + '"/>';
+        s += '<text x="' + clampX(nx, 30) + '" y="' + (cy - 13) + '" text-anchor="middle" font-size="12" font-weight="800" fill="' + m.color + '" class="num">' + fmtC(notice.rep.price) + "</text>";
+      }
+    });
+
+    var svg = el("tri");
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    svg.innerHTML = s;
+
+    el("chartScope").textContent = D.band && D.band.label ? D.band.label + " 기준" : "";
+    var notes = [];
+    if (deal)   notes.push("실거래: " + deal.monthsLabel + " 매매 " + deal.n + "건의 최저~최고와 중위값");
+    if (sise)   notes.push("산출시세: " + (sise.scopeLabel || "이 평형") + "의 범위와 대표 호");
+    if (notice) notes.push("공시: 대표 호 1채(" + notice.rep.dongName + " " + notice.rep.hoName + ")");
+    el("chartNote").textContent = notes.join(" · ");
+  })();
+
+  /* ---------- axis cards ---------- */
+  (function dealCard() {
+    if (!deal) {
+      el("dealBig").textContent = "기간 내 매매 없음";
+      el("dealBig").classList.add("absent");
+      el("dealSub").textContent = "조회 기간에 신고된 매매 계약이 없습니다.";
+      return;
+    }
+    el("dealWhen").textContent = dateDot(deal.from).slice(0, 7) + "~" + dateDot(deal.to).slice(0, 7);
+    el("dealBig").innerHTML = esc(fmtFull(deal.median)).replace("원", "<small>원</small>");
+    el("dealSub").textContent = "중위 거래가 · " + deal.monthsLabel + " " + deal.n + "건";
+    el("dealKv").innerHTML =
+      '<div><dt>최저</dt><dd class="num">' + fmtFull(deal.min) + "</dd></div>" +
+      '<div><dt>최고</dt><dd class="num">' + fmtFull(deal.max) + "</dd></div>";
+    var tags = [];
+    if (deal.n > 0 && deal.n < 4) tags.push("판정 유보(표본 " + deal.n + "건)");
+    else if (deal.n < 8) tags.push("표본 적음");
+    if (deal.partial) tags.push("일부만 반영");
+    if (deal.excludedCancelled > 0) tags.push("취소 " + deal.excludedCancelled + "건 제외");
+    if (/확장/.test(deal.monthsLabel || "")) tags.push("기간 확장");
+    el("dealTags").innerHTML = tags.map(function (t) { return '<span class="tag">' + esc(t) + "</span>"; }).join("");
+  })();
+
+  (function siseCard() {
+    if (!sise) {
+      el("siseBig").textContent = "자료 없음";
+      el("siseBig").classList.add("absent");
+      el("siseSub").textContent = "이 유형은 산출시세가 제공되지 않을 수 있습니다.";
+      return;
+    }
+    el("siseWhen").textContent = "기준 " + ymDot(sise.ym);
+    el("siseBig").innerHTML = esc(fmtFull(sise.rep.price)).replace("원", "<small>원</small>");
+    el("siseSub").textContent = "대표 호 " + sise.rep.dongName + " " + sise.rep.hoName;
+    el("siseKv").innerHTML =
+      '<div><dt>이 평형 범위</dt><dd class="num">' + fmtC(sise.bandMin) + " ~ " + fmtC(sise.bandMax) + "</dd></div>" +
+      '<div><dt>대표 호 상하한</dt><dd class="num">' + fmtC(sise.rep.lower) + " ~ " + fmtC(sise.rep.upper) + "</dd></div>";
+    var tags = [];
+    if (sise.rep.grade) tags.push('<span class="gradechip">등급 ' + esc(sise.rep.grade) + " · 대표 호 기준</span>");
+    if (!sise.complete) tags.push('<span class="tag">표본 기준</span>');
+    el("siseTags").innerHTML = tags.join("");
+  })();
+
+  (function noticeCard() {
+    if (!notice) {
+      el("noticeBig").textContent = "자료 없음";
+      el("noticeBig").classList.add("absent");
+      el("noticeSub").textContent = "대표 호의 공시가격을 찾지 못했습니다.";
+      return;
+    }
+    el("noticeWhen").textContent = "기준 " + ymDot(notice.ym);
+    el("noticeBig").innerHTML = esc(fmtFull(notice.rep.price)).replace("원", "<small>원</small>");
+    el("noticeSub").textContent = "대표 호 " + notice.rep.dongName + " " + notice.rep.hoName + (notice.year ? " · " + notice.year + "년 고시" : "");
+    if (sise && sise.rep) {
+      el("noticeKv").innerHTML =
+        '<div><dt>대표 호 시세 대비</dt><dd class="num">' + Math.round(notice.rep.price / sise.rep.price * 100) + "%</dd></div>";
+    }
+  })();
+
+  /* ---------- deals table ---------- */
+  (function dealsTable() {
+    if (!deal || !D.deals || !D.deals.length) {
+      el("dealsCard").style.display = "none";
+      return;
+    }
+    el("dealsScope").textContent = (D.band && D.band.label ? D.band.label + " · " : "") + "매매 · 최신순";
+    var rows = D.deals.map(function (r) {
+      return "<tr><td class=\"num\">" + dateDot(r.date) + "</td><td class=\"num\">" + esc(r.floor) + "층</td>" +
+        '<td class="r num">' + Number(r.area).toFixed(2) + '㎡</td><td class="r num price">' + fmtFull(r.price) + "</td></tr>";
+    });
+    if (D.moreDeals > 0) rows.push('<tr class="more-row"><td colspan="4">외 ' + D.moreDeals + "건</td></tr>");
+    el("dealRows").innerHTML = rows.join("");
+    var notes = [];
+    if (deal.excludedCancelled > 0) notes.push("취소 신고된 " + deal.excludedCancelled + "건은 제외했습니다.");
+    if (deal.partial) notes.push("자료가 많아 일부만 반영된 목록입니다.");
+    el("dealsNote").textContent = notes.join(" ");
+  })();
+
+  /* ---------- meta ---------- */
+  (function meta() {
+    var parts = ["조회일 " + dateDot(D.queriedAt)];
+    var yms = [];
+    if (deal)   yms.push("실거래 " + dateDot(deal.from).slice(0, 7) + "~" + dateDot(deal.to).slice(0, 7));
+    if (sise)   yms.push("산출시세 " + ymDot(sise.ym));
+    if (notice) yms.push("공시 " + ymDot(notice.ym));
+    if (yms.length) parts.push("기준: " + yms.join(" · "));
+    parts.push("데이터: BigValue Data Marketplace");
+    el("meta").textContent = parts.join("  |  ");
+  })();
+
+})();
+</script>
+</body>
+</html>
