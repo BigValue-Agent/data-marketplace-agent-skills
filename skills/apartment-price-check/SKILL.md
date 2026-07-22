@@ -15,23 +15,23 @@ The three sources have different natures and different reference months. This sk
 
 ## Runtime Inputs
 
-Read the API host from the `DATA_MARKETPLACE_BASE_URL` environment variable and the server-side key from `DATA_MARKETPLACE_API_KEY`. Both are provided with Data Marketplace onboarding — never guess or invent a host.
+This is a live **analysis skill**: it fetches data by calling the plugin's **MCP live tools**, and the plugin (BigValue Real Estate) supplies authentication on those tool calls. Do **not** read an API key or host, and do **not** build REST requests — the MCP tools are the interface. The six tools you call: `search_complex`, `complex_profile`, `building_summaries`, `realdeal_history`, `estimated_prices`, `notice_prices`.
 
-If the key is absent from the conversation and workspace, ask once whether to configure it now or stop; this skill performs live queries, so placeholder builds are not possible. Do not solicit the key value as a form, but if the caller pastes a key in chat, use it via the environment immediately, never repeat its value in any later output, and recommend rotating production keys because chat history retains them. The API key is a server-side secret — it goes into the `X-API-KEY` request header and never into the produced HTML.
+If those MCP tools are not connected in this session, stop and tell the user to install/enable the BigValue Real Estate plugin (which provides both the tools and their credentials) — this skill needs live data and cannot use placeholders. Never put a key, host, or internal identifier into the produced HTML.
 
 ## Workflow
 
-All calls are `POST {BASE_URL}/api/v1/data-products/residential/{slug}/query` with a JSON body. Exact request bodies, selection algorithms, and the `dm-data` field mapping live in `references/query-recipes.md` — read it before the first call.
+All data comes from MCP live tool calls; the plugin authenticates them. Each tool takes **flat arguments** (e.g. `complex_key`, `date_from`, `sort_field`), returns `{product, response}`, and the rows are in **`response.data`**. Exact tool arguments, selection algorithms, and the `dm-data` field mapping live in `references/query-recipes.md` — read it before the first call.
 
-1. **Resolve the complex** — `complex-search` by name. If two or more plausible candidates return, ask the user to pick once (show name + address + type). Carry `complex_key` forward as a string.
-2. **Load the profile** — `complexes`. Keep `complex_name`, `residential_type`, `complex_household_count`, and `standard_ym`. Every period in this skill derives from `standard_ym`, never from today's date.
-3. **Choose the pyeong band** — `buildings` → aggregate `units_summary`. Default: the valid-area pyeong group with the most units; merge supply pyeongs whose private areas overlap into one band. If the user named a pyeong, match it against `units_summary`; never convert 평 to ㎡ arithmetically. If the chosen pyeong has no observed private area, area-scoped queries are unavailable — fall back to whole-complex scope only when the complex has no pyeong information at all, and label the card accordingly.
-4. **Deal axis** — `realdeal` (route `realdeal`, not "transactions") with the band, `deal_division_name: "매매"`, and a 12-month window ending at `standard_ym`. Send the window dates as `YYYYMMDD` (dashed dates drop the boundary day). Page until `has_next` is false (max 3 pages). Drop rows with a non-null `cancel_date` and count them. If fewer than 4 deals remain, extend once to a 36-month window and label the extension. Compute median/min/max locally from the complete set; if truncation remained, mark `partial: true`.
-5. **Estimate axis** — `estimated-prices` with the band, sorted by `sise_price asc`, limit 100. If `has_next` is false the set is complete: band range is first/last row and the **representative unit is the median row**. If incomplete, take `bandMin` from the asc page and `bandMax` from one `desc, limit 1` call, then fetch the representative **directly** with `sise_price_min ≈ (bandMin+bandMax)/2` (`asc, limit 1`) — a mid-range example unit, not the low-clustered asc sample. The band is the signal; the representative is one example unit.
-6. **Notice axis** — `notice-prices` by the representative unit's `jpk`, sorted `notice_standard_ym desc`, limit 1. Using the same unit as the estimate axis is deliberate: 시세 and 공시 must describe the same physical unit.
+1. **Resolve the complex** — `search_complex({ complex_name })`. If two or more plausible candidates return, ask the user to pick once (show name + address + type). Carry `complex_key` forward as a string.
+2. **Load the profile** — `complex_profile({ complex_key })`. Keep `complex_name`, `residential_type`, `complex_household_count`, and `standard_ym`. Every period in this skill derives from `standard_ym`, never from today's date.
+3. **Choose the pyeong band** — `building_summaries({ complex_key })` → aggregate `units_summary`. Default: the valid-area pyeong group with the most units; merge supply pyeongs whose private areas overlap into one band. If the user named a pyeong, match it against `units_summary`; never convert 평 to ㎡ arithmetically. If the chosen pyeong has no observed private area, area-scoped queries are unavailable — fall back to whole-complex scope only when the complex has no pyeong information at all, and label the card accordingly.
+4. **Deal axis** — `realdeal_history` with the band, `deal_division_name: "매매"`, and a 12-month window ending at `standard_ym`. Send the window dates as `YYYYMMDD` (dashed dates drop the boundary day). Page until `response.has_next` is false (max 3 pages). Drop rows with a non-null `cancel_date` and count them. If fewer than 4 deals remain, extend once to a 36-month window and label the extension. Compute median/min/max locally from the complete set; if truncation remained, mark `partial: true`.
+5. **Estimate axis** — `estimated_prices` with the band, `sort_field: "sise_price", sort_order: "asc", limit: 100`. If `response.has_next` is false the set is complete: band range is first/last row and the **representative unit is the median row**. If incomplete, take `bandMin` from the asc page and `bandMax` from one `sort_order: "desc", limit: 1` call, then fetch the representative **directly** with `sise_price_min ≈ (bandMin+bandMax)/2` (`asc, limit 1`) — a mid-range example unit, not the low-clustered asc sample. The band is the signal; the representative is one example unit.
+6. **Notice axis** — `notice_prices` by the representative unit's `jpk`, `sort_field: "notice_standard_ym", sort_order: "desc", limit: 1`. Using the same unit as the estimate axis is deliberate: 시세 and 공시 must describe the same physical unit.
 7. **Render** — copy `assets/result.html`, replace only the `<script type="application/json" id="dm-data">` block, set `sample: false`, and save as `<단지명>_가격진단_<standard_ym>.html`. Do not edit markup, CSS, or the render script. Do not name the user copy `result.html` or `index.html`.
 
-Typical cost: 6–10 API calls per card.
+Typical cost: 6–10 MCP tool calls per card.
 
 ## Honesty Rules (non-negotiable)
 
@@ -43,7 +43,7 @@ Typical cost: 6–10 API calls per card.
 - **Grade is a unit attribute** (`sise_grade`) — it belongs to the representative unit only and the card labels it that way. Never present it as the complex's or the pyeong's grade.
 - **Single snapshots are not trends.** Notice and estimated prices expose one reference month per unit; never fabricate history, change rates, or forecasts from them.
 - **Keys stay strings** — `complex_key`, `pnu`, `ppk`, `jpk` are never cast to numbers.
-- Read rows from `result.data`. Respect each product's documented limits (`limit` ≤ 100, `offset` ≤ 2000).
+- Each tool returns `{product, response}`; read rows from **`response.data`** (`response.has_next` signals truncation). Respect each tool's documented limits (`limit` ≤ 100, `offset` ≤ 2000).
 
 ## Screen Language
 
@@ -60,12 +60,13 @@ Typical cost: 6–10 API calls per card.
 | Estimate rows absent for the band (e.g., 연립다세대) | Estimate card renders "자료 없음"; skip representative unit; notice axis then also unavailable — say so plainly |
 | Notice row absent for the representative unit | Notice card renders "자료 없음"; keep the other two axes |
 | `has_next` still true after paging caps | Compute from fetched rows, set `partial: true`, never claim completeness |
-| API error / auth failure | Stop and report the failing call; do not render a partial card silently |
+| MCP tools not connected | Stop; tell the user to enable the BigValue Real Estate plugin (tools + credentials). Do not render |
+| Tool error / auth failure | Stop and report the failing tool call; do not render a partial card silently |
 
 ## Final Self-Check
 
 - `dm-data` is the only thing you changed in the template copy; `sample` is `false`.
-- Every price in `dm-data` is a raw KRW integer taken from API responses — nothing estimated by you.
+- Every price in `dm-data` is a raw KRW integer taken from tool `response.data` — nothing estimated by you.
 - Deal stats come from a cancel-filtered, complete (or explicitly `partial`) fetch; window derived from `standard_ym`.
 - Representative unit is identical for the estimate and notice axes, with its 동/호 shown.
 - Each axis shows its own reference month; no invented trends; no cross-axis averages.
