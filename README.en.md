@@ -1,18 +1,26 @@
-# Data Marketplace Residential Service Skill
+# BigValue Real Estate (빅밸류 부동산)
 
 [한국어](README.md) | English
 
-AI code-generator skill for building residential real-estate services with the Data Marketplace API.
+A plugin for querying BigValue real-estate data in plain language. Look up **actual transaction prices, AI estimated prices, and official notice prices** for apartments, officetels, and row houses — and build residential service screens when you need them.
 
-This skill helps coding agents compose Data Marketplace residential products for complex search, map markers, detail panels, building/unit drill-downs, realdeal history, notice prices, and estimated price views.
+## What it does
 
-## Installation
+- **What** — Ask something like "run a price check on this apartment" and the AI pulls BigValue data into a **card comparing transaction, estimated, and official prices**.
+- **Who** — Anyone who works with real-estate data (PMs, marketers, agents, analysts), plus developers building real-estate services.
+- **How** — Install the plugin once in Claude Code (or Codex/ChatGPT), then just **ask in the chat**. No commands to memorize.
+
+> **Two terms**
+> - **MCP** — a data connector you attach to the AI. This plugin's MCP pulls BigValue's live transaction, estimated, and official prices.
+> - **Skill** — a task playbook telling the AI how to handle a request, so it works step by step like an expert.
+
+## Install
 
 Pick **one** method per tool. Combining methods loads the same skill twice.
 
-### Option A — Claude Code plugin (recommended: skill + MCP tools + key setup in one step)
+### Option A — Claude Code plugin (recommended)
 
-Run these commands in Claude Code, in order:
+Run these commands in order:
 
 ```text
 /plugin marketplace add BigValue-Agent/data-marketplace-agent-skills
@@ -21,58 +29,73 @@ Run these commands in Claude Code, in order:
 /bigvalue-realestate:setup
 ```
 
-During installation you will be prompted for the **MCP server URL** and **API key** provided at onboarding.
-The API key is kept in secure storage (OS keychain) and is only sent as the MCP server auth header.
-After `/reload-plugins`, both the skill and the Data Marketplace MCP tools (product contracts, recipes, templates, live queries) are active.
-The final `/bigvalue-realestate:setup` verifies the MCP connection actually works and guides configuration if it does not.
+During install, a prompt asks for the **MCP server URL** and **API key** from your onboarding. Once entered, the skills and data connection (MCP) turn on, and the final `setup` confirms the connection.
 
-### Option A-2 — Codex / ChatGPT desktop plugin (skill + manual MCP connection)
+### Option A-2 — Codex · ChatGPT desktop
 
 ```bash
 codex plugin marketplace add BigValue-Agent/data-marketplace-agent-skills
 ```
 
-Then install `BigValue Real Estate` from the Plugins Directory in the ChatGPT desktop app (Work mode or Codex).
-This plugin bundles the skill; the MCP connection is guided by the `setup` skill — run `setup` after install to register the API key safely via the environment-variable-name method.
+Then install `BigValue Real Estate` from the Plugins Directory in the ChatGPT desktop app (Work mode or Codex). Run `setup` afterward to connect the data (MCP).
 
 ### Option B — skill only (npx, for tools without plugin support)
 
-Use this only on tools that do not support plugins. Install with Node.js 18+.
+Use only on tools that don't support plugins. Requires Node.js 18+.
 
 ```bash
 npx skills add BigValue-Agent/data-marketplace-agent-skills
 ```
 
-If you need the MCP connection, follow the per-tool registration steps from your onboarding guide.
+If you need the MCP connection, follow the per-tool steps in your onboarding guide.
 
-## Skill
+## Skills (2)
 
-| Skill | Description |
-|---|---|
-| `data-marketplace-residential-service` | Data Marketplace residential service guidance for complex search, markers, detail panels, price tabs, building/unit drill-downs, and server-side integration |
+| Skill | What it does | For |
+|---|---|---|
+| **Apartment Price Check** (`apartment-price-check`) | Turns "how much is this apartment?" into a card **comparing transaction, AI estimated, and official prices** (HTML). | Anyone — PMs, marketers, agents |
+| **Residential Service Codegen** (`data-marketplace-residential-service`) | Guides which data to combine, and in what order, to build **residential services**: complex search, map markers, detail panels, unit drill-down, price screens. | Developers |
 
 ## Usage
 
-After installation, ask your AI code generator for the residential service screen you want to build.
+After install, just ask in the chat.
 
-Example:
+**Check a price**
 
 ```text
-Build a residential real-estate service with complex search, map markers, a detail panel, and price tabs using Data Marketplace.
+Run a price check on this apartment.
 ```
 
-A full map-service starting template is included under `assets/map-service/`.
+→ You get an HTML card comparing transaction, estimated, and official prices.
 
-## Authentication
+![Apartment price check demo](docs/price-check.gif)
 
-Live API calls require a server-side API key and API base URL, both provided at onboarding. This skill supplies product selection and combination rules; per-product filter/field/response snapshots are bundled under `references/api/`, and a newer caller-provided API Reference takes precedence.
+**Build a service**
+
+```text
+Build a residential real-estate map service.
+```
+
+→ The map-service starter template lives under the Residential Service Codegen skill's `assets/map-service/`.
+
+![Residential map service demo](docs/map-service.gif)
+
+## Data connection & auth
+
+**Most users (price checks and other lookups)**
+
+Install the plugin and run `/bigvalue-realestate:setup`, then enter your onboarding **MCP server URL and API key** once. The key is kept in secure storage (OS keychain) and used only for the data connection — **no environment variables to touch.**
+
+**If you're building a service**
+
+Server code generated by the Residential Service Codegen skill calls the BigValue API directly, so you set the key and URL as server environment variables. Keep the API key **server-side** in the `X-API-KEY` header — never in code or browser.
 
 ```bash
 export DATA_MARKETPLACE_API_KEY=<your-api-key>
 export DATA_MARKETPLACE_BASE_URL=<data-marketplace-base-url>
 ```
 
-The API key must be used server-side in the `X-API-KEY` header. Do not hardcode it or expose it to browser code.
+Per-product filter/field/response snapshots live under the codegen skill's `references/api/`; a newer caller-provided API Reference takes precedence.
 
 ## License
 
