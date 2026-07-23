@@ -69,7 +69,7 @@ Run a price check on this apartment.
 
 → You get an HTML card comparing transaction, estimated, and official prices.
 
-![Apartment price check demo](docs/price-check.gif)
+![Apartment price check demo](docs/price-check-v2.gif)
 
 **Rank a region**
 
@@ -79,7 +79,7 @@ Rank the top apartments in Gangnam.
 
 → You get an HTML card ranking a region's apartments by households, age, subway distance, or recent transaction price.
 
-![Region apartment ranking demo](docs/region-ranking.gif)
+![Region apartment ranking demo](docs/region-ranking-v2.gif)
 
 **Build a service**
 
