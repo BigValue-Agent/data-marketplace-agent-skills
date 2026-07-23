@@ -71,6 +71,16 @@ Run a price check on this apartment.
 
 ![Apartment price check demo](docs/price-check.gif)
 
+**Rank a region**
+
+```text
+Rank the top apartments in Gangnam.
+```
+
+→ You get an HTML card ranking a region's apartments by households, age, subway distance, or recent transaction price.
+
+![Region apartment ranking demo](docs/region-ranking.gif)
+
 **Build a service**
 
 ```text
