@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>동네 아파트 순위</title>
+<style>
+/* ===== tokens ===== */
+:root{
+  --bg:#f4f6f9; --card:#ffffff; --ink:#191f28; --sub:#6b7684; --faint:#8b95a1;
+  --line:#e5e8eb; --zebra:#f9fafb;
+  --accent:#3182f6; --accent-s:#e8f1fe;
+  --gold:#c8890f; --gold-s:#fbf1d9; --silver:#6b7684; --silver-s:#eef1f4; --bronze:#a15c2b; --bronze-s:#f6ebe1;
+  --warn:#b98004; --warn-s:#fdf3d8;
+  --shadow:0 1px 3px rgba(25,31,40,.06),0 8px 24px rgba(25,31,40,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e1116; --card:#171b22; --ink:#e9ecef; --sub:#98a2ad; --faint:#77818c;
+    --line:#2a313a; --zebra:#1c212a;
+    --accent:#6ba6ff; --accent-s:#1c2a40;
+    --gold:#e5b53b; --gold-s:#332a12; --silver:#aab4bf; --silver-s:#22272e; --bronze:#cf8a55; --bronze-s:#2e2015;
+    --warn:#e5b800; --warn-s:#332b10;
+    --shadow:none;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#f4f6f9; --card:#ffffff; --ink:#191f28; --sub:#6b7684; --faint:#8b95a1;
+  --line:#e5e8eb; --zebra:#f9fafb; --accent:#3182f6; --accent-s:#e8f1fe;
+  --gold:#c8890f; --gold-s:#fbf1d9; --silver:#6b7684; --silver-s:#eef1f4; --bronze:#a15c2b; --bronze-s:#f6ebe1;
+  --warn:#b98004; --warn-s:#fdf3d8;
+  --shadow:0 1px 3px rgba(25,31,40,.06),0 8px 24px rgba(25,31,40,.05);
+}
+:root[data-theme="dark"]{
+  --bg:#0e1116; --card:#171b22; --ink:#e9ecef; --sub:#98a2ad; --faint:#77818c;
+  --line:#2a313a; --zebra:#1c212a; --accent:#6ba6ff; --accent-s:#1c2a40;
+  --gold:#e5b53b; --gold-s:#332a12; --silver:#aab4bf; --silver-s:#22272e; --bronze:#cf8a55; --bronze-s:#2e2015;
+  --warn:#e5b800; --warn-s:#332b10; --shadow:none;
+}
+
+/* ===== base ===== */
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Pretendard Variable",Pretendard,
+    "Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
+  font-size:15px; line-height:1.55;
+}
+.wrap{max-width:720px;margin:0 auto;padding:20px 16px 48px}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+
+/* ===== sample ribbon ===== */
+.ribbon{display:flex;align-items:center;gap:8px;background:var(--warn-s);
+  color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);
+  border-radius:12px;padding:9px 14px;font-size:13px;font-weight:700;margin-bottom:14px}
+.ribbon[hidden]{display:none}
+
+/* ===== hero ===== */
+.hero{padding:6px 4px 16px}
+.hero .kicker{font-size:12px;font-weight:800;color:var(--sub);letter-spacing:.03em;margin-bottom:6px}
+.hero h1{font-size:24px;font-weight:800;letter-spacing:-.02em}
+.hero h1 small{font-size:15px;font-weight:700;color:var(--sub);margin-left:7px}
+.counts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.count{font-size:12px;font-weight:600;color:var(--sub);background:var(--card);
+  border:1px solid var(--line);border-radius:999px;padding:3.5px 10px}
+.count b{color:var(--ink);font-weight:800}
+.count.on{color:var(--accent);background:var(--accent-s);border-color:color-mix(in srgb,var(--accent) 35%,transparent)}
+.headline{margin-top:14px;font-size:16.5px;line-height:1.6;letter-spacing:-.01em}
+.headline b{font-weight:800;color:var(--accent)}
+.metricbar{display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-size:12.5px;
+  font-weight:700;color:var(--accent);background:var(--accent-s);border-radius:8px;padding:3px 10px}
+
+/* ===== list ===== */
+.list{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  box-shadow:var(--shadow);overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:none}
+.row.dim{opacity:.72}
+.rank{flex:0 0 auto;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;
+  justify-content:center;font-size:14px;font-weight:800;color:var(--faint);background:var(--zebra)}
+.rank.r1{color:var(--gold);background:var(--gold-s)}
+.rank.r2{color:var(--silver);background:var(--silver-s)}
+.rank.r3{color:var(--bronze);background:var(--bronze-s)}
+.body{flex:1 1 auto;min-width:0}
+.name{font-size:15.5px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.facts{font-size:12.5px;color:var(--faint);margin-top:2px;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.metric{flex:0 0 auto;text-align:right;padding-left:6px}
+.metric .big{font-size:19px;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+.metric .big small{font-size:13px;font-weight:700}
+.metric .big.absent{font-size:14px;font-weight:700;color:var(--faint)}
+.metric .msub{font-size:11px;color:var(--faint);margin-top:1px}
+
+/* ===== footer ===== */
+.foot{margin-top:20px;padding:0 4px}
+.foot .notes p{font-size:12.5px;color:var(--sub);margin-bottom:6px;padding-left:12px;position:relative}
+.foot .notes p::before{content:"";position:absolute;left:0;top:8px;width:4px;height:4px;
+  border-radius:50%;background:var(--faint)}
+.meta{font-size:11.5px;color:var(--faint);margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+
+@media (max-width:560px){
+  .hero h1{font-size:21px}
+  .metric .big{font-size:17px}
+  .facts{white-space:normal}
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+  <div class="ribbon" id="sampleRibbon" hidden>예시 화면 — 실제 조회 데이터가 아닙니다</div>
+
+  <header class="hero">
+    <p class="kicker">동네 아파트 순위</p>
+    <h1 id="regionName">지역<small id="regionScope"></small></h1>
+    <div class="counts" id="counts"></div>
+    <p class="headline" id="headline"></p>
+    <span class="metricbar" id="metricBar"></span>
+  </header>
+
+  <section class="list" id="list"></section>
+
+  <footer class="foot">
+    <div class="notes" id="notes"></div>
+    <p class="meta num" id="meta"></p>
+  </footer>
+
+</main>
+
+<script type="application/json" id="dm-data">
+{
+  "sample": true,
+  "queriedAt": "2026-07-23",
+  "region": {
+    "name": "서울특별시 강남구",
+    "scopeLabel": "강남구 전체",
+    "type": "아파트",
+    "counts": { "apartment": 66, "officetel": 21, "rowhouse": 169 }
+  },
+  "metric": { "key": "price", "label": "최근 실거래가", "order": "desc", "unit": "KRW" },
+  "total": 66,
+  "shown": 8,
+  "hasMore": true,
+  "ranking": [
+    { "rank": 1, "name": "은하수마을 3단지", "type": "아파트", "address": "서울 강남구 도곡로 401",
+      "household": 1402, "age": 6, "useApprovalYm": "202001",
+      "subwayName": "한티역", "subwayDistance": 280, "recentAvgPrice": 3980000000, "recentCount": 34 },
+    { "rank": 2, "name": "래미안 한강로", "type": "아파트", "address": "서울 강남구 삼성로 512",
+      "household": 2296, "age": 9, "useApprovalYm": "201704",
+      "subwayName": "선릉역", "subwayDistance": 350, "recentAvgPrice": 3720000000, "recentCount": 51 },
+    { "rank": 3, "name": "푸른숲 아이파크", "type": "아파트", "address": "서울 강남구 언주로 620",
+      "household": 812, "age": 4, "useApprovalYm": "202203",
+      "subwayName": "선정릉역", "subwayDistance": 460, "recentAvgPrice": 3510000000, "recentCount": 12 },
+    { "rank": 4, "name": "대치 센트럴자이", "type": "아파트", "address": "서울 강남구 대치동 943",
+      "household": 1608, "age": 12, "useApprovalYm": "201406",
+      "subwayName": "대치역", "subwayDistance": 190, "recentAvgPrice": 3245000000, "recentCount": 40 },
+    { "rank": 5, "name": "역삼 e편한세상", "type": "아파트", "address": "서울 강남구 역삼로 210",
+      "household": 940, "age": 15, "useApprovalYm": "201109",
+      "subwayName": "역삼역", "subwayDistance": 620, "recentAvgPrice": 2870000000, "recentCount": 22 },
+    { "rank": 6, "name": "논현 마이플레이스", "type": "아파트", "address": "서울 강남구 학동로 88",
+      "household": 388, "age": 21, "useApprovalYm": "200503",
+      "subwayName": "논현역", "subwayDistance": 240, "recentAvgPrice": 2410000000, "recentCount": 9 },
+    { "rank": 7, "name": "개포 한신더샵", "type": "아파트", "address": "서울 강남구 개포로 310",
+      "household": 1157, "age": 2, "useApprovalYm": "202401",
+      "subwayName": null, "subwayDistance": null, "recentAvgPrice": 2180000000, "recentCount": 6 },
+    { "rank": 8, "name": "세곡 리버뷰", "type": "아파트", "address": "서울 강남구 밤고개로 25",
+      "household": 274, "age": 11, "useApprovalYm": "201505",
+      "subwayName": "수서역", "subwayDistance": 1350, "recentAvgPrice": null, "recentCount": 0 }
+  ]
+}
+</script>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- data ---------- */
+  var D;
+  try { D = JSON.parse(document.getElementById("dm-data").textContent); }
+  catch (e) { document.getElementById("headline").textContent = "데이터 블록을 읽을 수 없습니다."; return; }
+
+  /* ---------- helpers ---------- */
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function el(id) { return document.getElementById(id); }
+  function comma(n) { return Number(n).toLocaleString("ko-KR"); }
+  function fmtC(v) {
+    if (v == null || isNaN(v)) return "—";
+    if (v >= 1e8) {
+      var e = v / 1e8;
+      var s = (e >= 100 ? Math.round(e) : Math.round(e * 10) / 10).toString();
+      return s.replace(/\.0$/, "") + "억";
+    }
+    return comma(Math.round(v / 1e4)) + "만";
+  }
+  function fmtDist(m) { return m >= 1000 ? (Math.round(m / 100) / 10).toString().replace(/\.0$/, "") + "km" : comma(m) + "m"; }
+  function yearOf(ym) { return ym ? String(ym).slice(0, 4) : null; }
+
+  var region = D.region || {}, metric = D.metric || {}, rows = D.ranking || [];
+  var counts = region.counts || {};
+
+  /* ---------- metric definitions (headline direction + per-row primary value) ---------- */
+  var METRIC = {
+    price: {
+      dir: "실거래가가 가장 높은",
+      value: function (r) {
+        if (r.recentAvgPrice == null) return { absent: "최근 실거래 없음" };
+        return { big: fmtC(r.recentAvgPrice), unit: "", sub: (r.recentCount ? r.recentCount + "건 평균" : "") };
+      }
+    },
+    household: {
+      dir: "세대수가 가장 많은",
+      value: function (r) {
+        if (r.household == null) return { absent: "세대수 미상" };
+        return { big: comma(r.household), unit: "세대", sub: "" };
+      }
+    },
+    age_new: {
+      dir: "준공이 가장 최근인",
+      value: function (r) {
+        if (r.age == null) return { absent: "연식 미상" };
+        return { big: comma(r.age), unit: "년차", sub: yearOf(r.useApprovalYm) ? yearOf(r.useApprovalYm) + "년 준공" : "" };
+      }
+    },
+    age_old: {
+      dir: "준공이 가장 오래된",
+      value: function (r) {
+        if (r.age == null) return { absent: "연식 미상" };
+        return { big: comma(r.age), unit: "년차", sub: yearOf(r.useApprovalYm) ? yearOf(r.useApprovalYm) + "년 준공" : "" };
+      }
+    },
+    subway: {
+      dir: "지하철역이 가장 가까운",
+      value: function (r) {
+        if (r.subwayDistance == null) return { absent: "역세권 정보 없음" };
+        return { big: fmtDist(r.subwayDistance), unit: "", sub: r.subwayName ? esc(r.subwayName) : "" };
+      }
+    }
+  };
+  var M = METRIC[metric.key] || METRIC.price;
+
+  /* ---------- secondary facts line (skip the primary metric to avoid repeat) ---------- */
+  function facts(r) {
+    var out = [];
+    if (metric.key !== "household" && r.household != null) out.push(comma(r.household) + "세대");
+    if (metric.key !== "age_new" && metric.key !== "age_old" && r.age != null) {
+      out.push(yearOf(r.useApprovalYm) ? yearOf(r.useApprovalYm) + "년 준공" : r.age + "년차");
+    }
+    if (metric.key !== "subway") {
+      if (r.subwayName && r.subwayDistance != null) out.push(esc(r.subwayName) + " " + fmtDist(r.subwayDistance));
+    }
+    if (metric.key !== "price" && r.recentAvgPrice != null) out.push("실거래 " + fmtC(r.recentAvgPrice));
+    return out.join(" · ");
+  }
+
+  /* ---------- sample ---------- */
+  if (D.sample) el("sampleRibbon").hidden = false;
+
+  /* ---------- hero ---------- */
+  el("regionName").firstChild.nodeValue = region.name || "지역";
+  el("regionScope").textContent = region.scopeLabel && region.scopeLabel !== region.name ? region.scopeLabel : "";
+  var cchips = [
+    { k: "apartment", label: "아파트", on: region.type === "아파트" },
+    { k: "officetel", label: "오피스텔", on: region.type === "오피스텔" },
+    { k: "rowhouse", label: "연립다세대", on: region.type === "연립다세대" }
+  ].filter(function (c) { return counts[c.k] != null; })
+   .map(function (c) {
+     return '<span class="count' + (c.on ? " on" : "") + '">' + c.label + " <b class=\"num\">" + comma(counts[c.k]) + "</b></span>";
+   });
+  el("counts").innerHTML = cchips.join("");
+
+  /* ---------- headline (computed here, not by the data author) ---------- */
+  (function headline() {
+    var scope = esc(region.scopeLabel || region.name || "이 지역");
+    var typ = esc(region.type || "아파트");
+    var top = rows.length ? rows[0] : null;
+    var parts = [];
+    parts.push(scope + " " + typ + " <b class=\"num\">" + comma(D.total || rows.length) + "</b>곳 중 " + M.dir + " 순으로 상위 <b class=\"num\">" + comma(D.shown || rows.length) + "</b>곳입니다.");
+    if (top) {
+      var tv = M.value(top);
+      var tvTxt = tv.absent ? tv.absent : (tv.big + (tv.unit ? tv.unit : ""));
+      parts.push("1위는 <b>" + esc(top.name) + "</b>(" + tvTxt + ").");
+    }
+    el("headline").innerHTML = parts.join(" ");
+    el("metricBar").textContent = "정렬 기준 · " + (metric.label || "최근 실거래가");
+  })();
+
+  /* ---------- list ---------- */
+  (function list() {
+    if (!rows.length) {
+      el("list").innerHTML = '<div class="row"><div class="body"><p class="name">이 지역에 ' +
+        esc(region.type || "아파트") + ' 단지가 없습니다</p><p class="facts">다른 지역명으로 다시 조회해 주세요.</p></div></div>';
+      return;
+    }
+    var html = rows.map(function (r) {
+      var v = M.value(r);
+      var rankCls = r.rank <= 3 ? " r" + r.rank : "";
+      var metricHtml = v.absent
+        ? '<p class="big absent">' + esc(v.absent) + "</p>"
+        : '<p class="big num">' + v.big + (v.unit ? '<small>' + v.unit + "</small>" : "") + "</p>" +
+          (v.sub ? '<p class="msub num">' + v.sub + "</p>" : "");
+      var f = facts(r);
+      return '<div class="row' + (v.absent ? " dim" : "") + '">' +
+        '<div class="rank' + rankCls + ' num">' + r.rank + "</div>" +
+        '<div class="body"><p class="name">' + esc(r.name) + "</p>" +
+        (f ? '<p class="facts">' + f + "</p>" : (r.address ? '<p class="facts">' + esc(r.address) + "</p>" : "")) +
+        "</div>" +
+        '<div class="metric">' + metricHtml + "</div>" +
+        "</div>";
+    });
+    el("list").innerHTML = html.join("");
+  })();
+
+  /* ---------- footer notes ---------- */
+  (function notes() {
+    var out = [];
+    out.push("순위는 <b>" + esc(region.type || "아파트") + " · " + esc(metric.label || "최근 실거래가") + "</b> 기준입니다. 기준을 바꾸면 순서도 달라집니다.");
+    if (D.hasMore) out.push("이 지역에는 더 많은 단지가 있으며, 위 목록은 상위 일부입니다.");
+    if (metric.key === "price") out.push("최근 실거래가는 단지 전체 최근 6개월 평균이며 평당가가 아닙니다. 실거래가 없는 단지는 순위 아래에 '최근 실거래 없음'으로 표시됩니다.");
+    if (metric.key === "subway") out.push("역세권 거리는 가장 가까운 지하철역까지의 직선 거리(m)이며, 정보가 없는 단지는 아래로 내려갑니다.");
+    var hasNull = rows.some(function (r) { return M.value(r).absent; });
+    if (hasNull && metric.key !== "price" && metric.key !== "subway") out.push("기준 값이 없는 단지는 순위 아래에 별도 표시됩니다.");
+    el("notes").innerHTML = out.map(function (p) { return "<p>" + p + "</p>"; }).join("");
+  })();
+
+  /* ---------- meta ---------- */
+  (function meta() {
+    var parts = ["조회일 " + String(D.queriedAt || "").replace(/-/g, ".")];
+    parts.push("범위: " + (region.scopeLabel || region.name || ""));
+    parts.push("데이터: BigValue Data Marketplace");
+    el("meta").textContent = parts.join("  |  ");
+  })();
+
+})();
+</script>
+</body>
+</html>
