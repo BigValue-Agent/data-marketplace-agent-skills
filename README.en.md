@@ -49,11 +49,12 @@ npx skills add BigValue-Agent/data-marketplace-agent-skills
 
 If you need the MCP connection, follow the per-tool steps in your onboarding guide.
 
-## Skills (2)
+## Skills (3)
 
 | Skill | What it does | For |
 |---|---|---|
 | **Apartment Price Check** (`apartment-price-check`) | Turns "how much is this apartment?" into a card **comparing transaction, AI estimated, and official prices** (HTML). | Anyone — PMs, marketers, agents |
+| **Region Apartment Ranking** (`region-apartment-ranking`) | Ask "top apartments in this area" and get an HTML card **ranking a region's complexes** by your chosen metric — households, age, subway distance, or recent transaction price. | Anyone — PMs, marketers, agents |
 | **Residential Service Codegen** (`data-marketplace-residential-service`) | Guides which data to combine, and in what order, to build **residential services**: complex search, map markers, detail panels, unit drill-down, price screens. | Developers |
 
 ## Usage

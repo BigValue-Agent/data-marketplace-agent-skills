@@ -1,7 +1,7 @@
 {
   "name": "bigvalue-realestate",
   "displayName": "빅밸류 부동산 (BigValue Real Estate)",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "아파트·오피스텔·연립다세대의 실거래가·AI 산출시세·공시가격 조회와 주거용 부동산 서비스(단지 검색·지도·동·호 상세) 개발을 돕는 부동산 데이터 스킬·MCP 도구. Korean residential real-estate data for apartments, officetels & row houses (transactions, AI estimated & official prices) and service codegen on BigValue Data Marketplace.",
   "author": {
     "name": "BigValue"
