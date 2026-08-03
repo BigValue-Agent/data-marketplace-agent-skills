@@ -2,11 +2,15 @@
 
 # 주거형 단지 프로필
 
-검색 또는 마커에서 얻은 complex_key로 단지 프로필과 요약 정보를 조회합니다.
+검색 또는 마커에서 얻은 complex_key로 단지 프로필과 요약 정보를 조회합니다. 법정동 코드로 지역 안의 단지 목록과 랭킹을 조회할 때도 사용합니다.
 
 ## Base URL
 
-Provided with Data Marketplace onboarding — inject the host via the `DATA_MARKETPLACE_BASE_URL` environment variable; do not hardcode it.
+API server:
+
+```text
+https://datamarket-api.bigvalue.ai
+```
 
 ## Endpoint
 
@@ -19,25 +23,44 @@ Send the request as a JSON Body. Do not send filters as URL query parameters.
 
 ## JSON Body
 
-Required search condition: `filters.complex_key`을 전달합니다.
+Required search condition: `filters.complex_key`, `filters.legaldong_code`, `filters.legaldong_code_prefix` 중 하나를 전달합니다.
 
 Supported filters:
 
-- `filters.complex_key`
+- `filters.complex_key` — exact match on a single complex.
+- `filters.legaldong_code` — exact match on the 10-digit legal dong code. Returns every complex in that legal dong.
+- `filters.legaldong_code_prefix` — prefix match. Use 5 digits for a sigungu, 2 digits for a sido.
+- `filters.residential_type` — one of `아파트`, `오피스텔`, `연립다세대`. Narrows a region query.
 
 Optional:
 
 - `fields`: string array of response field names.
-- `limit`: maximum row count. Keep `limit` in the `1..10` range. Default is `1`.
-- `offset`: not supported. Omit it or use `0`.
+- `limit`: maximum row count. Keep `limit` in the `1..100` range. Default is `20`.
+- `offset`: supported. Keep it in the `0..2000` range.
 
 ## Bbox
 
-Not supported.
+Not supported. Use `filters.legaldong_code_prefix` for area queries.
 
 ## Sort
 
-Client-selected sort is not supported for this product.
+Supported. Allowed sort fields:
+
+- `complex_household_count`
+- `complex_age_number`
+- `nearby_subway_station_distance`
+- `recent_month6_average_realdeal_price`
+
+```json
+{
+  "sort": {
+    "field": "complex_household_count",
+    "order": "desc"
+  }
+}
+```
+
+Descending sort places NULL values last. `recent_month6_average_realdeal_price` is NULL for complexes with no recent trade, so a price ranking returns traded complexes first.
 
 ## Allowed Fields
 
@@ -46,14 +69,12 @@ Client-selected sort is not supported for this product.
 - `complex_name`
 - `residential_type`
 - `pnu`
-- `land_standard_ym`
 - `land_area`
 - `land_purpose_name`
 - `purpose_region_division_1_name`
 - `land_use_situation_detail_name`
 - `land_recent_notice_year`
 - `land_recent_notice_price`
-- `title_part_standard_ym`
 - `representative_title_structure_name`
 - `representative_title_purpose_name`
 - `representative_title_etc_purpose_name`
@@ -105,9 +126,33 @@ Content-Type: application/json
 }
 ```
 
+Region ranking:
+
+```http
+POST /api/v1/data-products/residential/complexes/query
+X-API-KEY: {API_KEY}
+Content-Type: application/json
+
+{
+  "filters": {
+    "legaldong_code_prefix": "11680",
+    "residential_type": "아파트"
+  },
+  "sort": {
+    "field": "complex_household_count",
+    "order": "desc"
+  },
+  "limit": 20
+}
+```
+
 ## Response Use
 
 단지 기본정보, 대표 토지, 표제부 요약, 입지 요약, 최근 6개월 실거래 요약 필드를 반환합니다.
+
+토지·표제부 보강분의 기준월은 상품 전체 기준월(`standard_ym`)과 같습니다. 별도 기준월 필드는 제공하지 않습니다.
+
+`assignment_middle_school_name`과 `assignment_high_school_name`은 배정 학교가 여럿이면 쉼표로 이어 한 문자열로 옵니다. 한 곳이라고 가정하지 마세요.
 
 Carry forward string identifiers as strings. Do not cast `complex_key`, `pnu`, `ppk`, or `jpk` to numbers when they appear.
 

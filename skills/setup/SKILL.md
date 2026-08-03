@@ -18,10 +18,10 @@ description: BigValue Real Estate 플러그인 설치 후 Data Marketplace MCP �
 
 ## Claude Code 경로 — 대개 자동
 
-플러그인 설치 때 `userConfig`가 MCP URL과 API 키를 입력받아 연결 헤더에 자동으로 넣는다. 별도 등록 명령이 없다.
+플러그인 설치 때 `userConfig`가 API 키를 입력받아 연결 헤더에 자동으로 넣는다. MCP 주소는 플러그인에 내장돼 있어 입력할 것이 없다. 별도 등록 명령이 없다.
 
 1. `/mcp`에 `bigvalue-realestate` 서버가 보이면 연결된 것이다. 대표 도구를 한 번 호출해 확인한다.
-2. 서버가 없거나 인증 오류면, 설치 때 값 입력을 건너뛴 경우다. `/plugin configure bigvalue-realestate@bigvalue-agent-skills`로 MCP URL과 API 키를 설정하게 안내하고, 이어 `/reload-plugins`와 `/mcp`를 실행하게 한다.
+2. 서버가 없거나 인증 오류면, 설치 때 값 입력을 건너뛴 경우다. `/plugin configure bigvalue-realestate@bigvalue-agent-skills`로 API 키를 설정하게 안내하고, 이어 `/reload-plugins`와 `/mcp`를 실행하게 한다.
 3. API 키 값을 채팅에 받거나 출력하지 않는다. 값 입력은 플러그인 설정 UI에서 사용자가 직접 한다.
 
 ## Codex 경로 — MCP 수동 등록
@@ -29,10 +29,10 @@ description: BigValue Real Estate 플러그인 설치 후 Data Marketplace MCP �
 Codex 플러그인은 스킬만 담고 MCP 연결은 담지 못한다(플러그인이 키를 넣는 방법이 없다). MCP는 아래로 따로 등록한다.
 
 1. 환경변수 이름 하나를 정한다(예: `DATA_MARKETPLACE_API_KEY`). 이 이름을 등록 명령에 쓰고, 실제 키 값은 사용자가 그 이름의 환경변수에 따로 넣는다.
-2. 등록 명령을 보여주고 승인받아 실행한다. 이 명령에는 키 값이 아니라 이름만 들어간다. `<MCP-URL>`은 온보딩 때 받은 값으로 바꾼다.
+2. 등록 명령을 보여주고 승인받아 실행한다. 이 명령에는 키 값이 아니라 이름만 들어간다.
 
    ```
-   codex mcp add bigvalue-realestate --transport http <MCP-URL> --bearer-token-env-var DATA_MARKETPLACE_API_KEY
+   codex mcp add bigvalue-realestate --transport http https://datamarket-mcp.bigvalue.ai/mcp --bearer-token-env-var DATA_MARKETPLACE_API_KEY
    ```
 
 3. 사용자가 실제 키 값을 그 환경변수에 넣게 한다. 이 값 설정은 스킬이 대신 실행하지 않는다. 예: `setx DATA_MARKETPLACE_API_KEY "<키>"`(Windows) 또는 셸 `export`.

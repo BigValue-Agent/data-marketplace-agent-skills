@@ -140,7 +140,7 @@ window.mapCtl = (() => {
   function markerContent(row, mode) {
     const el = document.createElement("div");
     const typeCls = TYPE_CLASS[row.residential_type] || "";
-    const name = row.complex_name || row.residential_type || "";
+    const name = row.display_name || row.residential_type || "";
     if (mode === "dot") {
       el.className = `mk-dot${typeCls ? ` ${typeCls}` : ""}`;
       el.title = name;

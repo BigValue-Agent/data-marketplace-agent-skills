@@ -6,7 +6,11 @@
 
 ## Base URL
 
-Provided with Data Marketplace onboarding — inject the host via the `DATA_MARKETPLACE_BASE_URL` environment variable; do not hardcode it.
+API server:
+
+```text
+https://datamarket-api.bigvalue.ai
+```
 
 ## Endpoint
 
@@ -82,6 +86,8 @@ Content-Type: application/json
 ## Response Use
 
 동/건물 단위 좌표, 주거유형, 호수, 지상층수, 평형 요약을 반환합니다.
+
+`units_summary` 항목은 `pyeong_number`, `pyeong_type_name`, `private_area`, `ho_count` 네 키입니다. 평형 라벨이 필요하면 앞의 두 값을 붙여 만듭니다 — 합본 표기 키는 제공하지 않습니다.
 
 Carry forward string identifiers as strings. Do not cast `complex_key`, `pnu`, `ppk`, or `jpk` to numbers when they appear.
 

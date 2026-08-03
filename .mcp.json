@@ -2,7 +2,7 @@
   "mcpServers": {
     "bigvalue-realestate": {
       "type": "http",
-      "url": "${user_config.mcp_url}",
+      "url": "https://datamarket-mcp.bigvalue.ai/mcp",
       "headers": {
         "Authorization": "Bearer ${user_config.api_key}"
       }

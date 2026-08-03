@@ -85,7 +85,7 @@ Map:
 - Do not use row `id` as a stable external URL key.
 - For realdeal rows, treat sale `price`, monthly rent `price`, and lease `deposit_price` carefully.
 - If shape data is empty, do not invent `polygon_geojson`; fall back to representative coordinates.
-- If `pyeong_type_name` (units) or `area_type` (notice-prices) is missing, show area values instead of inventing a type label.
+- `pyeong_type_name` may be missing on units, notice-price, and estimated-price rows; show area values instead of inventing a type label. Row houses have no pyeong label at all.
 
 ## Reference Routing
 

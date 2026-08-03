@@ -125,7 +125,7 @@ window.api = (() => {
   async function noticePricesByJpk(ppk, jpk) {
     const r = await query(ROUTES.notice, {
       filters: { ppk, jpk },
-      sort: { field: "notice_standard_ym", order: "desc" },
+      sort: { field: "notice_year", order: "desc" },
       limit: 1,
     });
     return r.data;
@@ -165,7 +165,7 @@ window.api = (() => {
   async function estimatesByJpk(ppk, jpk) {
     const r = await query(ROUTES.estimated, {
       filters: { ppk, jpk },
-      sort: { field: "sise_production_standard_ym", order: "desc" },
+      sort: { field: "estimated_standard_ym", order: "desc" },
       limit: 1,
     });
     return r.data;

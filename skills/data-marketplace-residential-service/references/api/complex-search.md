@@ -6,7 +6,11 @@
 
 ## Base URL
 
-Provided with Data Marketplace onboarding — inject the host via the `DATA_MARKETPLACE_BASE_URL` environment variable; do not hardcode it.
+API server:
+
+```text
+https://datamarket-api.bigvalue.ai
+```
 
 ## Endpoint
 

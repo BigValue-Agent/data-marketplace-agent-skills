@@ -434,7 +434,7 @@ window.createPanelPriceModule = (context) => {
           <button type="button" class="nb-row" data-key="${F.esc(candidate.complex_key)}"
                   data-type="${F.esc(candidate.residential_type || "")}"
                   data-lat="${candidate.latitude}" data-lng="${candidate.longitude}">
-            <div class="nb-name">${F.esc(candidate.complex_name || candidate.residential_type)}<small>${F.count(candidate.complex_household_count)}세대</small></div>
+            <div class="nb-name">${F.esc(candidate.display_name || candidate.residential_type)}<small>${F.count(candidate.complex_household_count)}세대</small></div>
             <div class="nb-price">${D.validPrice(candidate.recent_month6_average_realdeal_price)
               ? F.price(candidate.recent_month6_average_realdeal_price, { compact: true })
               : "거래 없음"}</div>

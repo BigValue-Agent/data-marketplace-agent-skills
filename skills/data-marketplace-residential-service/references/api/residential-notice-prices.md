@@ -6,7 +6,11 @@
 
 ## Base URL
 
-Provided with Data Marketplace onboarding — inject the host via the `DATA_MARKETPLACE_BASE_URL` environment variable; do not hardcode it.
+API server:
+
+```text
+https://datamarket-api.bigvalue.ai
+```
 
 ## Endpoint
 
@@ -29,12 +33,11 @@ Supported filters:
 - `filters.ppk`
 - `filters.jpk`
 - `filters.notice_year`
-- `filters.notice_standard_ym`
 
 Optional:
 
 - `fields`: string array of response field names.
-- `sort`: object with `field` and `order`. Supported fields: `notice_standard_ym`, `notice_price`.
+- `sort`: object with `field` and `order`. Supported fields: `notice_year`, `notice_price`.
 - `limit`: maximum row count. Keep `limit` in the `1..100` range. Default is `30`.
 - `offset`: pagination offset. Keep `offset` in the `0..2000` range.
 
@@ -44,11 +47,11 @@ Not supported.
 
 ## Sort
 
-Default sort: `notice_standard_ym desc`.
+Default sort: `notice_year desc`.
 
 Allowed sort fields:
 
-- `notice_standard_ym`
+- `notice_year`
 - `notice_price`
 
 Allowed sort orders:
@@ -63,7 +66,6 @@ Allowed sort orders:
 - `pnu`
 - `ppk`
 - `jpk`
-- `notice_standard_ym`
 - `notice_year`
 - `notice_price`
 - `dong_name`
@@ -71,7 +73,6 @@ Allowed sort orders:
 - `private_area`
 - `pyeong_number`
 - `pyeong_type_name`
-- `area_type`
 
 ## Example
 
@@ -85,7 +86,7 @@ Content-Type: application/json
     "complex_key": "00533551"
   },
   "sort": {
-    "field": "notice_standard_ym",
+    "field": "notice_year",
     "order": "desc"
   },
   "limit": 30
@@ -94,7 +95,11 @@ Content-Type: application/json
 
 ## Response Use
 
-공시 기준연월, 공시가격, 동/호, 면적과 평형 보강값을 반환합니다.
+공시 연도, 공시가격, 동/호, 면적과 평형 보강값을 반환합니다.
+
+공시는 연 1회 갱신되므로 시간축은 `notice_year` 하나입니다. 필터와 정렬 모두 이 필드를 씁니다.
+
+평형 라벨이 필요하면 `pyeong_number`와 `pyeong_type_name`을 붙여 만듭니다 — 합본 표기 필드는 제공하지 않습니다.
 
 Carry forward string identifiers as strings. Do not cast `complex_key`, `pnu`, `ppk`, or `jpk` to numbers when they appear.
 

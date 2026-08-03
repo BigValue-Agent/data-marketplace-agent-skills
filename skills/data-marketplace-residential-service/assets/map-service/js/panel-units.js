@@ -238,16 +238,16 @@ window.createPanelUnitsModule = (context) => {
   function renderUnitPrices(box, unit, state, token) {
     const ests = state.estimates.rows;
     const notices = state.notices.rows;
-    // 신뢰등급(sise_grade)은 호 단위 속성 — 단지·평형 화면으로 승격하지 않고 여기서만 보여준다.
+    // 신뢰등급(estimated_grade)은 호 단위 속성 — 단지·평형 화면으로 승격하지 않고 여기서만 보여준다.
     const estRows = ests.slice(0, 6).map((estimate) => `
       <div class="ud-price-row">
-        <span>산출시세 ${F.ym(estimate.sise_production_standard_ym)}</span>
-        <b style="color:var(--est)">${F.price(estimate.sise_price, { compact: true })}
-          <small style="font-weight:500;color:var(--ink-3)">(${F.price(estimate.lowerlimit_sise_price, { compact: true })}~${F.price(estimate.upperlimit_sise_price, { compact: true })})${estimate.sise_grade ? ` · 신뢰등급 ${F.esc(estimate.sise_grade)}` : ""}</small></b>
+        <span>산출시세 ${F.ym(estimate.estimated_standard_ym)}</span>
+        <b style="color:var(--est)">${F.price(estimate.estimated_price, { compact: true })}
+          <small style="font-weight:500;color:var(--ink-3)">(${F.price(estimate.lowerlimit_estimated_price, { compact: true })}~${F.price(estimate.upperlimit_estimated_price, { compact: true })})${estimate.estimated_grade ? ` · 신뢰등급 ${F.esc(estimate.estimated_grade)}` : ""}</small></b>
       </div>`).join("");
     const noticeRows = notices.slice(0, 6).map((notice) => `
       <div class="ud-price-row">
-        <span>공시가격 ${F.ym(notice.notice_standard_ym)}</span>
+        <span>공시가격 ${F.esc(notice.notice_year)}년</span>
         <b style="color:var(--notice)">${F.price(notice.notice_price, { compact: true })}</b>
       </div>`).join("");
     const errorRows = [

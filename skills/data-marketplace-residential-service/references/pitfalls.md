@@ -35,5 +35,5 @@ Rows are grouped by theme: paths/keys → bbox/markers → sort/pagination → p
 | Turning raw distance into walking time | No route, entrance, or crossing data exists | Display distance only |
 | Trusting every numeric/GeoJSON value | Extreme values distort UI and unsupported shapes can throw | Apply the shared display policy, show `확인 필요`, and keep non-boundary UI usable |
 | Assuming `polygon_geojson` always exists | Some complexes have no shape row | Use representative coordinate fallback |
-| Assuming `pyeong_type_name` (units) / `area_type` (notice-prices) always exists | Some rows lack the type label | Display numeric area fields safely |
+| Assuming `pyeong_type_name` always exists on units, notice-price, or estimated-price rows | Row houses carry no pyeong label | Display numeric area fields safely |
 | Reusing one validation rule across price products | Realdeal, notice, and estimated-price products accept different required keys and filters | Split validation per product |

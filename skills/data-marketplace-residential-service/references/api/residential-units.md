@@ -6,7 +6,11 @@
 
 ## Base URL
 
-Provided with Data Marketplace onboarding — inject the host via the `DATA_MARKETPLACE_BASE_URL` environment variable; do not hardcode it.
+API server:
+
+```text
+https://datamarket-api.bigvalue.ai
+```
 
 ## Endpoint
 
@@ -95,6 +99,10 @@ Content-Type: application/json
 ## Response Use
 
 호실 단위 원천 상세 대신 공개 화면에 필요한 동/호, 층, 평형, 면적 필드만 반환합니다.
+
+`floor_number`는 층을 모르는 호실이 0으로 옵니다. 실제 지상 1층과 구분되지 않으니 0을 유효한 층으로 쓰지 마세요. 이 상품에는 지하층 음수 표기가 없습니다 — 실거래 상품의 `floor_name`은 문자열이고 지하를 음수로 쓰므로 두 값을 같은 축에 놓지 마세요.
+
+`dong_name`과 `ho_name`은 '107', '102'처럼 접미사 없이 숫자만 오기도 하므로 문자열로 다룹니다.
 
 Carry forward string identifiers as strings. Do not cast `complex_key`, `pnu`, `ppk`, or `jpk` to numbers when they appear.
 

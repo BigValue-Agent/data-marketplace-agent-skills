@@ -29,7 +29,7 @@ Run these commands in order:
 /bigvalue-realestate:setup
 ```
 
-During install, a prompt asks for the **MCP server URL** and **API key** from your onboarding. Once entered, the skills and data connection (MCP) turn on, and the final `setup` confirms the connection.
+During install, a prompt asks for the **API key** from your onboarding — the MCP server URL is built into the plugin. Once entered, the skills and data connection (MCP) turn on, and the final `setup` confirms the connection.
 
 ### Option A-2 — Codex · ChatGPT desktop
 
@@ -95,7 +95,7 @@ Build a residential real-estate map service.
 
 **Most users (price checks and other lookups)**
 
-Install the plugin and run `/bigvalue-realestate:setup`, then enter your onboarding **MCP server URL and API key** once. The key is kept in secure storage (OS keychain) and used only for the data connection — **no environment variables to touch.**
+Install the plugin and run `/bigvalue-realestate:setup`, then enter your onboarding **API key** once. The key is kept in secure storage (OS keychain) and used only for the data connection — **no environment variables to touch.**
 
 **If you're building a service**
 

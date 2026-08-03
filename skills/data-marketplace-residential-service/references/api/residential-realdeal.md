@@ -6,7 +6,11 @@
 
 ## Base URL
 
-Provided with Data Marketplace onboarding — inject the host via the `DATA_MARKETPLACE_BASE_URL` environment variable; do not hardcode it.
+API server:
+
+```text
+https://datamarket-api.bigvalue.ai
+```
 
 ## Endpoint
 
@@ -103,6 +107,12 @@ Content-Type: application/json
 ## Response Use
 
 거래 구분, 거래 방식, 계약일, 등기일, 가격, 보증금, 면적을 반환합니다.
+
+이 상품은 최근 36개월 계약분을 보관하며 매달 창이 한 달씩 이동합니다. `date_from`·`date_to`를 그 밖으로 잡으면 빈 결과가 나옵니다.
+
+`dong_name`과 `registry_date`는 매매 거래에만 들어옵니다. 전세·월세에는 값이 없으니 전월세 목록에 동 이름 칼럼을 만들지 마세요. `deal_type_name`도 매매에만 채워집니다.
+
+`cancel_date`가 채워진 행은 취소된 거래입니다. 통계에는 이 값이 null인 행만 쓰고, 취소는 매매 거래에만 나타납니다.
 
 Carry forward string identifiers as strings. Do not cast `complex_key`, `pnu`, `ppk`, or `jpk` to numbers when they appear.
 

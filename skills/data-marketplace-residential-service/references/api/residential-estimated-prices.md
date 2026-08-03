@@ -6,7 +6,11 @@
 
 ## Base URL
 
-Provided with Data Marketplace onboarding — inject the host via the `DATA_MARKETPLACE_BASE_URL` environment variable; do not hardcode it.
+API server:
+
+```text
+https://datamarket-api.bigvalue.ai
+```
 
 ## Endpoint
 
@@ -28,16 +32,18 @@ Supported filters:
 - `filters.pnu`
 - `filters.ppk`
 - `filters.jpk`
-- `filters.sise_production_standard_ym`
-- `filters.sise_price_min`
-- `filters.sise_price_max`
+- `filters.estimated_standard_ym`
+- `filters.estimated_price_min`
+- `filters.estimated_price_max`
+- `filters.pyeong_number`
+- `filters.pyeong_type_name`
 - `filters.private_area_min`
 - `filters.private_area_max`
 
 Optional:
 
 - `fields`: string array of response field names.
-- `sort`: object with `field` and `order`. Supported fields: `sise_production_standard_ym`, `sise_price`, `private_area`.
+- `sort`: object with `field` and `order`. Supported fields: `estimated_standard_ym`, `estimated_price`, `private_area`.
 - `limit`: maximum row count. Keep `limit` in the `1..100` range. Default is `30`.
 - `offset`: pagination offset. Keep `offset` in the `0..2000` range.
 
@@ -47,12 +53,12 @@ Not supported.
 
 ## Sort
 
-Default sort: `sise_production_standard_ym desc`.
+Default sort: `estimated_standard_ym desc`.
 
 Allowed sort fields:
 
-- `sise_production_standard_ym`
-- `sise_price`
+- `estimated_standard_ym`
+- `estimated_price`
 - `private_area`
 
 Allowed sort orders:
@@ -67,18 +73,20 @@ Allowed sort orders:
 - `pnu`
 - `ppk`
 - `jpk`
-- `sise_production_standard_ym`
+- `estimated_standard_ym`
 - `complex_name`
 - `dong_name`
 - `ho_name`
 - `private_area`
 - `private_pyeong_area`
-- `sise_price`
-- `lowerlimit_sise_price`
-- `upperlimit_sise_price`
-- `unit_sise_price`
-- `unit_pyeong_sise_price`
-- `sise_grade`
+- `pyeong_number`
+- `pyeong_type_name`
+- `estimated_price`
+- `lowerlimit_estimated_price`
+- `upperlimit_estimated_price`
+- `unit_estimated_price`
+- `unit_pyeong_estimated_price`
+- `estimated_grade`
 
 ## Example
 
@@ -89,10 +97,11 @@ Content-Type: application/json
 
 {
   "filters": {
-    "complex_key": "00533551"
+    "complex_key": "00533551",
+    "pyeong_number": 33
   },
   "sort": {
-    "field": "sise_production_standard_ym",
+    "field": "estimated_standard_ym",
     "order": "desc"
   },
   "limit": 30
@@ -101,7 +110,11 @@ Content-Type: application/json
 
 ## Response Use
 
-산출시세, 하한/상한 시세, 단위면적 시세, 시세 등급을 반환합니다.
+산출시세, 하한/상한 시세, 단위면적 시세, 시세 등급, 평형을 반환합니다.
+
+`pyeong_number`와 `pyeong_type_name`으로 "33평 A타입 시세"를 이 상품 하나로 만들 수 있습니다. 연립다세대는 원천에 평형 구분이 없어 두 필드가 비어 있습니다.
+
+`private_pyeong_area`(전용면적의 평 환산)와 `pyeong_number`(공급 기준 평수)는 기준이 다릅니다. 전용 84.99㎡가 25.76평이면서 동시에 33평입니다.
 
 Carry forward string identifiers as strings. Do not cast `complex_key`, `pnu`, `ppk`, or `jpk` to numbers when they appear.
 

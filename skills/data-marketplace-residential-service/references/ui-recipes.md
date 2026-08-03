@@ -66,7 +66,7 @@ Use these recipes to compose product calls into residential service screens.
 
 1. Use this only when the map needs a complex name plus recent price-like label.
 2. Load residential type markers with bbox and a narrow field set.
-3. Prefer `complex_key`, `residential_type`, `latitude`, `longitude`, `complex_name`, `complex_household_count`, and `recent_month6_average_realdeal_price`.
+3. Prefer `complex_key`, `residential_type`, `latitude`, `longitude`, `display_name`, `complex_household_count`, and `recent_month6_average_realdeal_price`.
 4. Treat recent price fields as optional; show a fallback label when they are null.
 5. A price bubble should identify the complex and label the price as the complex profile's recent-six-month summary; do not imply it is a residential-type price.
 6. For long names, use visual truncation/ellipsis; do not drop the name entirely.
@@ -159,7 +159,7 @@ The detailed completeness criteria and DOM evidence list live in `references/ver
 
 1. Load notice and estimated prices only after a selected unit provides `ppk + jpk`.
 2. Request the latest row from both products in parallel and render their failures independently.
-3. Show `notice_standard_ym` and `sise_production_standard_ym` from the returned rows; do not substitute the current calendar month.
+3. Show `notice_year` and `estimated_standard_ym` from the returned rows; do not substitute the current calendar year or month.
 4. Show the estimate grade only as that unit's grade. Do not promote it to a complex or pyeong grade.
 5. Treat the current unit-price products as single snapshots: show the latest row and do not generate history or trend UI unless multiple standard months are actually returned. Do not calculate complex/pyeong averages or a three-source gauge from paged unit rows.
 6. Tax, brokerage-fee, or acquisition-cost calculators are optional and must be labeled `단순 추정`.

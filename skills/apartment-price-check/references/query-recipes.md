@@ -63,20 +63,20 @@ args, `YYYY-MM-DD` for the `dm-data` display fields (`deal.from`/`deal.to`).
 
 ## Call 5 — estimated_prices (estimate axis)
 
-`estimated_prices({ complex_key: "<key>", residential_type: "<profile type>", private_area_min: <area_min>, private_area_max: <area_max>, fields: ["jpk","dong_name","ho_name","private_area","sise_price","lowerlimit_sise_price","upperlimit_sise_price","sise_grade","sise_production_standard_ym"], sort_field: "sise_price", sort_order: "asc", limit: 100, offset: 0 })`
+`estimated_prices({ complex_key: "<key>", residential_type: "<profile type>", private_area_min: <area_min>, private_area_max: <area_max>, fields: ["jpk","dong_name","ho_name","private_area","pyeong_number","pyeong_type_name","estimated_price","lowerlimit_estimated_price","upperlimit_estimated_price","estimated_grade","estimated_standard_ym"], sort_field: "estimated_price", sort_order: "asc", limit: 100, offset: 0 })`
 
-- `response.has_next` **false** → complete: `bandMin = first.sise_price`, `bandMax = last.sise_price`, representative unit = row at index `⌊n/2⌋`, `sise.complete = true`, scope label `"이 평형 호 전체 {n}호"`.
+- `response.has_next` **false** → complete: `bandMin = first.estimated_price`, `bandMax = last.estimated_price`, representative unit = row at index `⌊n/2⌋`, `sise.complete = true`, scope label `"이 평형 호 전체 {n}호"`.
 - `response.has_next` **true** → the asc page is truncated at the low end, so **do not pick the representative from it** (its rows cluster at the cheapest units and would understate the unit badly on large complexes). Instead:
   1. `bandMin` = the first row of the asc page (global minimum, since sorted asc).
-  2. One `estimated_prices({ ..., sort_field: "sise_price", sort_order: "desc", limit: 1 })` call → `bandMax` (global maximum).
-  3. One `estimated_prices({ ..., sise_price_min: round((bandMin+bandMax)/2), sort_field: "sise_price", sort_order: "asc", limit: 1 })` call → the cheapest unit at or above the midpoint = a **mid-range example unit**. This is the representative.
+  2. One `estimated_prices({ ..., sort_field: "estimated_price", sort_order: "desc", limit: 1 })` call → `bandMax` (global maximum).
+  3. One `estimated_prices({ ..., estimated_price_min: round((bandMin+bandMax)/2), sort_field: "estimated_price", sort_order: "asc", limit: 1 })` call → the cheapest unit at or above the midpoint = a **mid-range example unit**. This is the representative.
   Set `sise.complete = false`, scope label `"이 평형 대역 기준"`. The band (`bandMin`~`bandMax`) is the real signal; the representative is one example unit near the middle, not a census median.
-- `sise.ym` = representative row's `sise_production_standard_ym`. Grade/lower/upper belong to the representative unit only.
+- `sise.ym` = representative row's `estimated_standard_ym`. (`sise` here is this skill's internal render key, not an API field.) Grade/lower/upper belong to the representative unit only.
 - Zero rows → `sise = null`; notice axis is then also skipped (no `jpk` to look up).
 
 ## Call 6 — notice_prices (notice axis, same unit)
 
-`notice_prices({ jpk: "<representative jpk>", fields: ["jpk","dong_name","ho_name","notice_price","notice_standard_ym","notice_year"], sort_field: "notice_standard_ym", sort_order: "desc", limit: 1 })`
+`notice_prices({ jpk: "<representative jpk>", fields: ["jpk","dong_name","ho_name","notice_price","notice_year"], sort_field: "notice_year", sort_order: "desc", limit: 1 })`
 
 - This tool has no area filter — that is why the notice axis is a single-unit lookup, and why it must reuse the estimate axis's representative `jpk`.
 - Zero rows → `notice = null` (card shows 자료 없음; keep the other axes).

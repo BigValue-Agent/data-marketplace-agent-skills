@@ -6,7 +6,11 @@
 
 ## Base URL
 
-Provided with Data Marketplace onboarding — inject the host via the `DATA_MARKETPLACE_BASE_URL` environment variable; do not hardcode it.
+API server:
+
+```text
+https://datamarket-api.bigvalue.ai
+```
 
 ## Endpoint
 
@@ -61,7 +65,7 @@ For bbox requests, the API internally sorts by distance from the bbox center. Fo
 - `residential_type`
 - `latitude`
 - `longitude`
-- `complex_name`
+- `display_name`
 - `road_name_address`
 - `complex_household_count`
 - `recent_month6_average_realdeal_price`
@@ -84,7 +88,9 @@ Content-Type: application/json
 
 ## Response Use
 
-마커 좌표, 단지명, 도로명주소, 세대수, 최근 6개월 평균 실거래가, 대표 평수를 반환합니다.
+마커 좌표, 표시명, 도로명주소, 세대수, 최근 6개월 평균 실거래가, 대표 평수를 반환합니다.
+
+핀 라벨은 `display_name`을 씁니다. 원천에 이름이 없는 단지는 도로명주소 → 지번주소 → 단지 키 순으로 대체해 채우므로 빈 라벨이 없습니다. 이 상품은 원천 단지명(`complex_name`)을 싣지 않으니, 그 값이 필요하면 단지 프로필 API에서 가져옵니다.
 
 Carry forward string identifiers as strings. Do not cast `complex_key`, `pnu`, `ppk`, or `jpk` to numbers when they appear.
 
