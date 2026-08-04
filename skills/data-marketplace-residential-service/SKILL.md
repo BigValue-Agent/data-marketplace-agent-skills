@@ -11,13 +11,19 @@ Use this skill as a routing and guardrail map, not as an API manual. The exact p
 
 ## Runtime Inputs
 
-For live API calls or runnable integration, use `https://datamarket-api.bigvalue.ai` as the default Data Marketplace base URL and first confirm the caller has provided a server-side API key.
+For live API calls or runnable integration, use `https://datamarket-api.bigvalue.ai` as the default Data Marketplace base URL. Do not ask for a base URL unless the caller needs a non-default environment.
 
-If the server-side API key is absent from the conversation and workspace, ask once whether to configure runtime keys now or proceed with a server-side environment variable placeholder — do not solicit the key value as a form, but if the caller pastes a key in chat, write it into the server-side `.env` immediately, never repeat its value in any later output, and recommend rotating production keys because chat history retains them. When proceeding with placeholders, state clearly that live API calls and live tests will not work until `DATA_MARKETPLACE_API_KEY` is configured. Do not ask for a base URL unless the caller needs a non-default environment.
+Ask only what changes the generated code. The map SDK does, so ask that once before building a map UI, offering exactly three choices — Kakao Maps (template default), Naver Maps, or OpenStreetMap as a keyless alternative (present it to end users as 오픈소스 맵). Do not offer other map SDKs unless the caller asks, and do not ask at all when the choice already exists in the conversation or project files. All three map adapters ship with `assets/map-service/`, so switching maps means loading exactly one of `js/map-adapter-kakao.js`, `js/map-adapter-naver.js`, or `js/map-adapter-osm.js` in `index.html` — do not rewrite the controller or the panels for it. Never read or compare a zoom number outside an adapter, and never gate marker calls on zoom: marker eligibility stays on the `BBOX_MAX_DEG` viewport span in every adapter. OpenStreetMap has no satellite layer, so that tool hides itself there.
 
-Before building a map UI, check the conversation and workspace for map SDK and other runtime keys (for example the Kakao JavaScript key used by `assets/map-service/`). If none are present, ask once whether to provide runtime keys now or proceed with placeholders, offering exactly three map choices — Kakao Maps (template default), Naver Maps, or OpenStreetMap as a keyless alternative (present it to end users as 오픈소스 맵); do not offer other map SDKs unless the caller asks. When Kakao or Naver is chosen, guide key issuance with both paths — paste the key in chat for the agent to wire into its proper place (`.env` for the data key, map config for the map key), or edit those files directly. For Naver Maps, NCP issues both a Client ID (`X-NCP-APIGW-API-KEY-ID`) and a Client Secret (`X-NCP-APIGW-API-KEY`): browser Dynamic Map JS uses only the Client ID as `ncpKeyId`, while the Client Secret is server-side REST-only and must never be placed in browser config. Do not re-ask when the answer already exists in project files. When proceeding with placeholders, finish the build and explain how to inject real keys at run time as environment variables.
+Runtime keys do not change the generated code, so never block the build on them. Build the complete service first, then close with a run checklist that names each value the caller still has to set, where it goes, and how to obtain it. Name the exact destination per key: `DATA_MARKETPLACE_API_KEY` goes in the server `.env`, and the map key goes in the browser map config (`js/config.js` in the bundled template). Name the exact key too — `KAKAO_MAP_KEY` for Kakao, `NAVER_MAP_CLIENT_ID` for Naver, none at all for OpenStreetMap. Ask for key values only in that closing message.
 
-Never invent real keys. `DATA_MARKETPLACE_API_KEY` is a server-side secret — never expose it to browser code. Kakao JavaScript keys and the Naver Dynamic Map Client ID are domain-restricted public runtime map keys that belong in browser map config and are protected by domain registration, not secrecy. Inject real values at run time instead of committing them.
+Never invent real keys, and inject real values at run time instead of committing them. Which keys you may invite into chat differs by key:
+
+- `DATA_MARKETPLACE_API_KEY` is a server-side secret that belongs in `.env` and must never reach browser code. Show the caller how to set it themselves; do not ask them to paste the value.
+- Kakao JavaScript keys and the Naver Dynamic Map Client ID are domain-restricted public runtime map keys that belong in browser map config, protected by domain registration rather than secrecy. Inviting the caller to paste these is fine.
+- For Naver Maps, NCP issues both a Client ID (`X-NCP-APIGW-API-KEY-ID`) and a Client Secret (`X-NCP-APIGW-API-KEY`). Browser Dynamic Map JS uses only the Client ID as `ncpKeyId`; the Client Secret is server-side REST-only and must never be placed in browser config.
+
+If the caller pastes any key anyway, write it to its proper home immediately, never repeat its value in any later output, and recommend rotating production keys because chat history retains them.
 
 ## Choose the Entry Point
 
@@ -105,7 +111,8 @@ These are on-demand lookups, not a mandatory pre-read list; open each file only 
 This is the quick summary; the full completion audit lives in `references/verification-checklist.md`. Before finalizing generated code, verify:
 
 - Exact public API paths, filters, fields, and response fields came from the API Reference.
-- Base URL uses `https://datamarket-api.bigvalue.ai` by default or a server-side override; API key is handled as a server-side environment variable or explicit placeholder.
+- Base URL uses `https://datamarket-api.bigvalue.ai` by default or a server-side override; the API key is read from a server-side environment variable and never appears in generated source or browser code.
+- The build finished without waiting on any key, and the closing message lists each value still to set, where it goes, and how to obtain it.
 - API keys stay server-side in the `X-API-KEY` header.
 - Filters, fields, bbox, limit, and offset are sent in the JSON Body.
 - UI rows are read from `result.data`.

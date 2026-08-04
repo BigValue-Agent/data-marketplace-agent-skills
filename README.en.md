@@ -29,7 +29,7 @@ Run these commands in order:
 /bigvalue-realestate:setup
 ```
 
-During install, there is nothing to enter. Just ask a question after installing — on your first data question a browser opens, and one Google sign-in turns on the data connection (MCP). To sign in explicitly first, run `/bigvalue-realestate:login`. The final `setup` checks the connection.
+During install, there is nothing to enter. Just ask a question after installing — on your first data question a browser opens, and one Google sign-in turns on the data connection (MCP). The final `setup` checks the connection.
 
 ### Option A-2 — Codex · ChatGPT desktop
 

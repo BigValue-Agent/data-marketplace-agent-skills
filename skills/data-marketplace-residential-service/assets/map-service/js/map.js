@@ -1,9 +1,13 @@
+// 지도 컨트롤러 — 지도 SDK를 모른다.
+// SDK를 아는 것은 window.mapAdapter 하나뿐이고(index.html에서 어댑터 파일 하나를 고른다),
+// 이 파일은 그 계약만 부른다. 줌 숫자·좌표 객체·SDK 이름이 여기 등장하면 그것이 버그다.
 window.mapCtl = (() => {
   const C = window.APP_CONFIG;
   const F = window.fmt;
   const D = window.dataPolicy;
+  const A = window.mapAdapter;
 
-  let map = null;
+  let ready = false;
   let handlers = { onMarkerClick: null, onViewChange: null };
   let typeFilter = "아파트"; // '아파트' | '연립다세대' | '전체'
   let selectedKey = null;
@@ -15,29 +19,12 @@ window.mapCtl = (() => {
   let idleTimer = null;
   let noticeTimer = null;
 
-  // ── SDK 로드 ──────────────────────────────────
-  function loadSdk() {
-    return new Promise((resolve, reject) => {
-      const s = document.createElement("script");
-      s.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${C.KAKAO_MAP_KEY}&autoload=false`;
-      s.onerror = () => reject(new Error("카카오맵 SDK 로드 실패"));
-      s.onload = () => {
-        if (!window.kakao || !window.kakao.maps) return reject(new Error("kakao 객체 없음"));
-        window.kakao.maps.load(() => resolve());
-      };
-      document.head.appendChild(s);
-    });
-  }
-
   async function init(h) {
     handlers = { ...handlers, ...h };
-    await loadSdk();
-    const { kakao } = window;
-    map = new kakao.maps.Map(document.getElementById("map"), {
-      center: new kakao.maps.LatLng(C.INITIAL_CENTER.lat, C.INITIAL_CENTER.lng),
-      level: C.INITIAL_LEVEL,
-    });
-    kakao.maps.event.addListener(map, "idle", () => {
+    await A.load();
+    A.create(document.getElementById("map"));
+    ready = true;
+    A.onIdle(() => {
       clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
         refreshMarkers();
@@ -53,9 +40,8 @@ window.mapCtl = (() => {
   // 마커를 호출하지 않고 줌인 안내를 띄운다 (마커 상품 계약 규칙 · SDK 중립 판정).
   // 줌 레벨은 표시 밀도(풀/컴팩트/도트)와 동 라벨 티어 튜닝에만 쓴다 — 호출 여부 판단 금지.
   function viewportSpan() {
-    const b = map.getBounds();
-    const sw = b.getSouthWest(), ne = b.getNorthEast();
-    return { lat: ne.getLat() - sw.getLat(), lng: ne.getLng() - sw.getLng() };
+    const r = A.getBoundsRect();
+    return { lat: r.maxLat - r.minLat, lng: r.maxLng - r.minLng };
   }
 
   function shouldFetchMarkers() {
@@ -63,38 +49,33 @@ window.mapCtl = (() => {
     return s.lat <= C.BBOX_MAX_DEG && s.lng <= C.BBOX_MAX_DEG;
   }
 
-  // 표시 밀도 (호출 가드 아님): ≤FULL_PIN_LEVEL 풀 핀 / ≤COMPACT_PIN_LEVEL 컴팩트 / 그 외 도트
+  // 표시 밀도 (호출 가드 아님): 어댑터가 자기 줌 체계로 판정해 티어 이름만 돌려준다.
   function markerDensity() {
-    const lv = map.getLevel();
-    if (lv <= C.FULL_PIN_LEVEL) return "full";
-    if (lv <= C.COMPACT_PIN_LEVEL) return "compact";
-    return "dot";
+    return A.getDensityTier();
   }
 
   // bbox 안전 클램프 — span 가드를 통과했어도 부동소수 오차 등으로 0.1°를 넘지 않도록
   // 중심 기준으로 자른다 (마커 상품 계약: 위도/경도 각각 최대 0.1°).
   function currentBbox() {
-    const b = map.getBounds();
-    const sw = b.getSouthWest(), ne = b.getNorthEast();
-    let minLat = sw.getLat(), maxLat = ne.getLat();
-    let minLng = sw.getLng(), maxLng = ne.getLng();
-    const c = map.getCenter();
+    const r = A.getBoundsRect();
+    let { minLat, maxLat, minLng, maxLng } = r;
+    const c = A.getCenter();
     let clamped = false;
     if (maxLat - minLat > C.BBOX_MAX_DEG) {
-      minLat = c.getLat() - C.BBOX_MAX_DEG / 2;
-      maxLat = c.getLat() + C.BBOX_MAX_DEG / 2;
+      minLat = c.lat - C.BBOX_MAX_DEG / 2;
+      maxLat = c.lat + C.BBOX_MAX_DEG / 2;
       clamped = true;
     }
     if (maxLng - minLng > C.BBOX_MAX_DEG) {
-      minLng = c.getLng() - C.BBOX_MAX_DEG / 2;
-      maxLng = c.getLng() + C.BBOX_MAX_DEG / 2;
+      minLng = c.lng - C.BBOX_MAX_DEG / 2;
+      maxLng = c.lng + C.BBOX_MAX_DEG / 2;
       clamped = true;
     }
     return { bbox: { min_lat: minLat, max_lat: maxLat, min_lng: minLng, max_lng: maxLng }, clamped };
   }
 
   async function refreshMarkers() {
-    if (!map) return;
+    if (!ready) return;
     if (!shouldFetchMarkers()) {
       clearOverlays();
       notice("지도를 확대하면 단지 가격 정보가 보여요.", { sticky: true });
@@ -217,7 +198,6 @@ window.mapCtl = (() => {
   }
 
   function renderMarkers(allRows, mode) {
-    const { kakao } = window;
     const rows = prioritize(allRows, mode);
     const seen = new Set();
     for (const row of rows) {
@@ -226,24 +206,24 @@ window.mapCtl = (() => {
       seen.add(key);
       const existing = overlays.get(key);
       if (existing && existing.mode === mode) continue; // 그대로 유지
-      if (existing) { existing.overlay.setMap(null); overlays.delete(key); }
+      if (existing) { existing.overlay.remove(); overlays.delete(key); }
       const el = markerContent(row, mode);
-      const overlay = new kakao.maps.CustomOverlay({
-        position: new kakao.maps.LatLng(row.latitude, row.longitude),
-        content: el,
+      const overlay = A.addOverlay({
+        lat: row.latitude,
+        lng: row.longitude,
+        el,
         yAnchor: mode === "dot" ? 0.5 : 1,
         zIndex: row.complex_key === selectedKey
           ? 100
           : (D.validPrice(row.recent_month6_average_realdeal_price) ? 5 : 2),
         clickable: true,
       });
-      overlay.setMap(map);
       overlays.set(key, { overlay, el, row, mode });
     }
     // 화면에서 사라진 마커 제거 (선택 단지는 유지)
     for (const [key, o] of overlays) {
       if (!seen.has(key) && o.row.complex_key !== selectedKey) {
-        o.overlay.setMap(null);
+        o.overlay.remove();
         overlays.delete(key);
       }
     }
@@ -253,7 +233,7 @@ window.mapCtl = (() => {
   function clearOverlays() {
     for (const [key, o] of overlays) {
       if (o.row.complex_key === selectedKey) continue;
-      o.overlay.setMap(null);
+      o.overlay.remove();
       overlays.delete(key);
     }
   }
@@ -286,11 +266,7 @@ window.mapCtl = (() => {
     hidePolygon();
     const rings = D.geoJsonOuterRings(geojson);
     if (!rings) return false;
-    const { kakao } = window;
-    const paths = rings.map((ring) =>
-      ring.map(([lng, lat]) => new kakao.maps.LatLng(lat, lng)));
-    polygon = new kakao.maps.Polygon({
-      path: paths,
+    polygon = A.addPolygon(rings, {
       strokeWeight: 2.5,
       strokeColor: "#0e6b4f",
       strokeOpacity: 0.9,
@@ -298,12 +274,11 @@ window.mapCtl = (() => {
       fillOpacity: 0.1,
       zIndex: 1,
     });
-    polygon.setMap(map);
     return true;
   }
 
   function hidePolygon() {
-    if (polygon) { polygon.setMap(null); polygon = null; }
+    if (polygon) { polygon.remove(); polygon = null; }
   }
 
   let dongRows = null;
@@ -313,41 +288,40 @@ window.mapCtl = (() => {
   }
 
   function syncDongLabels() {
-    for (const o of dongOverlays) o.setMap(null);
+    for (const o of dongOverlays) o.remove();
     dongOverlays = [];
-    if (!map || !dongRows || map.getLevel() > C.DONG_LABEL_LEVEL) return;
-    const { kakao } = window;
+    if (!ready || !dongRows || !A.isDongLabelVisible()) return;
     for (const b of dongRows) {
       if (!D.validCoordinate(b.longitude, b.latitude)) continue;
       const el = document.createElement("div");
       el.className = "dong-label";
       const floor = D.validFloor(b.ground_floor_count) ? ` <small>${b.ground_floor_count}층</small>` : "";
       el.innerHTML = `${F.esc(b.dong_name)}동${floor}`;
-      const ov = new kakao.maps.CustomOverlay({
-        position: new kakao.maps.LatLng(b.latitude, b.longitude),
-        content: el, yAnchor: 0.5, zIndex: 50, clickable: false,
-      });
-      ov.setMap(map);
-      dongOverlays.push(ov);
+      dongOverlays.push(A.addOverlay({
+        lat: b.latitude, lng: b.longitude, el,
+        yAnchor: 0.5, zIndex: 50, clickable: false,
+      }));
     }
   }
 
   // ── 뷰 이동/도구 ─────────────────────────────
-  function panTo(lat, lng, level = null) {
-    if (!map || !D.validCoordinate(lng, lat)) return false;
-    const { kakao } = window;
-    if (level != null && map.getLevel() !== level) map.setLevel(level);
-    map.panTo(new kakao.maps.LatLng(lat, lng));
+  // tier는 "최소 이 정도까지는 확대" 요청이다. 어느 SDK에서 무슨 숫자인지는 어댑터가 안다.
+  //   null       — 이동만
+  //   "complex"  — 단지가 보이는 수준
+  //   "dong"     — 동 라벨이 보이는 수준
+  function focusOn(lat, lng, tier = null) {
+    if (!ready || !D.validCoordinate(lng, lat)) return false;
+    A.focusOn(lat, lng, tier);
     return true;
   }
 
-  function zoom(delta) { map.setLevel(map.getLevel() + delta); }
+  function zoomIn() { if (ready) A.zoomIn(); }
+  function zoomOut() { if (ready) A.zoomOut(); }
 
   let skyview = false;
   function toggleMapType() {
-    const { kakao } = window;
-    skyview = !skyview;
-    map.setMapTypeId(skyview ? kakao.maps.MapTypeId.HYBRID : kakao.maps.MapTypeId.ROADMAP);
+    if (!A.supportsSatellite) return false;
+    skyview = A.setSatellite(!skyview);
     return skyview;
   }
 
@@ -369,10 +343,12 @@ window.mapCtl = (() => {
     refreshMarkers();
   }
 
+  // 공개 면에 줌 숫자를 내보내지 않는다 — 내보내면 호출부가 SDK 방향을 알게 되고,
+  // 어댑터만 바꿔도 화면이 반대로 도는 버그가 다시 생긴다.
   return {
     init, refreshMarkers, setTypeFilter,
     select, clearSelection, showPolygon, setDongLabels,
-    panTo, zoom, toggleMapType, notice, hideNotice,
-    getLevel: () => (map ? map.getLevel() : null),
+    focusOn, zoomIn, zoomOut, toggleMapType, notice, hideNotice,
+    supportsSatellite: () => A.supportsSatellite,
   };
 })();

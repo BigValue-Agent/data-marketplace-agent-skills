@@ -53,19 +53,46 @@ DATA_MARKETPLACE_API_KEY=발급받은키 node server/proxy.mjs
    호 선택 시 해당 호실의 최신 값 각 1행을 병렬 조회한다.
    6개월·1년·3년 기간은 브라우저 오늘 날짜가 아니라 프로필 `standard_ym`을 끝월로 계산한다.
    `매매/전세` 비교는 사용자가 켰을 때 같은 기간·면적의 전세 첫 100행만 추가 조회한다.
-8. **OSM 전환(키리스)** — 카카오 키가 없거나 OSM을 선택한 경우 `js/map.js`의 카카오
-   어댑터만 Leaflet+OSM 타일로 교체하고 컨트롤러 인터페이스(도 단위 span 가드·중심
-   클램프·마커 풀·밀도 티어)는 유지한다. 공용 OSM 타일은 데모 전용 — 실서비스는
-   상용/자체 타일 서버를 쓴다.
-9. **Naver 전환** — 네이버를 선택한 경우 `js/map.js`의 카카오 어댑터만 Naver Maps
-   JS v3로 교체하고 같은 컨트롤러 인터페이스와 `getBounds()` span 가드를 유지한다.
-   NCP는 Client ID(`X-NCP-APIGW-API-KEY-ID`)와 Client Secret(`X-NCP-APIGW-API-KEY`)을
-   함께 발급하지만 브라우저 Dynamic Map JS에는 Client ID만 `ncpKeyId`로 넣는다.
-   Client Secret은 서버 REST API 전용이며 브라우저 config에 넣지 않는다.
-   `ncpClientId`는 구형 예제 호환 확인용 후보로만 둔다. 카카오는 level이 작을수록
-   확대되고 네이버는 zoom이 클수록 확대되므로 이 차이는 `INITIAL_ZOOM`과 밀도 티어
-   임계값에만 반영하고, 마커 호출 여부는 계속 bbox span으로 판단한다. 인증 실패는
-   `navermap_authFailure`, Dynamic Map 활성화, Web 서비스 URL 등록을 확인한다.
+8. **지도 선택은 어댑터 한 줄이다** — 카카오·네이버·오픈소스 맵 어댑터가 셋 다 들어
+   있다. `index.html`에서 셋 중 **하나만** 로드하면 지도가 바뀐다.
+
+   ```html
+   <script src="js/map-adapter-kakao.js"></script>  <!-- 기본 -->
+   <!-- <script src="js/map-adapter-naver.js"></script> -->
+   <!-- <script src="js/map-adapter-osm.js"></script> -->
+   ```
+
+   `js/map.js`(컨트롤러)와 `js/app.js`·패널들은 **고치지 않는다.** 컨트롤러는 지도
+   SDK를 모르고 어댑터 계약만 부른다. 다른 지도 SDK를 쓰고 싶으면 같은 계약으로
+   어댑터를 하나 더 만든다 — 컨트롤러를 건드리는 것이 아니다.
+
+   키는 고른 어댑터가 쓰는 것만 `js/config.js`에 채운다. 카카오는 `KAKAO_MAP_KEY`,
+   네이버는 `NAVER_MAP_CLIENT_ID`, 오픈소스 맵은 키가 없다.
+
+9. **줌 방향은 어댑터 안에서만 다룬다** — 카카오는 level이 작을수록 확대되고
+   네이버·Leaflet은 zoom이 클수록 확대된다. 그래서 줌 상수도 어댑터별로 나뉘어 있다
+   (`INITIAL_LEVEL`·`FULL_PIN_LEVEL`… / `NAVER_ZOOM` / `OSM_ZOOM`).
+
+   컨트롤러 밖으로 나가는 것은 방향이 없는 이름뿐이다 — `zoomIn()`·`zoomOut()`·
+   `focusOn(lat, lng, "complex"|"dong")`, 그리고 밀도 티어 `"full"|"compact"|"dot"`.
+   **화면 코드에서 줌 숫자를 읽거나 비교하면 그것이 버그다.** 어댑터를 바꿨을 때 줌인
+   버튼이 축소로 도는 사고가 여기서 난다.
+
+   마커 호출 자격은 어느 지도에서도 `BBOX_MAX_DEG` 뷰포트 span으로 판단한다. 줌으로
+   판단하면 과호출이 난다.
+
+   네이버 주의: NCP는 Client ID(`X-NCP-APIGW-API-KEY-ID`)와 Client Secret
+   (`X-NCP-APIGW-API-KEY`)을 함께 발급하지만 브라우저에는 Client ID만 `ncpKeyId`로
+   넣는다. Client Secret은 서버 REST 전용이며 브라우저 config에 넣지 않는다. 인증
+   실패는 `navermap_authFailure`, Dynamic Map 활성화, Web 서비스 URL 등록을 확인한다.
+
+   오픈소스 맵 주의: 공용 OSM 타일에는 **위성 지도가 없다.** 어댑터가
+   `supportsSatellite: false`를 알리고 컨트롤러가 위성 버튼을 감춘다. 공용 타일은 데모
+   전용이라 실서비스는 상용/자체 타일 서버를 쓴다.
+
+   어댑터 계약(15개): `id` · `supportsSatellite` · `load` · `create` · `onIdle` ·
+   `getBoundsRect` · `getCenter` · `getDensityTier` · `isDongLabelVisible` · `zoomIn` ·
+   `zoomOut` · `focusOn` · `addOverlay` · `addPolygon` · `setSatellite`.
 
 ## 기능 ↔ route ↔ 데이터 상품 매핑
 

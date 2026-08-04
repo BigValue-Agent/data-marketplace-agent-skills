@@ -17,14 +17,14 @@ description: BigValue Real Estate 플러그인 설치 후 Data Marketplace MCP �
 
 1. 현재 클라이언트를 식별한다. Claude Code에서는 `claude plugin list --json`과 `claude mcp list`, Codex에서는 `codex plugin list --json`과 `codex mcp list --json`을 쓴다. 셸 승인이 필요하면 먼저 받는다.
 2. 플러그인 `bigvalue-realestate`가 설치·활성 상태인지 확인한다.
-3. MCP 서버 `bigvalue-realestate`의 상태를 확인한다. `! Needs authentication`이면 로그인 전이다. 단 `✔ Connected`는 로그인 완료의 증거가 아니다 — 도구 목록은 로그인 없이도 보이도록 열려 있어서, 로그인 전에도 Connected로 표시된다. 로그인 여부는 대표 도구를 한 번 호출해 판정한다: 성공이면 로그인된 것, 인증 오류면 아래 로그인 안내로 간다.
+3. MCP 서버 `bigvalue-realestate`의 상태를 확인한다. 로그인 전에는 서버가 연결 자체를 거절하므로 `! Needs authentication`으로 표시되고, `✔ Connected`면 로그인된 것이다. 확실히 하려면 대표 도구를 한 번 호출해 확인한다.
 4. 상태만 요청받았으면 판정 결과를 한국어로 보고하고 아무것도 바꾸지 않는다.
 
 ## Claude Code 경로
 
 플러그인을 설치하면 MCP 서버는 자동 등록된다. 남는 것은 로그인 한 번이다.
 
-따로 명령 없이도 된다 — 첫 데이터 질문에서 클라이언트가 로그인을 띄운다. 명시적으로 하려면 `/bigvalue-realestate:login`이 판정부터 세션 안 브라우저 로그인 시작까지 한 번에 처리한다. 아래는 수동 경로다.
+따로 명령이 필요 없다 — 첫 데이터 질문에서 클라이언트가 브라우저 로그인을 띄운다. 아래는 수동 경로다.
 
 1. `claude mcp list`에 `! Needs authentication`이 보이면 정상이다 — 아직 로그인 전이라는 뜻이다.
 2. 사용자에게 `/mcp`를 실행해 `bigvalue-realestate`를 선택하게 안내한다. 브라우저가 열리고 구글 로그인과 동의를 거치면 연결이 끝난다.

@@ -132,7 +132,7 @@ window.createPanelUnitsModule = (context) => {
         <div class="skel" style="height:200px"></div>
       </div>`;
     sheetEl.querySelector("#us-close")?.addEventListener("click", closeSheet);
-    window.mapCtl.panTo(building.latitude, building.longitude, Math.min(window.mapCtl.getLevel() ?? 3, 3));
+    window.mapCtl.focusOn(building.latitude, building.longitude, "dong");
 
     try {
       // 첫 페이지(100호)를 받는 즉시 표시한다 — 대단지도 한 번의 대기로 화면이 열린다.

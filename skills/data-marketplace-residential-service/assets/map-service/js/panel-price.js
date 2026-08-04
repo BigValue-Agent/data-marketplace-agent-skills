@@ -449,7 +449,7 @@ window.createPanelPriceModule = (context) => {
     box.querySelectorAll(".nb-row[data-key]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const { key, type, lat, lng } = btn.dataset;
-        if (lat && lng) window.mapCtl.panTo(+lat, +lng);
+        if (lat && lng) window.mapCtl.focusOn(+lat, +lng);
         openComplex(key, type || null);
       });
     });

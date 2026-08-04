@@ -105,7 +105,7 @@
     input.value = it.complex_name;
     hideResults();
     if (it.latitude != null && it.longitude != null) {
-      window.mapCtl.panTo(it.latitude, it.longitude, 4);
+      window.mapCtl.focusOn(it.latitude, it.longitude, "complex");
     }
     window.panel.open(it.complex_key, it.residential_type);
     window.mapCtl.select(it.complex_key);
@@ -145,13 +145,20 @@
   });
 
   // ── 지도 도구 ────────────────────────────────
-  document.getElementById("tool-zoomin").addEventListener("click", () => window.mapCtl.zoom(-1));
-  document.getElementById("tool-zoomout").addEventListener("click", () => window.mapCtl.zoom(1));
-  document.getElementById("tool-maptype").addEventListener("click", (e) => {
-    const on = window.mapCtl.toggleMapType();
-    e.target.classList.toggle("is-on", on);
-    e.target.textContent = on ? "지도" : "위성";
-  });
+  document.getElementById("tool-zoomin").addEventListener("click", () => window.mapCtl.zoomIn());
+  document.getElementById("tool-zoomout").addEventListener("click", () => window.mapCtl.zoomOut());
+  // 위성 지도를 제공하지 않는 지도(오픈소스 맵)에서는 버튼을 감춘다 — 눌러도 아무 일이
+  // 없는 버튼을 남기지 않는다.
+  const mapTypeBtn = document.getElementById("tool-maptype");
+  if (window.mapCtl.supportsSatellite()) {
+    mapTypeBtn.addEventListener("click", (e) => {
+      const on = window.mapCtl.toggleMapType();
+      e.target.classList.toggle("is-on", on);
+      e.target.textContent = on ? "지도" : "위성";
+    });
+  } else {
+    mapTypeBtn.hidden = true;
+  }
   document.getElementById("tool-area").addEventListener("click", (e) => {
     const next = F.getAreaUnit() === "pyeong" ? "m2" : "pyeong";
     F.setAreaUnit(next);
