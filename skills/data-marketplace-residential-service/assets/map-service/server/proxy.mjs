@@ -1,6 +1,7 @@
 // Data Marketplace 프록시 + 정적 파일 서버 (의존성 없음, Node 18+)
 //
-//   DATA_MARKETPLACE_API_KEY=... DATA_MARKETPLACE_BASE_URL=... node server/proxy.mjs
+//   DATA_MARKETPLACE_API_KEY=... node server/proxy.mjs
+//   (DATA_MARKETPLACE_BASE_URL은 비표준 환경에서만 지정한다)
 //
 // 보안 경계: X-API-KEY는 이 프로세스의 환경변수로만 존재하고 브라우저에 절대 내려가지 않는다.
 // slug 직통 전달 금지 — 아래 allowlist(계약 route ↔ 상품 slug 1:1 매핑) 밖의 경로는 404.
@@ -13,17 +14,12 @@ import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const API_KEY = process.env.DATA_MARKETPLACE_API_KEY;
-const API_BASE = process.env.DATA_MARKETPLACE_BASE_URL;
+const API_BASE = process.env.DATA_MARKETPLACE_BASE_URL ?? "https://datamarket-api.bigvalue.ai";
 const PORT = Number(process.env.PORT || 3000);
 const ROOT = fileURLToPath(new URL("..", import.meta.url)); // 템플릿 루트 (server/의 상위)
 
 if (!API_KEY) {
   console.error("DATA_MARKETPLACE_API_KEY 환경변수가 필요합니다.");
-  process.exit(1);
-}
-
-if (!API_BASE) {
-  console.error("DATA_MARKETPLACE_BASE_URL 환경변수가 필요합니다 (온보딩 시 안내받은 Data Marketplace 주소).");
   process.exit(1);
 }
 

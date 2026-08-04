@@ -11,9 +11,9 @@ Use this skill as a routing and guardrail map, not as an API manual. The exact p
 
 ## Runtime Inputs
 
-For live API calls or runnable integration, read the Data Marketplace base URL from the `DATA_MARKETPLACE_BASE_URL` environment variable — the value is provided with Data Marketplace onboarding; never guess or invent a host — and first confirm the caller has provided a server-side API key.
+For live API calls or runnable integration, use `https://datamarket-api.bigvalue.ai` as the default Data Marketplace base URL and first confirm the caller has provided a server-side API key.
 
-If the server-side API key is absent from the conversation and workspace, ask once whether to configure runtime keys now or proceed with a server-side environment variable placeholder — do not solicit the key value as a form, but if the caller pastes a key in chat, write it into the server-side `.env` immediately, never repeat its value in any later output, and recommend rotating production keys because chat history retains them. When proceeding with placeholders, state clearly that live API calls and live tests will not work until `DATA_MARKETPLACE_API_KEY` is configured. If `DATA_MARKETPLACE_BASE_URL` is also absent, cover it inside that same single question instead of asking separately, and let placeholder builds fail clearly at run time until it is set.
+If the server-side API key is absent from the conversation and workspace, ask once whether to configure runtime keys now or proceed with a server-side environment variable placeholder — do not solicit the key value as a form, but if the caller pastes a key in chat, write it into the server-side `.env` immediately, never repeat its value in any later output, and recommend rotating production keys because chat history retains them. When proceeding with placeholders, state clearly that live API calls and live tests will not work until `DATA_MARKETPLACE_API_KEY` is configured. Do not ask for a base URL unless the caller needs a non-default environment.
 
 Before building a map UI, check the conversation and workspace for map SDK and other runtime keys (for example the Kakao JavaScript key used by `assets/map-service/`). If none are present, ask once whether to provide runtime keys now or proceed with placeholders, offering exactly three map choices — Kakao Maps (template default), Naver Maps, or OpenStreetMap as a keyless alternative (present it to end users as 오픈소스 맵); do not offer other map SDKs unless the caller asks. When Kakao or Naver is chosen, guide key issuance with both paths — paste the key in chat for the agent to wire into its proper place (`.env` for the data key, map config for the map key), or edit those files directly. For Naver Maps, NCP issues both a Client ID (`X-NCP-APIGW-API-KEY-ID`) and a Client Secret (`X-NCP-APIGW-API-KEY`): browser Dynamic Map JS uses only the Client ID as `ncpKeyId`, while the Client Secret is server-side REST-only and must never be placed in browser config. Do not re-ask when the answer already exists in project files. When proceeding with placeholders, finish the build and explain how to inject real keys at run time as environment variables.
 
@@ -105,7 +105,7 @@ These are on-demand lookups, not a mandatory pre-read list; open each file only 
 This is the quick summary; the full completion audit lives in `references/verification-checklist.md`. Before finalizing generated code, verify:
 
 - Exact public API paths, filters, fields, and response fields came from the API Reference.
-- Base URL comes from `DATA_MARKETPLACE_BASE_URL` (onboarding-provided) or an explicit placeholder that fails clearly at run time; API key is handled as a server-side environment variable or explicit placeholder.
+- Base URL uses `https://datamarket-api.bigvalue.ai` by default or a server-side override; API key is handled as a server-side environment variable or explicit placeholder.
 - API keys stay server-side in the `X-API-KEY` header.
 - Filters, fields, bbox, limit, and offset are sent in the JSON Body.
 - UI rows are read from `result.data`.

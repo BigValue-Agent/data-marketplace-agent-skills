@@ -11,9 +11,10 @@
 ## 실행
 
 ```bash
-DATA_MARKETPLACE_API_KEY=발급받은키 DATA_MARKETPLACE_BASE_URL=발급받은주소 node server/proxy.mjs
+DATA_MARKETPLACE_API_KEY=발급받은키 node server/proxy.mjs
 # 브라우저에서 http://localhost:3000 접속
-# DATA_MARKETPLACE_BASE_URL은 온보딩 시 안내받은 업스트림 주소를 지정한다 (미설정 시 기동 실패).
+# 업스트림은 https://datamarket-api.bigvalue.ai를 기본값으로 쓴다.
+# 스테이징 등 비표준 환경에서만 DATA_MARKETPLACE_BASE_URL로 덮어쓴다.
 ```
 
 격리망이나 샌드박스에서 `HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY`가 설정돼 있으면

@@ -40,10 +40,7 @@ export async function callDataProduct<T>(
   productSlug: string,
   body: DataProductBody,
 ): Promise<DataProductResponse<T>> {
-  const baseUrl = process.env.DATA_MARKETPLACE_BASE_URL;
-  if (!baseUrl) {
-    throw new Error("DATA_MARKETPLACE_BASE_URL is not set (provided with Data Marketplace onboarding)");
-  }
+  const baseUrl = process.env.DATA_MARKETPLACE_BASE_URL ?? "https://datamarket-api.bigvalue.ai";
   const res = await fetch(
     `${baseUrl}/api/v1/data-products/${apiDomain}/${productSlug}/query`,
     {

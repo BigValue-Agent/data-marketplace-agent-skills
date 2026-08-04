@@ -1,6 +1,6 @@
 # Product Routing
 
-Use this as a decision table for product selection and combination. Exact filters, allowed fields, and limits live in the bundled per-product docs under `references/api/`; if the caller provides a newer API Reference, it takes precedence over the bundled snapshot. Never invent fields beyond each doc's Allowed Fields. Actual API calls use the runtime base URL (`DATA_MARKETPLACE_BASE_URL`).
+Use this as a decision table for product selection and combination. Exact filters, allowed fields, and limits live in the bundled per-product docs under `references/api/`; if the caller provides a newer API Reference, it takes precedence over the bundled snapshot. Never invent fields beyond each doc's Allowed Fields. Actual API calls use `https://datamarket-api.bigvalue.ai` by default.
 
 | Service feature | Product role | Use when | Carry forward | Contract reference |
 |---|---|---|---|---|
