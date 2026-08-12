@@ -119,15 +119,16 @@ async function upstreamQuery(targetUrl, { headers, body }) {
 
 // minimum_service_contract의 core/lazy route ↔ Data Marketplace 상품 slug
 const ROUTES = {
-  "/api/complex-search": "complex-search",
-  "/api/markers": "complex-type-markers",
-  "/api/complex-detail": "complexes",
-  "/api/complex-shape": "complex-shapes",
-  "/api/prices?tab=realdeal": "realdeal",
-  "/api/prices?tab=notice": "notice-prices",
-  "/api/prices?tab=estimated": "estimated-prices",
-  "/api/buildings": "buildings",
-  "/api/units": "units",
+  // 티어 주석은 구성 3단 절삭용(README 각색 규칙 10): 기본형은 "전 구성" 3줄만 남긴다.
+  "/api/complex-search": "complex-search", // 전 구성
+  "/api/markers": "complex-type-markers", // 전 구성
+  "/api/complex-detail": "complexes", // 전 구성
+  "/api/complex-shape": "complex-shapes", // 표준형+
+  "/api/prices?tab=realdeal": "realdeal", // 표준형+
+  "/api/prices?tab=notice": "notice-prices", // 완성형
+  "/api/prices?tab=estimated": "estimated-prices", // 완성형
+  "/api/buildings": "buildings", // 표준형+
+  "/api/units": "units", // 완성형
 };
 
 const MIME = {

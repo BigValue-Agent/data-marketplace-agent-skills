@@ -19,15 +19,19 @@ Pick the filter by what the user named:
 
 - Returns one row per 법정동 in that area, each with `legaldong_code` and the per-type counts.
 - **Zero rows** → the name did not match; stop and ask for a different place name.
-- **Rows spanning more than one `sigungu_name`** (a 동 name shared across 구) → ask the user once which one,
-  listing `full_name`.
+- **`has_next` true** → some 시군구 hold more than 100 법정동. Page with `offset += 100` until `has_next` is
+  false before summing counts; a single page undercounts the region total.
+- **Group the rows by the first 5 digits of `legaldong_code`** — that prefix, not `sigungu_name`, identifies
+  a 시군구. Several 시·도 have a 중구/동구/남구/서구/북구, so one `sigungu_name` filter can return rows from
+  more than one 시군구 while every row shows the same name. If there is more than one group, ask the user
+  once which one, listing `sido_name + " " + sigungu_name`. Never sum counts across groups.
 
 ## Fix the scope (between Call 1 and Call 2)
 
-- **시군구 request** (whole 구): take any returned `legaldong_code`, keep its **first 5 digits** as
-  `legaldong_code_prefix` (5-digit = 시군구). `region.scopeLabel` = the 구 name; `region.name` =
+- **시군구 request** (whole 구): take a `legaldong_code` from the chosen group, keep its **first 5 digits**
+  as `legaldong_code_prefix` (5-digit = 시군구). `region.scopeLabel` = the 구 name; `region.name` =
   `sido_name + " " + sigungu_name`. `region.counts.apartment` = **sum** of `apartment_complex_count`
-  across all returned 동 rows (same for officetel/rowhouse).
+  across the 동 rows **of that one group** (same for officetel/rowhouse).
 - **single-동 request**: use that row's 10-digit `legaldong_code` directly. `region.name`/`scopeLabel` =
   its `full_name`; `region.counts.*` = that single row's counts.
 

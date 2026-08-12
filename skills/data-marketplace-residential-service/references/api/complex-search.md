@@ -33,7 +33,7 @@ Optional:
 
 - `fields`: string array of response field names.
 - `limit`: maximum row count. Keep `limit` in the `1..20` range. Default is `10`.
-- `offset`: not supported. Omit it or use `0`.
+- `offset`: not supported. Do not send it. The response has no `offset` field either, so do not compute a next page from it.
 
 ## Bbox
 
@@ -41,7 +41,7 @@ Not supported.
 
 ## Sort
 
-Client-selected sort is not supported for this product.
+Client-selected sort is not supported for this product. 이름 일치도가 높은 순으로, 일치도가 같으면 이름 가나다순으로 돌아옵니다.
 
 ## Allowed Fields
 
@@ -69,7 +69,7 @@ Content-Type: application/json
 
 ## Response Use
 
-검색 응답은 함수 내부의 match_score 기준으로 정렬되지만 match_score 자체는 기본 응답 필드에 포함하지 않습니다.
+이름이 비슷한 단지가 많으면 첫 행이 정답이 아닙니다. `헬리오`로 검색하면 헬리오스 세 곳이 헬리오시티보다 먼저 나옵니다. 첫 행을 자동 선택하지 말고, 화면에 `display_address`를 함께 보여주고 사용자가 고르게 하세요.
 
 Carry forward string identifiers as strings. Do not cast `complex_key`, `pnu`, `ppk`, or `jpk` to numbers when they appear.
 

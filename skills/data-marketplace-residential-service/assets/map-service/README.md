@@ -94,6 +94,20 @@ DATA_MARKETPLACE_API_KEY=발급받은키 node server/proxy.mjs
    `getBoundsRect` · `getCenter` · `getDensityTier` · `isDongLabelVisible` · `zoomIn` ·
    `zoomOut` · `focusOn` · `addOverlay` · `addPolygon` · `setSatellite`.
 
+10. **구성 3단 절삭** — 스킬이 구성(완성형·표준형·기본형)을 묻고, 하위 구성은 이
+    템플릿(완성형)에서 **지워서** 만든다. 티어별 템플릿을 새로 만들지 않는다.
+    티어에 없는 route가 생성물에 남아 있으면 그것이 결함이다.
+
+    | 구성 | 지우는 것 |
+    |---|---|
+    | 표준형 | `panel-units.js`는 가격용 `renderPyeongControls`만 남기고 동·호실 흐름 제거 · `panel.js`는 `A.buildings`·평형 집계·`buildingsReady` 가드·가격 평형 UI를 유지하고 동 목록·동 라벨·호실 시트만 제거 · `api.js`와 proxy에서 units·notice·estimated 3종 제거 |
+    | 기본형 | 표준형에서 남긴 상세 실거래·평형 UI와 `panel-units.js` 제거 · `panel.js`의 buildings·shape 조회 제거 · `api.js`와 proxy에서 shape·buildings·realdeal·units·notice·estimated 제거. 가격 영역은 프로필 `recent_month6_*` 요약만 유지 |
+
+    표준형의 buildings는 화면용 동 목록이 아니라 실거래의 관측 전용면적 스코프를
+    정하는 의존성이다. 조회 실패 시 실거래를 막는 현재 동작을 유지하고
+    `buildingsReady=true` 강제 우회는 하지 않는다. allowlist 각 줄의 티어 주석이
+    지울 줄을 표시한다.
+
 ## 기능 ↔ route ↔ 데이터 상품 매핑
 
 | 화면 기능 | 프록시 route | 상품 slug |

@@ -1,8 +1,8 @@
 <!-- Bundled snapshot generated from frontend/apps/app/public/reference/ai — edit the origin, not this copy. -->
 
-# 주거형 동/건물 요약
+# 주거형 동별 상세
 
-단지 내부 동/건물 목록, 동 마커, 평형 요약을 조회합니다.
+단지 안 동마다 층수·호실 수·평형 구성을 조회합니다.
 
 ## Base URL
 
@@ -84,8 +84,6 @@ Content-Type: application/json
 ```
 
 ## Response Use
-
-동/건물 단위 좌표, 주거유형, 호수, 지상층수, 평형 요약을 반환합니다.
 
 `units_summary` 항목은 `pyeong_number`, `pyeong_type_name`, `private_area`, `ho_count` 네 키입니다. 평형 라벨이 필요하면 앞의 두 값을 붙여 만듭니다 — 합본 표기 키는 제공하지 않습니다.
 

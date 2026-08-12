@@ -43,7 +43,19 @@ Typical cost: 6–10 MCP tool calls per card.
 - **Grade is a unit attribute** (`estimated_grade`) — it belongs to the representative unit only and the card labels it that way. Never present it as the complex's or the pyeong's grade.
 - **Single snapshots are not trends.** Notice and estimated prices expose one reference month per unit; never fabricate history, change rates, or forecasts from them.
 - **Keys stay strings** — `complex_key`, `pnu`, `ppk`, `jpk` are never cast to numbers.
-- Each tool returns `{product, response}`; read rows from **`response.data`** (`response.has_next` signals truncation). Respect each tool's documented limits (`limit` ≤ 100, `offset` ≤ 2000).
+- Each tool returns `{product, response}`; read rows from **`response.data`** (`response.has_next` signals truncation).
+- Limits differ per tool. The recipes already use valid values — do not raise a `limit` past what a recipe shows.
+
+| tool | `limit` | `offset` |
+|---|---|---|
+| `search_complex` | ≤ 20 | none |
+| `complex_profile` | ≤ 10 | none |
+| `building_summaries` | ≤ 300 | ≤ 2000 |
+| `realdeal_history` | ≤ 100 | ≤ 2000 |
+| `estimated_prices` | ≤ 100 | ≤ 2000 |
+| `notice_prices` | ≤ 100 | ≤ 2000 |
+
+- On the two tools with no `offset`, `has_next` means the result was truncated, not that a next page exists. Narrow the search text or accept the truncation and set `partial: true`.
 
 ## Screen Language
 

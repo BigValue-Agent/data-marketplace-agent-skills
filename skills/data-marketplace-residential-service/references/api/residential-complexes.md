@@ -1,8 +1,8 @@
 <!-- Bundled snapshot generated from frontend/apps/app/public/reference/ai — edit the origin, not this copy. -->
 
-# 주거형 단지 프로필
+# 주거형 단지 상세
 
-검색 또는 마커에서 얻은 complex_key로 단지 프로필과 요약 정보를 조회합니다. 법정동 코드로 지역 안의 단지 목록과 랭킹을 조회할 때도 사용합니다.
+검색 또는 마커에서 얻은 complex_key로 단지 한 곳의 상세 정보를 조회합니다. 법정동 코드로 지역 안의 단지 목록과 랭킹을 조회할 때도 사용합니다.
 
 ## Base URL
 
@@ -148,9 +148,11 @@ Content-Type: application/json
 
 ## Response Use
 
-단지 기본정보, 대표 토지, 표제부 요약, 입지 요약, 최근 6개월 실거래 요약 필드를 반환합니다.
+단지 기본정보, 대표 토지, 건축물대장 요약, 입지 요약, 최근 6개월 실거래 요약이 한 행에 함께 담깁니다. 항목이 많으므로 목록·랭킹 화면에서는 `fields`로 필요한 항목만 골라 받으세요.
 
-토지·표제부 보강분의 기준월은 상품 전체 기준월(`standard_ym`)과 같습니다. 별도 기준월 필드는 제공하지 않습니다.
+기간을 계산할 때는 오늘 날짜가 아니라 `standard_ym`을 기준으로 삼으세요. 원천이 매달 교체되므로 오늘이 8월이어도 데이터는 7월 기준일 수 있습니다.
+
+`representative_title_*` 세 필드는 특정 한 동의 값이 아니라 단지 안에서 가장 흔한 값입니다. 세 값이 서로 다른 동에서 왔을 수 있으니 "대표 동의 구조"로 표시하지 마세요.
 
 `assignment_middle_school_name`과 `assignment_high_school_name`은 배정 학교가 여럿이면 쉼표로 이어 한 문자열로 옵니다. 한 곳이라고 가정하지 마세요.
 

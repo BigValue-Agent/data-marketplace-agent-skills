@@ -13,7 +13,27 @@ Use this skill as a routing and guardrail map, not as an API manual. The exact p
 
 For live API calls or runnable integration, use `https://datamarket-api.bigvalue.ai` as the default Data Marketplace base URL. Do not ask for a base URL unless the caller needs a non-default environment.
 
-Ask only what changes the generated code. The map SDK does, so ask that once before building a map UI, offering exactly three choices — Kakao Maps (template default), Naver Maps, or OpenStreetMap as a keyless alternative (present it to end users as 오픈소스 맵). Do not offer other map SDKs unless the caller asks, and do not ask at all when the choice already exists in the conversation or project files. All three map adapters ship with `assets/map-service/`, so switching maps means loading exactly one of `js/map-adapter-kakao.js`, `js/map-adapter-naver.js`, or `js/map-adapter-osm.js` in `index.html` — do not rewrite the controller or the panels for it. Never read or compare a zoom number outside an adapter, and never gate marker calls on zoom: marker eligibility stays on the `BBOX_MAX_DEG` viewport span in every adapter. OpenStreetMap has no satellite layer, so that tool hides itself there.
+Ask only what changes the generated code. The service composition and the map SDK do — ask both once, in one confirmation, before building a map UI, and skip either question when its answer already exists in the conversation or project files.
+
+For composition, offer exactly three tiers, recommended first, using this Korean copy verbatim:
+
+```
+아파트·오피스텔·빌라 지도 서비스를 어느 구성으로 만들까요?
+
+· 완성형 (권장) — 지도에서 검색과 가격 마커로 단지를 찾고, 단지를 누르면 경계가
+  표시된 지도와 상세 패널에서 실거래 목록·차트를 확인하고, 동·호를 골라 호실 단위
+  AI 산출시세·공시가격 비교까지 이어지는 전체 흐름
+· 표준형 — 지도에서 검색과 가격 마커로 단지를 찾고, 단지를 누르면 경계 표시와
+  함께 상세 패널에서 실거래 목록·차트까지 확인하는 구성
+· 기본형 — 지도에서 검색과 가격 마커로 단지를 찾고, 상세 패널에서 최근 실거래
+  요약까지 확인하는 최소 구성
+
+(다른 조합이 필요하면 직접 입력)
+```
+
+Tier to products: 기본형 = complex search + type markers + complex profile (3 products); its recent realdeal summary comes from profile `recent_month6_*`, with no realdeal-history route or chart. 표준형 = 기본형 + complex shapes + buildings + realdeal history (6 products); buildings stays as an internal price-scope dependency, so keep the buildings call, `buildingsReady` guard, and price pyeong controls while omitting dong/unit UI and unit-scope routes. 완성형 = all nine, adding units, notice prices, and estimated prices. A free-form custom mix must keep the 기본형 core, include buildings whenever it includes realdeal history, and never include unit-scope notice/estimated prices without the 동·호 surface.
+
+For the map, offer exactly three choices — Kakao Maps (template default), Naver Maps, or OpenStreetMap as a keyless alternative (present it to end users as 오픈소스 맵). Do not offer other map SDKs unless the caller asks. All three map adapters ship with `assets/map-service/`, so switching maps means loading exactly one of `js/map-adapter-kakao.js`, `js/map-adapter-naver.js`, or `js/map-adapter-osm.js` in `index.html` — do not rewrite the controller or the panels for it. Never read or compare a zoom number outside an adapter, and never gate marker calls on zoom: marker eligibility stays on the `BBOX_MAX_DEG` viewport span in every adapter. OpenStreetMap has no satellite layer, so that tool hides itself there.
 
 Runtime keys do not change the generated code, so never block the build on them. Build the complete service first, then close with a run checklist that names each value the caller still has to set, where it goes, and how to obtain it. Name the exact destination per key: `DATA_MARKETPLACE_API_KEY` goes in the server `.env`, and the map key goes in the browser map config (`js/config.js` in the bundled template). Name the exact key too — `KAKAO_MAP_KEY` for Kakao, `NAVER_MAP_CLIENT_ID` for Naver, none at all for OpenStreetMap. Ask for key values only in that closing message.
 
@@ -113,6 +133,7 @@ This is the quick summary; the full completion audit lives in `references/verifi
 - Exact public API paths, filters, fields, and response fields came from the API Reference.
 - Base URL uses `https://datamarket-api.bigvalue.ai` by default or a server-side override; the API key is read from a server-side environment variable and never appears in generated source or browser code.
 - The build finished without waiting on any key, and the closing message lists each value still to set, where it goes, and how to obtain it.
+- The generated route set matches the chosen composition tier exactly — nothing extra, nothing missing. 기본형 ships no realdeal-history, buildings, units, or unit-price routes. 표준형 keeps buildings and realdeal-history for observed-area price scope but ships no units or unit-price routes. Treat any other leftover surface as a defect, not a bonus.
 - API keys stay server-side in the `X-API-KEY` header.
 - Filters, fields, bbox, limit, and offset are sent in the JSON Body.
 - UI rows are read from `result.data`.

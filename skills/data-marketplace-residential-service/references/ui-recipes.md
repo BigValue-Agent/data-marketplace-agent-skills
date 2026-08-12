@@ -36,7 +36,7 @@ Use these recipes to compose product calls into residential service screens.
 
 1. Debounce text input.
 2. Call name search.
-3. Preserve returned order because name-search candidates are relevance-first by internal `match_score DESC`, then `complex_name` and `complex_key`; `match_score` is not exposed.
+3. Preserve returned order because name-search candidates come back name-relevance first, then alphabetical by name. Render `display_address` under each candidate and require an explicit pick — do not auto-select the first row.
 4. Show candidate name, address/region, and type labels.
 5. On selection, store `complex_key` as a string.
 6. Load detail drawer data.
@@ -70,7 +70,8 @@ Use these recipes to compose product calls into residential service screens.
 4. Treat recent price fields as optional; show a fallback label when they are null.
 5. A price bubble should identify the complex and label the price as the complex profile's recent-six-month summary; do not imply it is a residential-type price.
 6. For long names, use visual truncation/ellipsis; do not drop the name entirely.
-7. Load complex profile only after marker selection when the UI needs full detail data.
+7. Marker rows carry `display_name`, not `complex_name`. Reading `complex_name` from a marker row yields nothing; load the complex profile after selection when the source name is required.
+8. Load complex profile only after marker selection when the UI needs full detail data.
 
 ## Boundary Layer
 
@@ -102,7 +103,7 @@ Use these recipes to compose product calls into residential service screens.
 
 ## Detail Drawer Tabs
 
-Use this neutral tab architecture for full residential map service generation.
+Use this neutral tab architecture for full residential map service generation. The table below is the 완성형 composition tier. 기본형 keeps the profile-summary 가격 and 단지정보 only. 표준형 also keeps price pyeong controls backed by building summaries, but omits the visible building cards and 동/호 tab.
 
 | Tab | Products | Required components |
 |---|---|---|
@@ -117,7 +118,7 @@ When nearby comparison is requested, load one marker query lazily and label pric
 
 ## Full-Service Minimum
 
-For a full residential map service, the generated app must show evidence for both building and lazy unit drilldown: a buildings route/section and a lazy units route/panel that carries `complex_key + ppk` (strings). Recommended route names are `/api/buildings` and `/api/units`. Before unit rows load, show `data-testid="unit-panel-placeholder"`; after a unit request, render `data-testid="unit-row"` rows or `data-testid="unit-empty-state"`. A bundled starting point lives in `assets/map-service/`; adapt it to the target stack instead of rebuilding these surfaces.
+For a full residential map service (the 완성형 composition tier, or when no tier was asked), the generated app must show evidence for both building and lazy unit drilldown: a buildings route/section and a lazy units route/panel that carries `complex_key + ppk` (strings). Recommended route names are `/api/buildings` and `/api/units`. Before unit rows load, show `data-testid="unit-panel-placeholder"`; after a unit request, render `data-testid="unit-row"` rows or `data-testid="unit-empty-state"`. A bundled starting point lives in `assets/map-service/`; adapt it to the target stack instead of rebuilding these surfaces. 기본형 omits both routes. 표준형 retains `/api/buildings` only to derive observed private-area bands for realdeal, and omits building cards, the lazy units route/panel, and unit-price surfaces.
 
 The detailed completeness criteria and DOM evidence list live in `references/verification-checklist.md` (Full-Service Incomplete Checks).
 

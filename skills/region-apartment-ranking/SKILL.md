@@ -28,9 +28,12 @@ Exact tool arguments, the region-scope rule, the metric map, and the `dm-data` m
 
 1. **Resolve the region** — `region_summaries` by the user's place name (`sigungu_name` for a 구/시,
    `eupmyeondong_name` or `full_name` for a 동). This returns 법정동 rows with `legaldong_code` and the
-   per-type complex counts. Multiple 시군구 share a 동 name → ask once. Carry the region label and counts.
+   per-type complex counts. Keep paging with the same filter and fields until `has_next` is false, collecting
+   every `response.data` row before choosing a region. Group the collected rows by the first 5 digits of
+   `legaldong_code` — a 시군구 name like 중구 exists in several 시·도, so one name filter can return two
+   시군구 with identical `sigungu_name`. More than one group → ask once. Carry the region label and counts.
 2. **Fix the scope** — a 시군구 request ranks the whole 구: take the 5-digit `legaldong_code` prefix and
-   sum the counts across the returned 동 rows. A single-동 request uses that 동's 10-digit `legaldong_code`.
+   sum the counts across that group's collected 동 rows. A single-동 request uses that 동's 10-digit `legaldong_code`.
 3. **Pick the metric** — from the user's words (default: 최근 실거래가, 비싼 순). Map it to a `sort_field`
    and `sort_order` per the recipe (household desc / age asc for 신축 / subway distance asc / recent price desc).
 4. **Rank** — `complexes_by_region` with the scope filter, `residential_type: "아파트"`, the chosen sort,
@@ -58,8 +61,10 @@ Typical cost: 2–3 MCP tool calls per card.
   오피스텔/연립다세대 into the same list.
 - **`recent_month6_average_realdeal_price` is a whole-complex 6-month average, not a 평당가.** Do not divide
   it by area or present it as a per-pyeong price.
-- **Keys stay strings.** Each tool returns `{product, response}`; read rows from `response.data`. Respect
-  limits (`limit` ≤ 100, `offset` ≤ 2000).
+- **Keys stay strings.** Each tool returns `{product, response}`; read rows from `response.data`.
+- **Limits differ per tool.** `region_summaries` and `complexes_by_region` both cap `limit` at 100 with
+  `offset` up to 2000. Do not raise a `limit` above what the recipe shows, and never assume one cap
+  applies to every tool.
 
 ## Screen Language
 

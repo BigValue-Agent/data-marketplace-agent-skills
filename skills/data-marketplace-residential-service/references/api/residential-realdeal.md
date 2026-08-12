@@ -106,7 +106,17 @@ Content-Type: application/json
 
 ## Response Use
 
-거래 구분, 거래 방식, 계약일, 등기일, 가격, 보증금, 면적을 반환합니다.
+신고된 계약 한 건이 한 행입니다. 호실 번호가 없으므로 공시가격·산출시세 행에 1:1로 이어 붙일 수 없습니다 — 이으려면 `private_area`(전용면적)로 맞춥니다.
+
+`price`와 `deposit_price`의 뜻은 `deal_division_name`에 따라 달라집니다.
+
+| `deal_division_name` | `price` | `deposit_price` |
+|---|---|---|
+| 매매 | 매매가 | null |
+| 전세 | null | 보증금 |
+| 월세 | 월 임대료 | 보증금 |
+
+거래 구분을 거르지 않고 `price`를 평균 내면 매매가와 월 임대료가 한 숫자에 섞입니다. 집계 전에 `deal_division_name`으로 먼저 나누세요.
 
 이 상품은 최근 36개월 계약분을 보관하며 매달 창이 한 달씩 이동합니다. `date_from`·`date_to`를 그 밖으로 잡으면 빈 결과가 나옵니다.
 

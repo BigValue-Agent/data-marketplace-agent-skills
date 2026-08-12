@@ -10,7 +10,7 @@ Flow:
 
 1. Call the name search product with the user's text.
 2. Return candidates, not just the first row.
-3. Preserve returned order: candidates are relevance-first by internal `match_score DESC`, then `complex_name` and `complex_key`; `match_score` is not exposed.
+3. Preserve returned order: candidates come back name-relevance first, then alphabetical by name. Do not auto-select the first row — a partial query like `헬리오` ranks other complexes ahead of `헬리오시티`; show `display_address` with each candidate and let the user pick.
 4. After selection, carry `complex_key` forward as a string.
 5. Load the residential complex profile by `complex_key`.
 6. Use matching-type profile `recent_month6_*` fields for the default whole-complex summary.

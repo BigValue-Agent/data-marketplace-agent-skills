@@ -27,11 +27,10 @@ type DataProductResponse<T> = {
   success: boolean;
   data: T[];
   row_count: number;
-  // Total rows matching the query; null for products/queries that cannot count.
-  // Use for "N건" headers and page math; fall back to has_next when null.
-  total_available: number | null;
   limit: number;
-  offset: number;
+  // Absent on products without offset pagination (name search, map markers,
+  // complex boundaries). There is no total-count field — page with has_next.
+  offset?: number;
   has_next: boolean;
 };
 

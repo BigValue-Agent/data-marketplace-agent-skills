@@ -22,5 +22,5 @@ Use this as a decision table for product selection and combination. Exact filter
 - For generated services, keep notice and estimated prices at unit scope. Their broader API filters remain contract capabilities, not the default screen aggregation strategy.
 - Prefer type markers for map viewport loading; do not use realdeal as complete marker coverage.
 - Prefer explicit user selection when name search returns multiple candidates.
-- For name search, preserve returned order because candidates are relevance-first by internal `match_score DESC`, then `complex_name` and `complex_key`; `match_score` is not exposed.
+- For name search, preserve returned order because candidates come back name-relevance first, then alphabetical by name. Never auto-select the first row as the answer.
 - Read exact `api_domain` and `api_slug` from the bundled API docs (or a newer caller-provided API Reference); never bind product role names, API path metadata, or internal product IDs to a complex URL param.

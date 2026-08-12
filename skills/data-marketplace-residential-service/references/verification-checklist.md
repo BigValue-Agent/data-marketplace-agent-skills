@@ -49,73 +49,72 @@ Route names are recommended examples; keep the role-to-route mapping even if nam
 
 ## Verification Flow
 
-One representative complex through this chain is sufficient live verification; do not repeat the live chain across multiple complexes.
+One representative complex is sufficient live verification; do not repeat the live chain across multiple complexes. Run only the steps for the selected composition tier. All tiers: search, markers, complex detail, and profile recent-six-month summary. 표준형·완성형: shape, buildings, and scoped realdeal. 완성형 only: units, notice prices, and estimated prices.
 
-1. Search by complex name and select a candidate.
-2. Confirm `complex_key` remains a string.
-3. Load bbox markers with top-level `bbox`.
-4. Load complex detail by `complex_key`.
-5. Load shape and handle empty shape fallback.
-6. Verify the matching-type profile recent-six-month summary and its `standard_ym`.
-7. Load buildings, choose the largest valid-area pyeong, and verify overlapping private-area bands share one realdeal scope.
-8. Load the selected-area realdeal first page and verify sale, lease, and monthly-rent labels separately.
-9. Load unit rows with `limit` and `offset`.
-10. Select a unit and load latest notice and estimated prices with `ppk + jpk`.
+1. All tiers: search by complex name and select a candidate.
+2. All tiers: confirm `complex_key` remains a string.
+3. All tiers: load bbox markers with top-level `bbox`.
+4. All tiers: load complex detail by `complex_key` and verify the matching-type profile recent-six-month summary and its `standard_ym`.
+5. 표준형·완성형: load shape and handle empty shape fallback.
+6. 표준형·완성형: load buildings, choose the largest valid-area pyeong, and verify overlapping private-area bands share one realdeal scope.
+7. 표준형·완성형: load the selected-area realdeal first page and verify sale, lease, and monthly-rent labels separately.
+8. 완성형: load unit rows with `limit` and `offset`.
+9. 완성형: select a unit and load latest notice and estimated prices with `ppk + jpk`.
 
 ## UI/UX Verification Flow
+
+Run only the checks for surfaces included in the selected tier.
 
 1. The first screen is a map-based working surface, not a landing page.
 2. The desktop layout has top search/filter, a results list (floating search card acceptable), full map, and right detail drawer.
 3. The map renders residential type marker rows as markers or price bubbles.
 4. Price bubbles use loaded marker/profile fields and handle null price labels.
 5. Selecting a marker or candidate opens a detail drawer by `complex_key`.
-6. The detail drawer includes a realdeal chart or volume chart when transaction rows are available.
+6. 표준형·완성형 detail drawers include a realdeal chart or volume chart when transaction rows are available; 기본형 stops at the profile `recent_month6_*` summary.
 7. The whole-complex price summary comes from matching-type profile `recent_month6_*`, not paged detail rows.
-8. Realdeal uses an observed private-area scope and a period derived from profile `standard_ym`; list and chart share the first page.
-9. Building/unit sections are lazy and carry `ppk` and `jpk` as strings; notice and estimated prices load only for a selected unit.
-10. Shape layer uses the complex area product only for selected complex boundaries.
-11. A pyeong with no observed private area stays unavailable; whole-complex realdeal is used only when the complex has no pyeong information.
-12. Notice and estimated prices display the standard year-month from returned rows, and one unit's grade is not promoted to a complex grade.
+8. In 표준형·완성형, realdeal waits for buildings and uses an observed private-area scope plus a period derived from profile `standard_ym`; list and chart share the first page.
+9. In 완성형, building/unit sections are lazy and carry `ppk` and `jpk` as strings; notice and estimated prices load only for a selected unit.
+10. In 표준형·완성형, the shape layer uses the complex area product only for selected complex boundaries.
+11. In 표준형·완성형, a pyeong with no observed private area stays unavailable; whole-complex realdeal is used only when the complex has no pyeong information.
+12. In 완성형, notice and estimated prices display the standard year-month from returned rows, and one unit's grade is not promoted to a complex grade.
 13. Profile distance fields render as distance only, without walking/driving time or an N-minute catchment.
-14. Empty or unsupported GeoJSON omits the boundary only and keeps markers, detail, building, and unit UI usable.
-15. Out-of-policy pyeong, area, and floor fixtures render as `확인 필요` and do not enter normal selectors or derived metrics; raw rows and stable keys remain available.
+14. In 표준형·완성형, empty or unsupported GeoJSON omits the boundary only and keeps the tier's remaining UI usable.
+15. Out-of-policy pyeong, area, and floor fixtures render as `확인 필요` only on tiers that include those surfaces; they do not enter normal selectors or derived metrics, while raw rows and stable keys remain available.
 
 ## Full-Service Incomplete Checks
 
-- For full-service residential map prompts, a generated app is incomplete when it lacks building route/UI evidence.
-- For full-service residential map prompts, a generated app is incomplete when it lacks a clear lazy unit drilldown route/panel.
+These two checks apply when the 완성형 composition tier was chosen, or when no tier was asked. 기본형 omits buildings and unit surfaces. 표준형 keeps the buildings route only as a price-scope dependency and omits visible building cards and unit surfaces.
+
+- For 완성형 (or tier-unasked) residential map prompts, a generated app is incomplete when it lacks building route/UI evidence.
+- For 완성형 (or tier-unasked) residential map prompts, a generated app is incomplete when it lacks a clear lazy unit drilldown route/panel.
+- Whatever the tier: the generated route set must match the chosen tier exactly. 기본형 ships complex-search/markers/complex-detail routes only. 표준형 adds complex-shape/buildings/realdeal. 완성형 adds units/notice/estimated. A route outside that set is the defect, not a bonus.
 - Building route/UI evidence means `/api/buildings` (or equivalent), the building summary product, and `data-testid="building-card"` appear in the generated backend/frontend.
 - Lazy unit drilldown route/panel means `/api/units` (or equivalent), the unit detail product, `complex_key + ppk`, and `data-testid="unit-drilldown-panel"` appear in the generated backend/frontend.
 - Unit rows are required after user intent or an intentional first-building preview; before that, use `data-testid="unit-panel-placeholder"`.
 
 ## DOM Smoke Test Requirements
 
-- A marker click immediately opens the detail drawer before detail API responses finish.
-- The selected marker and matching list item expose a selected class or equivalent selected state.
-- A programmatic map pan followed by map idle keeps the same detail drawer open.
-- A stale detail, marker, price, building, or unit response does not overwrite the currently selected complex.
-- The realdeal section renders either `data-testid="price-trend-chart"` or a realdeal-specific empty/error state.
-- A rapid pyeong, deal-type, or period change cannot let an older realdeal response overwrite the current selection.
-- Selected-unit notice and estimated-price requests can fail independently and do not reuse realdeal rows.
-- An area or pyeong card click updates the selected state and filters the chart/table when area data is available.
-- A building card click carries `ppk` as a string and renders unit rows or a unit-specific empty state.
-- Empty shape data keeps the detail drawer usable and does not throw a browser console error.
-- Unsupported `GeometryCollection` and invalid-coordinate shapes also keep the detail drawer usable without a console error.
-- A single-unit snapshot shows its response standard year-month without a complex/pyeong aggregate or representative grade.
-- Profile distance fields do not produce `도보`, `차량 N분`, or `N분 생활권` text.
-- Extreme pyeong/area/floor fixture values do not appear as normal marker, selector, floor, or unit-price inputs.
+Run only the checks for surfaces included in the selected tier.
+
+- All tiers: a marker click immediately opens the detail drawer before detail API responses finish; the selected marker and matching list item expose a selected class or equivalent selected state; a programmatic map pan followed by idle keeps the same drawer open.
+- All tiers: stale detail or marker responses do not overwrite the selected complex, and profile distance fields do not produce `도보`, `차량 N분`, or `N분 생활권` text.
+- 표준형·완성형: the realdeal section renders `data-testid="price-trend-chart"` or a realdeal-specific empty/error state; rapid pyeong, deal-type, or period changes reject stale price responses.
+- 표준형·완성형: an area or pyeong card click updates the selected state and filters the chart/table; stale building responses do not overwrite the selected complex.
+- 표준형·완성형: empty, unsupported `GeometryCollection`, or invalid-coordinate shape data keeps the detail drawer usable without a console error.
+- 완성형: stale unit responses do not overwrite the selected complex; selected-unit notice and estimated-price requests can fail independently and do not reuse realdeal rows.
+- 완성형: a building card click carries `ppk` as a string and renders unit rows or a unit-specific empty state; a single-unit snapshot shows its response standard year-month without a complex/pyeong aggregate or representative grade.
+- For every tier, extreme pyeong, area, or floor values are tested only on surfaces that tier includes and never enter normal marker, selector, floor, or unit-price inputs.
 
 ## Static Source Checks
 
-When local browser execution or port binding is blocked, these checks still apply.
+When local browser execution or port binding is blocked, these grep-level checks still apply. Check the exact selected-tier route and UI set; verify included hooks as `data-testid` attribute literals or runtime `dataset.testid` assignments, and treat a higher-tier route or hook left in a lower tier as a failure.
 
-- Run a grep-level source check for `/api/buildings`, `/api/units` (or their equivalents), and the building/unit product usages.
-- Run a grep-level source check for `transaction-chart`, `building-card`, `unit-drilldown-panel`, and `price-trend-chart` as `data-testid` attribute literals or runtime `dataset.testid` assignments.
-- Run a grep-level source check for `unit-panel-placeholder`, `unit-empty-state`, and `unit-row`.
+- 표준형·완성형 source checks: require `/api/buildings`, `/api/prices?tab=realdeal`, their product usages, and `transaction-chart` or `price-trend-chart`; 기본형 must omit them.
+- 완성형-only source checks: require `/api/units`, notice/estimated routes, unit product usages, `building-card`, `unit-drilldown-panel`, `unit-panel-placeholder`, `unit-empty-state`, and `unit-row`; 기본형·표준형 must omit them.
 - Marker bubble rendering labels `recent_month6_average_realdeal_price` as a whole-complex summary and does not pair it with a type-specific pyeong claim.
 - The marker API wrapper must be limit-only: send top-level `bbox`, optional `filters.residential_type`, `fields`, and `limit`; do not send `offset` in marker request bodies because marker responses are center-distance truncated with `has_next`, not offset-paged. For the all-types view, one unfiltered request (all types share one limit, so a dense type can crowd out others) and the bundled template's per-type parallel requests (balanced coverage with more requests, cushioned by the marker TTL cache) are both acceptable — pick one deliberately.
-- If a bundled reference template was used, preserve module boundaries when the stack allows it (`data-policy`, `api`, `map`, `panel`, `chart`, `format`, and `proxy` layers). If a framework requires a different file shape, prove equivalent structure with the DOM hooks above.
-- If `assets/map-service/` is used, preserve its proxy boundary, module responsibilities, building route, scoped realdeal flow, and lazy unit drilldown unless the target framework requires an equivalent structure.
+- If a bundled reference template was used, preserve module boundaries when the stack allows it (`data-policy`, `api`, `map`, `panel`, `chart`, `format`, and `proxy` layers). If a framework requires a different file shape, prove equivalent structure with the selected tier's DOM hooks above.
+- If `assets/map-service/` is used, preserve only the routes, modules, and UI surfaces included in the selected tier; for 표준형 this includes the hidden buildings price-scope dependency but not building cards or unit drilldown.
 - Only when the template's interaction logic was reimplemented or heavily modified (not a verbatim template adaptation), use jsdom or pure DOM event tests for marker click → drawer open, tab switching, and area filter behavior.
 - A blocked local server, sandboxed network, or port binding failure is not a reason to skip static source checks.
 

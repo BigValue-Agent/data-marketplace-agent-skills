@@ -16,14 +16,15 @@ The skill should say which role to use and which key to carry forward. The API R
 ## Common Parameter Rules
 
 - `limit` must follow the target product's documented range.
-- `offset` must follow the target product's documented support. Some products only allow `0`; for those, `has_next=true` is not a next-page signal.
+- `offset` must follow the target product's documented support. Name search, map markers, and complex boundaries have no `offset` at all — do not send it, and do not read one back. For those products `has_next=true` means the result was truncated, so narrow the search text or the bbox instead of paging.
 - `fields` must be a string array and each value must exist in the product's allowed fields.
 - Search filters belong in the JSON Body `filters` object.
 - bbox belongs in the top-level JSON Body `bbox` object.
 - bbox latitude/longitude spans are capped at 0.1 degrees per axis on bbox-supported products; wider spans are a request error, not an empty result.
 - bbox marker responses return rows nearest the bbox center first and truncate outward when the limit is hit.
 - All Data Product responses are wrapped; returned rows are in `data`.
-- The wrapper also carries `row_count`, `total_available` (may be null), `limit`, `offset`, and `has_next`. Use `total_available` for "N건" headers and page math; when it is null, fall back to `has_next`-only pagination.
+- The wrapper carries `success`, `data`, `row_count`, `limit`, `has_next`, and — only on offset-capable products — `offset`. There is no total-count field. On offset-capable products, page by resending with `offset + row_count` while `has_next` is `true`.
+- Never render a total like "N건" from a single response. Only `row_count` is known; when `has_next` is `true` label it as "N건 이상" or hide the count.
 
 ## Stable Key Rules
 
