@@ -13,7 +13,7 @@ Use this skill as a routing and guardrail map, not as an API manual. The exact p
 
 For live API calls or runnable integration, use `https://datamarket-api.bigvalue.ai` as the default Data Marketplace base URL. Do not ask for a base URL unless the caller needs a non-default environment.
 
-Ask only what changes the generated code. The service composition and the map SDK do — ask both once, in one confirmation, before building a map UI, and skip either question when its answer already exists in the conversation or project files.
+**HITL gate:** A generic request to build a residential map service is not a composition or map SDK choice. If either answer is unresolved, ask the unresolved question(s) once and wait for the reply before creating or modifying files or adapting the template. An empty project, missing runtime keys, or OpenStreetMap being keyless does not count as a choice. Skip a question only when its answer already exists in the conversation or project files. If confirmation is unavailable or the caller explicitly delegates both defaults, use 완성형 and Kakao Maps (template default).
 
 For composition, offer exactly three tiers, recommended first, using this Korean copy verbatim:
 
@@ -35,7 +35,7 @@ Tier to products: 기본형 = complex search + type markers + complex profile (3
 
 For the map, offer exactly three choices — Kakao Maps (template default), Naver Maps, or OpenStreetMap as a keyless alternative (present it to end users as 오픈소스 맵). Do not offer other map SDKs unless the caller asks. All three map adapters ship with `assets/map-service/`, so switching maps means loading exactly one of `js/map-adapter-kakao.js`, `js/map-adapter-naver.js`, or `js/map-adapter-osm.js` in `index.html` — do not rewrite the controller or the panels for it. Never read or compare a zoom number outside an adapter, and never gate marker calls on zoom: marker eligibility stays on the `BBOX_MAX_DEG` viewport span in every adapter. OpenStreetMap has no satellite layer, so that tool hides itself there.
 
-Runtime keys do not change the generated code, so never block the build on them. Build the complete service first, then close with a run checklist that names each value the caller still has to set, where it goes, and how to obtain it. Name the exact destination per key: `DATA_MARKETPLACE_API_KEY` goes in the server `.env`, and the map key goes in the browser map config (`js/config.js` in the bundled template). Name the exact key too — `KAKAO_MAP_KEY` for Kakao, `NAVER_MAP_CLIENT_ID` for Naver, none at all for OpenStreetMap. Ask for key values only in that closing message.
+After the composition and map SDK are resolved, runtime keys do not change the selected code shape and must not block implementation. Never switch to OpenStreetMap because a map key is missing. Finish the selected service, then close with a run checklist that names each value the caller still has to set, where it goes, and how to obtain it. Name the exact destination per key: `DATA_MARKETPLACE_API_KEY` goes in the server `.env`, and the map key goes in the browser map config (`js/config.js` in the bundled template). Name the exact key too — `KAKAO_MAP_KEY` for Kakao, `NAVER_MAP_CLIENT_ID` for Naver, none at all for OpenStreetMap. Ask for key values only in that closing message.
 
 Never invent real keys, and inject real values at run time instead of committing them. Which keys you may invite into chat differs by key:
 
