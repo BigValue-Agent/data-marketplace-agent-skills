@@ -1,7 +1,7 @@
 {
   "name": "bigvalue-realestate",
-  "version": "0.1.9",
-  "description": "아파트·오피스텔·연립다세대의 실거래가·AI 산출시세·공시가격 조회와 주거용 부동산 서비스(단지 검색·지도·동·호 상세) 개발을 돕는 부동산 데이터 스킬. Korean residential real-estate data for apartments, officetels & row houses and service codegen on BigValue Data Marketplace.",
+  "version": "0.1.13",
+  "description": "아파트·오피스텔·연립다세대의 거래·가격·입지·주거 구성 진단과 비교·순위, 주거용 부동산 서비스 개발을 돕는 빅밸류 데이터 스킬. Korean residential diagnostics, comparisons, rankings, and service codegen on BigValue Data Marketplace.",
   "author": {
     "name": "BigValue"
   },
@@ -24,8 +24,8 @@
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "빅밸류 부동산 (BigValue Real Estate)",
-    "shortDescription": "부동산 데이터 조회·서비스 개발 스킬 (실거래가·AI 산출시세·공시가격)",
-    "longDescription": "아파트·오피스텔·연립다세대의 실거래가·AI 산출시세·공시가격을 조회하고, 단지 검색·지도·동·호 상세 같은 주거용 부동산 서비스를 만들도록 AI 코드 생성기를 안내하는 스킬입니다. 데이터 연결(MCP)은 첫 사용 때 브라우저 로그인 한 번으로 켜집니다. / Guides AI code generators to query Korean residential real-estate data (apartments, officetels, row houses) and build services on BigValue Data Marketplace; the MCP data connection signs in once via browser OAuth on first use.",
+    "shortDescription": "주거 데이터 진단·비교·순위·서비스 개발 스킬",
+    "longDescription": "아파트·오피스텔·연립다세대의 거래·가격·입지·주거 구성을 질문에 맞게 진단하거나 둘 이상의 대상을 비교·순위화하고, 주거용 부동산 서비스를 만들도록 안내하는 스킬입니다. 데이터 연결(MCP)은 첫 사용 때 브라우저 로그인 한 번으로 켜집니다. / Diagnoses and compares Korean residential data, ranks comparable targets, and guides residential service code generation on BigValue Data Marketplace; the MCP data connection signs in once via browser OAuth on first use.",
     "developerName": "BigValue",
     "category": "Productivity",
     "capabilities": [
@@ -33,8 +33,8 @@
       "Service Code Generation"
     ],
     "defaultPrompt": [
-      "이 아파트의 실거래가·AI 시세·공시가격을 비교해줘",
-      "강남구 아파트를 최근 실거래가 기준으로 순위 내줘",
+      "잠실동 아파트 시장의 단지 구성과 최근 거래 현황을 분석해줘",
+      "리센츠와 헬리오시티의 실거주 여건을 비교해줘",
       "표준형 주거용 부동산 지도 서비스를 만들어줘"
     ]
   }

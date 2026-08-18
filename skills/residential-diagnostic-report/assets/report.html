@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>주거 진단 리포트</title>
+<style>
+:root{
+  --bg:#f4f6f9;--card:#fff;--ink:#191f28;--sub:#6b7684;--faint:#8b95a1;
+  --line:#e5e8eb;--accent:#3182f6;--accent-soft:#e8f1fe;
+  --green:#0ca678;--green-soft:#e6f7f1;--violet:#7048e8;--violet-soft:#f0ebfd;
+  --orange:#b26a00;--orange-soft:#fff1d6;--shadow:0 8px 28px rgba(25,31,40,.06)
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#0e1116;--card:#171b22;--ink:#edf0f3;--sub:#a3adb8;--faint:#7e8995;
+    --line:#2a313a;--accent:#6ba6ff;--accent-soft:#1c2a40;
+    --green:#3ecf9a;--green-soft:#123328;--violet:#a28af5;--violet-soft:#292144;
+    --orange:#e5b84b;--orange-soft:#332a12;--shadow:none
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,
+  "Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  font-size:15px;line-height:1.6}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 56px}
+.block[hidden]{display:none}
+.hero{padding:10px 4px 22px}
+.eyebrow{margin:0 0 5px;color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.04em}
+h1{margin:0;font-size:28px;line-height:1.3;letter-spacing:-.025em}
+.scope{margin:8px 0 0;color:var(--sub);font-size:13px}
+.diagnosis{padding:24px;border-radius:18px;background:var(--card);border:1px solid var(--line);
+  box-shadow:var(--shadow)}
+.diagnosis-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.label{color:var(--sub);font-size:12px;font-weight:700}
+.confidence{padding:3px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent);
+  font-size:11.5px;font-weight:800}
+.diagnosis h2{margin:12px 0 6px;font-size:22px;line-height:1.45;letter-spacing:-.02em}
+.diagnosis p{margin:0;color:var(--sub)}
+.evidence{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}
+.evidence-card{min-height:132px;padding:17px;border-radius:15px;background:var(--card);
+  border:1px solid var(--line);border-top:3px solid var(--accent)}
+.evidence-card.green{border-top-color:var(--green)}
+.evidence-card.violet{border-top-color:var(--violet)}
+.evidence-card.orange{border-top-color:var(--orange)}
+.evidence-label{margin:0;color:var(--sub);font-size:12px;font-weight:700}
+.evidence-value{margin:8px 0 3px;font-size:21px;font-weight:800;line-height:1.35;letter-spacing:-.02em}
+.evidence-note{margin:0;color:var(--faint);font-size:12px}
+.section{margin-top:14px;padding:22px;border-radius:16px;background:var(--card);border:1px solid var(--line)}
+.section h2{margin:0 0 8px;font-size:17px;letter-spacing:-.015em}
+.section-summary{margin:0 0 14px;color:var(--sub)}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 18px;margin:0}
+.fact{padding:10px 0;border-top:1px solid var(--line)}
+.fact dt{color:var(--faint);font-size:12px}
+.fact dd{margin:2px 0 0;font-weight:700}
+.fact small{display:block;margin-top:2px;color:var(--faint);font-size:11.5px;font-weight:400}
+.table-wrap{overflow:auto;margin-top:14px}
+table{width:100%;border-collapse:collapse;white-space:nowrap}
+th{padding:8px 10px;border-bottom:1px solid var(--line);color:var(--faint);font-size:11.5px;
+  font-weight:700;text-align:left}
+td{padding:9px 10px;border-bottom:1px solid var(--line);font-size:13px}
+tbody tr:last-child td{border-bottom:0}
+.foot{margin-top:22px;padding:0 4px}
+.foot h2{margin:0 0 9px;font-size:13px}
+.foot ul{margin:0;padding-left:18px;color:var(--sub);font-size:12.5px}
+.foot li+li{margin-top:4px}
+.sources{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.source{margin:4px 0;color:var(--faint);font-size:11.5px}
+.meta{margin-top:12px;color:var(--faint);font-size:11px}
+@media(max-width:720px){
+  h1{font-size:23px}.evidence{grid-template-columns:1fr}.facts{grid-template-columns:1fr}
+  .diagnosis,.section{padding:18px}.diagnosis h2{font-size:19px}
+}
+@media print{
+  body{background:#fff}.wrap{max-width:none;padding:0}.diagnosis,.section,.evidence-card{box-shadow:none}
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="hero">
+    <p class="eyebrow">주거 진단 리포트</p>
+    <h1 id="title">진단 제목</h1>
+    <p class="scope" id="scope"></p>
+  </header>
+
+  <section class="diagnosis">
+    <div class="diagnosis-top">
+      <span class="label" id="diagnosisLabel">핵심 진단</span>
+      <span class="confidence" id="confidence"></span>
+    </div>
+    <h2 id="headline"></h2>
+    <p id="summary"></p>
+  </section>
+
+  <section class="evidence block" id="evidence" aria-label="핵심 근거"></section>
+  <div id="sections"></div>
+
+  <footer class="foot">
+    <section class="block" id="caveatBlock">
+      <h2>해석할 때 함께 볼 점</h2>
+      <ul id="caveats"></ul>
+    </section>
+    <section class="sources block" id="sourceBlock">
+      <h2>데이터 출처</h2>
+      <div id="sources"></div>
+    </section>
+    <p class="meta" id="meta"></p>
+  </footer>
+</main>
+
+<!--
+  이 JSON 블록에는 실제 조회 결과만 입력한다.
+  evidence와 sections는 질문에 맞게 개수를 늘리거나 비울 수 있다.
+  사용자 화면에는 API 필드명, slug, 내부 식별자, 인증 정보를 넣지 않는다.
+-->
+<script type="application/json" id="dm-report">
+{
+  "title": "",
+  "scope": "",
+  "reference": "",
+  "generatedAt": "",
+  "diagnosis": {
+    "label": "핵심 진단",
+    "headline": "",
+    "summary": "",
+    "confidence": ""
+  },
+  "evidence": [],
+  "sections": [],
+  "caveats": [],
+  "sources": []
+}
+</script>
+
+<script>
+(function(){
+  "use strict";
+  var data;
+  try{data=JSON.parse(document.getElementById("dm-report").textContent)}
+  catch(e){document.getElementById("headline").textContent="리포트 데이터를 읽을 수 없습니다.";return}
+
+  function byId(id){return document.getElementById(id)}
+  function setText(node,value){node.textContent=value==null?"":String(value)}
+  function make(tag,className,text){
+    var node=document.createElement(tag);
+    if(className)node.className=className;
+    if(text!=null)setText(node,text);
+    return node
+  }
+  function hideWhenEmpty(node,items){node.hidden=!Array.isArray(items)||items.length===0}
+
+  document.title=data.title||"주거 진단 리포트";
+  setText(byId("title"),data.title||"주거 진단 리포트");
+  setText(byId("scope"),data.scope||"");
+
+  var diagnosis=data.diagnosis||{};
+  setText(byId("diagnosisLabel"),diagnosis.label||"핵심 진단");
+  setText(byId("confidence"),diagnosis.confidence||"근거 범위 확인");
+  setText(byId("headline"),diagnosis.headline||"확인 가능한 진단이 없습니다.");
+  setText(byId("summary"),diagnosis.summary||"");
+
+  var evidence=Array.isArray(data.evidence)?data.evidence:[];
+  var evidenceRoot=byId("evidence");
+  hideWhenEmpty(evidenceRoot,evidence);
+  evidence.forEach(function(item){
+    var tones={green:"green",violet:"violet",orange:"orange"};
+    var card=make("article","evidence-card "+(tones[item.tone]||""));
+    card.appendChild(make("p","evidence-label",item.label));
+    card.appendChild(make("p","evidence-value",item.value));
+    if(item.note)card.appendChild(make("p","evidence-note",item.note));
+    evidenceRoot.appendChild(card)
+  });
+
+  var sections=Array.isArray(data.sections)?data.sections:[];
+  var sectionRoot=byId("sections");
+  sections.forEach(function(item){
+    var section=make("section","section");
+    section.appendChild(make("h2","",item.title||"세부 분석"));
+    if(item.summary)section.appendChild(make("p","section-summary",item.summary));
+
+    var facts=Array.isArray(item.facts)?item.facts:[];
+    if(facts.length){
+      var dl=make("dl","facts");
+      facts.forEach(function(fact){
+        var wrap=make("div","fact");
+        wrap.appendChild(make("dt","",fact.label));
+        var dd=make("dd","",fact.value);
+        if(fact.note)dd.appendChild(make("small","",fact.note));
+        wrap.appendChild(dd);dl.appendChild(wrap)
+      });
+      section.appendChild(dl)
+    }
+
+    var table=item.table||{},columns=Array.isArray(table.columns)?table.columns:[];
+    var rows=Array.isArray(table.rows)?table.rows:[];
+    if(columns.length&&rows.length){
+      var tableWrap=make("div","table-wrap"),tableEl=make("table",""),thead=make("thead",""),tr=make("tr","");
+      columns.forEach(function(column){tr.appendChild(make("th","",column))});
+      thead.appendChild(tr);tableEl.appendChild(thead);
+      var tbody=make("tbody","");
+      rows.forEach(function(row){
+        var bodyRow=make("tr","");
+        columns.forEach(function(_,index){bodyRow.appendChild(make("td","",Array.isArray(row)?row[index]:""))});
+        tbody.appendChild(bodyRow)
+      });
+      tableEl.appendChild(tbody);tableWrap.appendChild(tableEl);section.appendChild(tableWrap)
+    }
+    sectionRoot.appendChild(section)
+  });
+
+  var caveats=Array.isArray(data.caveats)?data.caveats:[];
+  hideWhenEmpty(byId("caveatBlock"),caveats);
+  caveats.forEach(function(item){byId("caveats").appendChild(make("li","",item))});
+
+  var sources=Array.isArray(data.sources)?data.sources:[];
+  hideWhenEmpty(byId("sourceBlock"),sources);
+  sources.forEach(function(item){
+    var text=[item.name,item.reference,item.note].filter(Boolean).join(" · ");
+    byId("sources").appendChild(make("p","source",text))
+  });
+  setText(byId("meta"),[data.reference,data.generatedAt&&("작성 "+data.generatedAt)].filter(Boolean).join(" · "));
+}());
+</script>
+</body>
+</html>

@@ -2,16 +2,16 @@
 
 [한국어](README.md) | English
 
-A plugin for querying BigValue real-estate data in plain language. Look up **actual transaction prices, AI estimated prices, and official notice prices** for apartments, officetels, and row houses — and build residential service screens when you need them.
+A plugin for querying BigValue real-estate data in plain language. Diagnose or compare transactions, prices, location, and housing composition for apartments, officetels, and row houses — and build residential service screens when you need them.
 
 ## What it does
 
-- **What** — Ask something like "run a price check on this apartment" and the AI pulls BigValue data into a **card comparing transaction, estimated, and official prices**.
+- **What** — Ask about a residential market or complex and the AI selects only the relevant BigValue data to produce an **evidence-backed diagnostic report with clear limits**.
 - **Who** — Anyone who works with real-estate data (PMs, marketers, agents, analysts), plus developers building real-estate services.
 - **How** — Install the plugin once in Claude Code (or Codex/ChatGPT), then just **ask in the chat**. No commands to memorize.
 
 > **Two terms**
-> - **MCP** — a data connector you attach to the AI. This plugin's MCP pulls BigValue's live transaction, estimated, and official prices.
+> - **MCP** — a data connector you attach to the AI. This plugin's MCP pulls the BigValue residential data relevant to the question.
 > - **Skill** — a task playbook telling the AI how to handle a request, so it works step by step like an expert.
 
 ## Install
@@ -29,15 +29,30 @@ Run these commands in order:
 /bigvalue-realestate:setup
 ```
 
-During install, there is nothing to enter. Just ask a question after installing — on your first data question a browser opens, and one Google sign-in turns on the data connection (MCP). The final `setup` checks the connection.
+The plugin registers its MCP server automatically. Select `bigvalue-realestate` in `/mcp` to sign in through your browser, or run the command below in a terminal. The final `setup` checks the connection.
 
-### Option A-2 — Codex · ChatGPT desktop
+```bash
+claude mcp login plugin:bigvalue-realestate:bigvalue-realestate
+```
+
+### Option A-2 — Codex CLI
 
 ```bash
 codex plugin marketplace add BigValue-Agent/data-marketplace-agent-skills
+codex plugin add bigvalue-realestate@bigvalue-agent-skills
 ```
 
-Then install `BigValue Real Estate` from the Plugins Directory in the ChatGPT desktop app (Work mode or Codex). Run `setup` afterward to connect the data (MCP).
+The MCP server is registered with the plugin. Your first data request opens a browser to connect your account.
+
+To connect in advance:
+
+```bash
+codex mcp login bigvalue-realestate
+```
+
+### Option A-3 — ChatGPT desktop
+
+After adding the marketplace, install `BigValue Real Estate` from the Plugins Directory in the ChatGPT desktop app (Work mode or Codex). Your first data request opens a browser to connect your account.
 
 ### Option B — skill only (npx, for tools without plugin support)
 
@@ -53,33 +68,33 @@ If you need the MCP connection, follow the per-tool steps in your onboarding gui
 
 | Skill | What it does | For |
 |---|---|---|
-| **Apartment Price Check** (`apartment-price-check`) | Turns "how much is this apartment?" into a card **comparing transaction, AI estimated, and official prices** (HTML). | Anyone — PMs, marketers, agents |
-| **Region Apartment Ranking** (`region-apartment-ranking`) | Ask "top apartments in this area" and get an HTML card **ranking a region's complexes** by your chosen metric — households, age, subway distance, or recent transaction price. | Anyone — PMs, marketers, agents |
+| **Residential Diagnostic Report** (`residential-diagnostic-report`) | Selects the relevant evidence across transactions, prices, location, and housing composition to **diagnose a complex, region, or residential segment**. | Anyone — PMs, marketers, agents |
+| **Residential Comparison Report** (`residential-comparison-report`) | Uses consistent evidence to **compare or rank** two or more complexes, regions, residential types, area bands, or other coherent targets. | Anyone — PMs, marketers, agents |
 | **Residential Service Codegen** (`data-marketplace-residential-service`) | Guides which data to combine, and in what order, to build **residential services**: complex search, map markers, detail panels, unit drill-down, price screens. | Developers |
 
 ## Usage
 
 After install, just ask in the chat.
 
-**Check a price**
+**Diagnose a residential market or complex**
 
 ```text
-Run a price check on this apartment.
+Analyze the complex mix and recent transaction activity in Jamsil-dong.
 ```
 
-→ You get an HTML card comparing transaction, estimated, and official prices.
+→ You get a report grounded in the relevant live data, with its interpretation limits stated.
 
-![Apartment price check demo](docs/price-check-v2.gif)
+![Residential diagnostic report demo](docs/price-check-v2.gif)
 
-**Rank a region**
+**Compare or rank residential targets**
 
 ```text
-Rank the top apartments in Gangnam.
+Compare the living conditions of Ricenz and Helio City.
 ```
 
-→ You get an HTML card ranking a region's apartments by households, age, subway distance, or recent transaction price.
+→ You get a side-by-side report or, when ranking is appropriate, an ordered table with its criterion stated.
 
-![Region apartment ranking demo](docs/region-ranking-v2.gif)
+![Residential comparison and ranking report demo](docs/region-ranking-v2.gif)
 
 **Build a service**
 
@@ -93,7 +108,7 @@ Build a residential real-estate map service.
 
 ## Data connection & auth
 
-**Most users (price checks and other lookups)**
+**Most users (diagnostics, comparisons, rankings, and other analysis)**
 
 Install the plugin and run `/bigvalue-realestate:setup`, and there is no key to enter. Sign in once via the browser on first use; the client stores and refreshes the login token securely — **no API keys or environment variables to touch.**
 
@@ -105,7 +120,7 @@ Server code generated by the Residential Service Codegen skill calls the BigValu
 export DATA_MARKETPLACE_API_KEY=<your-api-key>
 ```
 
-Per-product filter/field/response snapshots live under the codegen skill's `references/api/`; a newer caller-provided API Reference takes precedence.
+The codegen skill reads `https://datamarket.bigvalue.ai/llms.txt` as the product index and follows only the current filter, field, and response documents needed for the implementation.
 
 ## License
 

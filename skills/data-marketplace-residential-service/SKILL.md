@@ -1,13 +1,15 @@
 ---
 name: data-marketplace-residential-service
-description: "Use when an AI code generator needs to generate Data Marketplace residential real-estate API code or build property service flows: complex search, map markers, profile summaries, scoped realdeal views, building/unit drill-down, unit prices, and safe server-side Data Product API integration."
+description: "Use when the task is to create, extend, modify, debug, or review software for a Korean residential real-estate product, whether described as an app, website, map, dashboard, UI, backend, API integration, or service flow. Do not use when the goal is only to retrieve or summarize live property data."
 ---
 
 # Data Marketplace Residential Service
 
 ## Core Rule
 
-Use this skill as a routing and guardrail map, not as an API manual. The exact product contract lives in the bundled per-product API docs under `references/api/`; a newer caller-provided API Reference takes precedence. Use this skill to decide which product to call first, which key to carry forward, and which code patterns to avoid.
+Use this skill as a routing and guardrail map, not as an API manual. Before writing or validating Data Marketplace API code, read `https://datamarket.bigvalue.ai/llms.txt` as the current product index, select only the products required for the requested feature, and open each matching product Markdown linked from that index. In this skill, "API Reference" means those live product documents. Use this skill to decide which product to call first, which key to carry forward, and which code patterns to avoid.
+
+If the index or a required linked product document is unavailable, stop contract-dependent implementation and name the unavailable URL. Do not infer paths, filters, fields, or limits from memory.
 
 ## Runtime Inputs
 
@@ -54,7 +56,7 @@ If the caller pastes any key anyway, write it to its proper home immediately, ne
 | Open selected complex detail | Detail panel recipe | `references/ui-recipes.md#detail-panel` |
 | Build a price flow | Price scope recipe | `references/ui-recipes.md#price-scope-and-reference-time` |
 | Show building/unit drill-down | Building/unit recipe | `references/ui-recipes.md#building-unit-drilldown` |
-| Validate exact product/filter/field use | API Reference plus minimal schema contract | `references/schema-contract.md` |
+| Validate exact product/filter/field use | Live product API Reference plus minimal schema contract | `references/schema-contract.md` |
 | Verify a generated service before completion | Verification checklist | `references/verification-checklist.md` |
 
 ## Default Flows
@@ -118,7 +120,7 @@ Map:
 These are on-demand lookups, not a mandatory pre-read list; open each file only when its condition applies.
 
 - Read `references/entrypoints.md` before implementing search or map entry code.
-- Read `references/product-routing.md` when selecting products for a feature; then open the matching `references/api/<product>.md` for that product's exact filters, allowed fields, and limits.
+- Read `references/product-routing.md` when selecting products for a feature; first read `https://datamarket.bigvalue.ai/llms.txt`, then open only the matching linked product documents for exact filters, allowed fields, and limits.
 - Read `references/schema-contract.md` when checking public API paths, required filters, bbox support, or risky fields.
 - Read `references/code-patterns.md` when writing API client/helper code.
 - Read `references/pitfalls.md` before finalizing generated code.
@@ -130,7 +132,7 @@ These are on-demand lookups, not a mandatory pre-read list; open each file only 
 
 This is the quick summary; the full completion audit lives in `references/verification-checklist.md`. Before finalizing generated code, verify:
 
-- Exact public API paths, filters, fields, and response fields came from the API Reference.
+- Exact public API paths, filters, fields, and response fields came from product Markdown linked by the live `llms.txt` index during this task.
 - Base URL uses `https://datamarket-api.bigvalue.ai` by default or a server-side override; the API key is read from a server-side environment variable and never appears in generated source or browser code.
 - The build finished without waiting on any key, and the closing message lists each value still to set, where it goes, and how to obtain it.
 - The generated route set matches the chosen composition tier exactly — nothing extra, nothing missing. 기본형 ships no realdeal-history, buildings, units, or unit-price routes. 표준형 keeps buildings and realdeal-history for observed-area price scope but ships no units or unit-price routes. Treat any other leftover surface as a defect, not a bonus.

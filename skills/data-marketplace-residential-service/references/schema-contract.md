@@ -1,6 +1,6 @@
 # Schema Contract
 
-This is a minimal code-generation contract, not the API spec. Use the provided API Reference for exact public API paths, `domain`, `product_slug`, required filters, allowed fields, response fields, and sample requests.
+This is a minimal code-generation contract, not the API spec. Use the live product Markdown selected from `https://datamarket.bigvalue.ai/llms.txt` for exact public API paths, `domain`, `product_slug`, required filters, allowed fields, response fields, and sample requests.
 
 ## Product Fact Boundary
 

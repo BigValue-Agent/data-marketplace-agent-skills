@@ -19,7 +19,7 @@ Use this checklist when verifying a generated residential map, detail, price, or
 ## Source Review Order
 
 1. Read `references/ui-recipes.md` for the service flow.
-2. Read the API Reference for the core products you are wiring first; read realdeal, building/unit, and unit-price contracts when implementing those screens.
+2. Read `https://datamarket.bigvalue.ai/llms.txt`, then open the linked live documents for the core products you are wiring; read realdeal, building/unit, and unit-price contracts only when implementing those screens.
 3. Adapt `assets/map-service/` instead of writing screens from scratch; if the assets are unavailable, follow `references/ui-recipes.md`.
 4. Read `references/code-patterns.md` and `references/pitfalls.md` as needed for the specific code pattern or pitfall in question; re-check pitfalls before finalizing.
 5. Sample verification calls go directly to the Data Marketplace API from server-side code when credentials are available.
