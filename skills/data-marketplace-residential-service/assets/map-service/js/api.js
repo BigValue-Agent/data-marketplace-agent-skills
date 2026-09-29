@@ -4,7 +4,8 @@ window.api = (() => {
 
   // 계약 route — minimum_service_contract의 core/lazy route 문자열과 1:1
   const ROUTES = {
-    search: "/api/complex-search",
+    search: "/api/location-search",
+    regionDetail: "/api/region-detail",
     markers: "/api/markers",
     detail: "/api/complex-detail",
     shape: "/api/complex-shape",
@@ -44,13 +45,24 @@ window.api = (() => {
 
   // ── 상품별 래퍼 ──────────────────────────────────────────
 
-  // 1. 단지 검색 (자동완성)
-  async function searchComplex(name, { signal } = {}) {
+  // 1. 지역·단지 통합검색 (자동완성, 지역 5건 + 단지 15건 고정 후보)
+  async function searchLocation(queryText, { scope = "all", signal } = {}) {
     const r = await query(ROUTES.search, {
-      filters: { complex_name: name },
-      limit: 10,
+      filters: { query_text: queryText, result_scope: scope },
+      limit: 20,
     }, { signal, useCache: false });
     return r.data;
+  }
+
+  // 검색 결과가 실제 경계를 가진 법정동일 때만 호출한다. 같은 응답의 아파트
+  // 단지 수를 선택 지역 핀에 함께 표시하며, 이를 위한 별도 호출은 만들지 않는다.
+  async function regionDetail(legaldongCode, { signal } = {}) {
+    const r = await query(ROUTES.regionDetail, {
+      filters: { legaldong_code: legaldongCode },
+      fields: ["legaldong_code", "polygon_geojson", "apartment_complex_count"],
+      limit: 1,
+    }, { signal });
+    return r.data[0] || null;
   }
 
   // 2. 단지 프로필
@@ -93,7 +105,7 @@ window.api = (() => {
   async function complexShape(complexKey) {
     const r = await query(ROUTES.shape, {
       filters: { complex_key: complexKey },
-      limit: 5,
+      limit: 1,
     });
     return r.data[0] || null;
   }
@@ -147,8 +159,16 @@ window.api = (() => {
     if (residentialType) filters.residential_type = residentialType;
     if (dateFrom) filters.date_from = dateFrom;
     if (dateTo) filters.date_to = dateTo;
-    if (areaMin != null) filters.private_area_min = areaMin;
-    if (areaMax != null) filters.private_area_max = areaMax;
+    // 응답 면적은 소수 둘째 자리지만 필터는 더 정밀한 원값에 적용된다. 정확 면적
+    // 선택은 표시 단위(0.01㎡)의 반 간격으로 감싸 같은 표시 면적의 거래를 조회한다.
+    const exactArea = areaMin != null && areaMax != null && areaMin === areaMax;
+    const areaHalfStep = 0.005;
+    if (areaMin != null) filters.private_area_min = exactArea
+      ? Math.max(0, Number((areaMin - areaHalfStep).toFixed(3)))
+      : areaMin;
+    if (areaMax != null) filters.private_area_max = exactArea
+      ? Number((areaMax + areaHalfStep).toFixed(3))
+      : areaMax;
     const r = await query(ROUTES.realdeal, {
       filters,
       sort: { field: sortField, order: sortOrder },
@@ -172,7 +192,7 @@ window.api = (() => {
   }
 
   return {
-    searchComplex, complexProfile, markers, nearbyMarkers, complexShape, buildings, units,
+    searchLocation, regionDetail, complexProfile, markers, nearbyMarkers, complexShape, buildings, units,
     noticePricesByJpk, realdealPage,
     estimatesByJpk,
   };

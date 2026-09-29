@@ -17,7 +17,7 @@
 <div id="map-fallback" class="map-fallback" hidden>
   <div class="map-fallback-box">
     <strong>지도를 불러오지 못했어요</strong>
-    <p>카카오맵 연결을 확인한 뒤 다시 시도해 주세요.<br/>지도 없이도 검색으로 단지 정보를 볼 수 있어요.</p>
+    <p>지도 연결을 확인한 뒤 다시 시도해 주세요.<br/>지도 없이도 검색으로 단지 정보를 볼 수 있어요.</p>
     <button type="button" id="map-retry" class="btn-ghost">다시 불러오기</button>
   </div>
 </div>
@@ -30,18 +30,20 @@
     </a>
     <span class="brand-tag" id="brand-tag">단지 정보와 가격 흐름을 한눈에</span>
   </div>
-  <div class="search-box" role="combobox" aria-expanded="false" aria-haspopup="listbox" id="search-combo">
+  <div class="search-box" id="search-combo">
     <svg class="search-icon" viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="6" fill="none" stroke="currentColor" stroke-width="2"/><line x1="13.5" y1="13.5" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-    <input id="search-input" type="text" placeholder="단지명으로 검색 (예: 헬리오시티)"
-           autocomplete="off" spellcheck="false" aria-label="단지명 검색" />
+    <input id="search-input" type="text" placeholder="지역 또는 단지명 검색 (예: 가락동, 헬리오시티)"
+           autocomplete="off" spellcheck="false" aria-label="지역 또는 단지 검색"
+           role="combobox" aria-autocomplete="list" aria-haspopup="listbox"
+           aria-expanded="false" aria-controls="search-results" />
     <button type="button" id="search-clear" class="search-clear" hidden aria-label="검색어 지우기">×</button>
   </div>
   <ul id="search-results" class="search-results" role="listbox" hidden></ul>
   <div class="type-seg" role="group" aria-label="주거유형 필터">
-    <button type="button" class="seg-btn is-on" data-type="아파트">아파트</button>
-    <button type="button" class="seg-btn" data-type="오피스텔">오피스텔</button>
-    <button type="button" class="seg-btn" data-type="연립다세대">연립·다세대</button>
-    <button type="button" class="seg-btn" data-type="전체">전체</button>
+    <button type="button" class="seg-btn is-on" data-type="아파트" aria-pressed="true">아파트</button>
+    <button type="button" class="seg-btn" data-type="오피스텔" aria-pressed="false">오피스텔</button>
+    <button type="button" class="seg-btn" data-type="연립다세대" aria-pressed="false">연립·다세대</button>
+    <button type="button" class="seg-btn" data-type="전체" aria-pressed="false">전체</button>
   </div>
 </header>
 
@@ -83,7 +85,7 @@
 <script src="js/chart.js"></script>
 <script src="js/map.js"></script>
 <script src="js/panel-price.js"></script>
-<script src="js/panel-units.js"></script><!-- 표준형 가격 평형 선택 + 완성형 동·호 — 기본형 절삭 대상 (README 규칙 10) -->
+<script src="js/panel-units.js"></script><!-- 완성형 전용 동·호 — 표준형·기본형 절삭 대상 (README 규칙 10) -->
 <script src="js/panel.js"></script>
 <script src="js/app.js"></script>
 </body>

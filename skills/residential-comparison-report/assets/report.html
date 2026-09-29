@@ -6,14 +6,15 @@
 <title>주거 비교 리포트</title>
 <style>
 :root{
-  --bg:#f4f6f9;--card:#fff;--ink:#191f28;--sub:#6b7684;--faint:#8b95a1;
-  --line:#e5e8eb;--accent:#3182f6;--accent-soft:#e8f1fe;
+  --bg:#f4f6f9;--card:#fff;--ink:#191f28;--sub:#596575;--faint:#66707d;
+  --line:#e5e8eb;--accent:#3182f6;--accent-text:#205bc7;--accent-soft:#e8f1fe;
   --green:#0ca678;--violet:#7048e8;--orange:#b26a00;--shadow:0 8px 28px rgba(25,31,40,.06)
 }
-@media(prefers-color-scheme:dark){
+/* 다크 색상은 화면에만 적용하고, 인쇄는 기본 밝은 테마의 글자색을 유지한다. */
+@media screen and (prefers-color-scheme:dark){
   :root{
     --bg:#0e1116;--card:#171b22;--ink:#edf0f3;--sub:#a3adb8;--faint:#7e8995;
-    --line:#2a313a;--accent:#6ba6ff;--accent-soft:#1c2a40;
+    --line:#2a313a;--accent:#6ba6ff;--accent-text:var(--accent);--accent-soft:#1c2a40;
     --green:#3ecf9a;--violet:#a28af5;--orange:#e5b84b;--shadow:none
   }
 }
@@ -25,7 +26,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,Bl
 .wrap{max-width:960px;margin:0 auto;padding:24px 16px 56px}
 .block[hidden]{display:none}
 .hero{padding:10px 4px 18px}
-.eyebrow{margin:0 0 5px;color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.04em}
+.eyebrow{margin:0 0 5px;color:var(--accent-text);font-size:12px;font-weight:800;letter-spacing:.04em}
 h1{margin:0;font-size:28px;line-height:1.3;letter-spacing:-.025em}
 .scope{margin:8px 0 0;color:var(--sub);font-size:13px}
 .subjects{display:flex;flex-wrap:wrap;gap:8px;margin:0 4px 14px}
@@ -72,7 +73,8 @@ tbody tr:last-child td{border-bottom:0}
   .conclusion,.section{padding:18px}.conclusion h2{font-size:19px}.subject{flex:1 1 140px}
 }
 @media print{
-  body{background:#fff}.wrap{max-width:none;padding:0}.conclusion,.section,.highlight{box-shadow:none}
+  :root{--bg:#fff;--card:#fff}
+  .wrap{max-width:none;padding:0}.conclusion,.section,.highlight{box-shadow:none}
 }
 </style>
 </head>

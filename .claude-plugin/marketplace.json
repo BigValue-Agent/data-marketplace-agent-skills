@@ -8,7 +8,7 @@
     {
       "name": "bigvalue-realestate",
       "source": "./",
-      "description": "아파트·오피스텔·연립다세대의 거래·가격·입지·주거 구성 진단과 비교·순위, 주거용 부동산 서비스 개발을 돕는 빅밸류 데이터 스킬·MCP 도구. Korean residential diagnostics, comparisons, rankings, and service codegen on BigValue Data Marketplace.",
+      "description": "아파트·오피스텔·연립다세대의 조건별 단지 탐색, 주거 데이터 진단·비교·순위, 부동산 서비스 개발을 돕는 빅밸류 데이터 스킬·MCP 도구. Korean residential complex discovery, diagnostics, comparisons, rankings, and service codegen on BigValue Data Marketplace.",
       "category": "productivity",
       "tags": ["부동산", "아파트", "오피스텔", "연립다세대", "실거래가", "시세", "공시가격", "real-estate", "data-marketplace", "codegen", "korea"]
     }

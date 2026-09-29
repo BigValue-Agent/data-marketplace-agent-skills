@@ -1,6 +1,6 @@
 ---
 name: residential-comparison-report
-description: "Use when the user wants an evidence-backed comparison, ranking, prioritization, or choice among two or more Korean residential complexes, regions, housing types, area bands, units, or other coherent targets using BigValue data—even when phrased casually as which is better, where stands out, or what should come first. Do not use for a simple one-fact lookup, a single-target diagnosis whose main goal is understanding its state, or application/API code generation."
+description: "Use when the user wants an evidence-backed comparison, ranking, prioritization, or choice among two or more established Korean residential complexes, regions, housing types, area bands, units, or other coherent targets using BigValue data—even when phrased casually as which is better, where stands out, or what should come first. When the main goal is discovering complexes in a region or filtering a pool by requirements, use residential-complex-finder first. Do not use for a simple one-fact lookup, a single-target diagnosis whose main goal is understanding its state, or application/API code generation."
 ---
 
 # Residential Comparison Report
@@ -8,12 +8,21 @@ description: "Use when the user wants an evidence-backed comparison, ranking, pr
 빅밸류 데이터에서 질문에 필요한 근거만 골라 한국 주거 부동산 대상을 같은 기준으로
 비교하거나 순위화한다. 특정 지역·주거 유형·순위 지표나 정해진 상품 조합을 전제로 하지 않는다.
 
+지역에서 조건에 맞는 단지를 새로 찾거나 주어진 후보를 조건으로 걸러 내는 것이 주목적이면
+`residential-complex-finder`가 먼저다. ‘찾아서 비교’는 탐색 결과를 재사용해 비교한다.
+지역 자체의 시장 비교나 이미 정한 대상 집합의 순위는 이 스킬에 포함된다.
+
 ## 결과 원칙
 
 - 사용자가 원하는 선택이나 비교 목적이 먼저 읽히는 한국어 리포트를 작성한다.
 - 별도 형식 요청이 없으면 핵심 결론, 비교표, 해석 한계가 읽히는 간결한 Markdown으로 답한다.
 - HTML 카드나 파일형 리포트가 필요하면 `assets/report.html`을 사용한다. 실제 근거가 있는
   대상과 섹션만 넣는다.
+- 같은 수치를 핵심 카드·표·본문에 반복하지 말고 가장 빨리 비교할 수 있는 표현 하나를 고른다.
+  선택을 바꾸지 않는 공통점이나 실행 과정은 별도 섹션으로 확장하지 않는다.
+- 수집·계산·제외 처리는 내부에서 검증한다. 사용자 본문에는 선택을 바꾸는 근거와 한계만
+  한 번씩 쓰고, 페이지 수·필터 적용·반환 행 같은 실행 과정은 근거 파일이나 기술 부록으로
+  분리한다.
 - 비교 기준과 방향을 붙인다. 값의 높고 낮음 자체를 우위로 보지 말고, 관측 차이와 사용
   목적에 따른 유리함을 구분한다. 기준 없는 `최고`, `대장`, `가장 좋음`을 데이터 사실처럼
   단정하지 않는다.
@@ -46,18 +55,26 @@ description: "Use when the user wants an evidence-backed comparison, ranking, pr
    개념을 맞춘다. 맞출 수 없는 값은 별도 축으로 설명하거나 해당 순위에서 제외하고 이유를
    적는다.
 6. **필요한 범위를 모은다.** 전체 집합의 순위·합계·분포를 주장하려면 지원 범위 안에서
-   페이지를 끝까지 수집한다. 일부만 썼다면 `상위 N개`, `조회된 N건`, `선정 표본`처럼
-   결과 범위를 낮춘다.
+   페이지를 끝까지 수집한다. 일부만 썼다면 `조회된 N건`, `선정 표본`처럼 결과 범위를 낮춘다.
+   `상위 N개`는 미조회 대상이 그 결과를 앞설 수 없다는 정렬 근거가 있을 때만 사용한다.
 7. **결과를 쓴다.** 먼저 비교 기준과 결론을 밝히고, 대상별 근거와 차이, 반대 신호 또는
-   한계를 함께 제시한다. 데이터가 지원하지 않는 미래 전망·선호도·인과관계는 만들지 않는다.
+   한계를 필요한 곳에 한 번씩 제시한다. 사용한 데이터 출처와 기준시점을 밝히고, 데이터가
+   지원하지 않는 미래 전망·선호도·인과관계는 만들지 않는다.
+   원 단위로 확인한 금액은 [scripts/format_money.py](scripts/format_money.py)의
+   `format_money(value)`로 표시한다. 생성 코드에서 이 파일을 복사해 import하거나 CLI로
+   실행한다. 계약 금액은 기본값으로 보존하고, 평균 등을 반올림할 때만 `round_to`(원)를
+   지정해 표시 정밀도를 밝힌다. 판정·집계는 원값으로 하고 HTML·Markdown·요약에는 같은
+   변환 결과를 재사용한다. Python 실행이 불가능하면 단위를 재조합하지 않고 원 단위로 표시한다.
 
 대표 비교 조합과 계산 힌트가 필요할 때만 `references/comparison-patterns.md`를 읽는다. 이
-파일의 다섯 사례는 선택 가능한 패턴이며 고정 호출 순서가 아니다.
+파일의 사례는 선택 가능한 패턴이며 고정 호출 순서가 아니다.
 
 ## 반드시 지킬 데이터 의미
 
 - 비교 대상마다 같은 기준월을 우선한다. 기준시점이 다르면 각 시점을 표시하고 변화율이나
   동일 시점 순위를 만들지 않는다.
+  기준월·조회일과 실제 집계 기간을 구분하고, 기간 통계에는 시작과 끝을 표시한다.
+  요약 통계는 상품의 기간 정의를, 개별 거래 집계는 실제 사용한 기간을 따른다.
 - 사용자가 지정한 공간 수준을 유지한다. 동·읍·면·리는 검색 결과의 10자리 `legaldong_code`를
   쓰고, 시군구 전체를 요청한 경우에만 앞 5자리 `legaldong_code_prefix`를 쓴다. 이름이
   같은 다른 시·도를 섞거나 지정한 동을 시군구로 넓히지 않는다.
@@ -65,29 +82,16 @@ description: "Use when the user wants an evidence-backed comparison, ranking, pr
   취소 거래는 유효 거래 통계에서 제외한다.
 - 단지 상세의 최근 6개월 평균 실거래가는 여러 면적이 섞인 단지 전체 평균이다. 특정 평형
   가격이나 평당가로 바꾸지 않는다.
-- 실거래 면적은 조회 기간에 계약이 관측된 면적이다. 평형 재고·구성·주력 면적을 말하려면
-  건물의 `units_summary`를 사용하고 실거래 범위에서 확대 추정하지 않는다.
+- 실거래 면적은 조회 기간에 계약이 관측된 면적이다. 단지 전체 평형별 수량·구성비 비교는
+  제공하지 않으며, 이를 복원하려고 전체 호실을 열거하거나 거래에서 주택 구성을 추정하지 않는다.
 - 산출시세는 최신 월 스냅샷, 공시가격은 연간 공시 기준값, 실거래는 과거 계약이다. 세 가격을
   합산해 하나의 점수나 정답 가격으로 만들지 않는다.
-- 평형 구성비는 각 대상의 `units_summary` 내부 수량 합계를 분모로 계산한다. 단지 프로필의
-  세대수·호수와 같다고 가정하지 않는다.
 - 거리값은 상품이 정의한 접근성 지표다. 도보시간·통학 안전·상권 품질·생활 만족도 점수로
   바꾸지 않는다.
 - 결측값은 0이나 최하위가 아니다. 결측 대상은 별도로 표시하고 순위 포함 여부를 설명한다.
+  데이터의 부재나 한계도 상품 정의·조회 범위·실제 응답으로 확인한다. 조회하지 않음,
+  제공되지 않음, 일부 결측, 분석에서 미사용을 구분하고 일부 결측을 전체 부재로 설명하지 않는다.
 - 화면에 API slug, 영문 필드명, 내부 식별자, 인증 정보를 노출하지 않는다.
-
-## 리포트 구성
-
-질문에 맞는 항목만 사용한다.
-
-1. 비교 대상·범위·기준시점
-2. 비교 기준과 핵심 결론
-3. 대상별 핵심 근거 또는 순위표
-4. 항목별 차이와 상충 관계
-5. 해석 한계와 데이터 공백
-6. 사용한 빅밸류 데이터 출처와 각 기준시점
-
-긴 호출 과정이나 사용하지 않은 상품 설명은 사용자 화면에 넣지 않는다.
 
 ## 완료 전 확인
 
@@ -96,4 +100,4 @@ description: "Use when the user wants an evidence-backed comparison, ranking, pr
   개념으로 비교됐는가? 범위 밖 행은 집계에서 제외하고 계약 이상을 밝혔는가?
 - 임의 가중치, 가짜 평균, 결측값 0 처리로 순위를 만들지 않았는가?
 - 전체·상위 일부·표본을 구분하고 동률과 결측을 필요한 곳에 표시했는가?
-- 다섯 예시나 특정 지역 순위 흐름을 모든 비교 요청에 강제하지 않았는가?
+- 예시나 특정 지역 순위 흐름을 모든 비교 요청에 강제하지 않았는가?

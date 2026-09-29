@@ -15,11 +15,11 @@
     try {
       await window.mapCtl.init({
         onMarkerClick: (row) => {
-          // 마커 row grain은 complex_key + residential_type — 주상복합에서 클릭한 유형이
-          // 프로필 대표 유형에 덮이지 않도록 유형을 함께 넘긴다.
+          // 마커는 complex_key당 한 행이며 residential_type은 대표 유형이다.
           window.panel.open(row.complex_key, row.residential_type);
-          window.mapCtl.select(row.complex_key);
         },
+        onRegionOverview: () => window.panel.close(),
+        onSelectionCleared: () => window.panel.close(),
       });
     } catch (e) {
       console.error(e);
@@ -34,112 +34,224 @@
   const resultsEl = document.getElementById("search-results");
   const clearBtn = document.getElementById("search-clear");
   const combo = document.getElementById("search-combo");
+  const searchRequest = window.asyncPolicy.latestRequest();
   let searchTimer = null;
   let searchAbort = null;
   let items = [];
   let activeIdx = -1;
+  let pickGeneration = 0;
+  let regionAbort = null;
+
+  const SEARCH_GROUPS = [
+    { type: "region", id: "search-group-region", label: "지역" },
+    { type: "complex", id: "search-group-complex", label: "단지" },
+  ];
+
+  function invalidateSearch() {
+    clearTimeout(searchTimer);
+    searchAbort?.abort();
+    searchAbort = null;
+    searchRequest.next();
+  }
+
+  function currentOptions() {
+    return [...resultsEl.querySelectorAll('[role="option"][data-i]')];
+  }
 
   input.addEventListener("input", () => {
     clearBtn.hidden = input.value.length === 0;
-    clearTimeout(searchTimer);
+    invalidateSearch();
+    items = [];
+    hideResults();
     const q = input.value.trim();
-    if (q.length < 2) { hideResults(); return; }
+    if (q.length < 2) return;
     searchTimer = setTimeout(() => runSearch(q), 250);
   });
 
   async function runSearch(q) {
-    if (searchAbort) searchAbort.abort();
-    searchAbort = new AbortController();
+    const sequence = searchRequest.next();
+    const controller = new AbortController();
+    searchAbort = controller;
     try {
-      items = await window.api.searchComplex(q, { signal: searchAbort.signal });
+      const rows = await window.api.searchLocation(q, { signal: controller.signal });
+      if (!searchRequest.isCurrent(sequence) || input.value.trim() !== q) return;
+      items = SEARCH_GROUPS.flatMap(({ type }) => rows.filter((row) => row.result_type === type));
       renderResults(q);
     } catch (e) {
-      if (e.name === "AbortError") return;
+      if (e.name === "AbortError" || !searchRequest.isCurrent(sequence)) return;
       console.error(e);
       items = [];
-      resultsEl.innerHTML = `<li class="sr-empty">검색 중 오류가 났어요. 잠시 후 다시 시도해 주세요.</li>`;
+      resultsEl.innerHTML = `<li class="sr-empty" role="none">검색 중 오류가 났어요. 잠시 후 다시 시도해 주세요.</li>`;
       resultsEl.hidden = false;
+      input.setAttribute("aria-expanded", "true");
+    } finally {
+      if (searchAbort === controller) searchAbort = null;
     }
   }
 
   function renderResults(q) {
     activeIdx = -1;
     if (!items.length) {
-      resultsEl.innerHTML = `<li class="sr-empty">"${F.esc(q)}" 단지를 찾지 못했어요. 단지명을 다시 확인해 주세요.</li>`;
+      resultsEl.innerHTML = `<li class="sr-empty" role="none">"${F.esc(q)}" 지역이나 단지를 찾지 못했어요.</li>`;
       resultsEl.hidden = false;
-      combo.setAttribute("aria-expanded", "true");
+      input.setAttribute("aria-expanded", "true");
       return;
     }
-    const TYPE_BADGE = {
+    const RESIDENTIAL_BADGE = {
       "연립다세대": { cls: " villa", label: "연립" },
       "오피스텔": { cls: " officetel", label: "오피스텔" },
+      "아파트": { cls: "", label: "아파트" },
     };
-    resultsEl.innerHTML = items.map((it, i) => {
-      const badge = TYPE_BADGE[it.residential_type] || { cls: "", label: it.residential_type || "아파트" };
-      const name = F.esc(it.complex_name).replace(
-        new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"), "<mark>$1</mark>");
-      return `<li role="option" data-i="${i}">
-        <span class="sr-type${badge.cls}">${badge.label}</span>
-        <div class="sr-main">
-          <div class="sr-name">${name}</div>
-          <div class="sr-addr">${F.esc(it.display_address || "")}</div>
-        </div>
+    let index = 0;
+    resultsEl.innerHTML = SEARCH_GROUPS.map((group) => {
+      const groupItems = items.filter((item) => item.result_type === group.type);
+      if (!groupItems.length) return "";
+      const options = groupItems.map((item) => {
+        const itemIndex = index++;
+        const badge = item.result_type === "region"
+          ? { cls: " region", label: "지역" }
+          : RESIDENTIAL_BADGE[item.residential_type] || { cls: "", label: item.residential_type || "단지" };
+        const name = F.esc(item.title).replace(
+          new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"), "<mark>$1</mark>");
+        return `<li id="search-option-${itemIndex}" role="option" aria-selected="false" data-i="${itemIndex}">
+          <span class="sr-type${badge.cls}">${F.esc(badge.label)}</span>
+          <div class="sr-main">
+            <div class="sr-name">${name}</div>
+            <div class="sr-addr">${F.esc(item.subtitle || "")}</div>
+          </div>
+        </li>`;
+      }).join("");
+      return `<li class="sr-group" role="group" aria-labelledby="${group.id}">
+        <div class="sr-group-title" id="${group.id}">${group.label}</div>
+        <ul class="sr-options" role="presentation">${options}</ul>
       </li>`;
     }).join("");
     resultsEl.hidden = false;
-    combo.setAttribute("aria-expanded", "true");
-    resultsEl.querySelectorAll("li[data-i]").forEach((li) => {
+    input.setAttribute("aria-expanded", "true");
+    currentOptions().forEach((li) => {
       li.addEventListener("click", () => pick(+li.dataset.i));
     });
   }
 
+  function setActiveOption(index) {
+    activeIdx = index;
+    const options = currentOptions();
+    options.forEach((option, optionIndex) => {
+      const active = optionIndex === activeIdx;
+      option.classList.toggle("is-active", active);
+      option.setAttribute("aria-selected", String(active));
+    });
+    const activeOption = options[activeIdx];
+    if (activeOption) {
+      input.setAttribute("aria-activedescendant", activeOption.id);
+      activeOption.scrollIntoView({ block: "nearest" });
+    } else {
+      input.removeAttribute("aria-activedescendant");
+    }
+  }
+
   function hideResults() {
     resultsEl.hidden = true;
-    combo.setAttribute("aria-expanded", "false");
+    input.setAttribute("aria-expanded", "false");
+    input.removeAttribute("aria-activedescendant");
     activeIdx = -1;
   }
 
-  function pick(i) {
+  async function pick(i) {
     const it = items[i];
     if (!it) return;
-    input.value = it.complex_name;
+    invalidateSearch();
+    regionAbort?.abort();
+    regionAbort = null;
+    const generation = ++pickGeneration;
+    input.value = it.title;
     hideResults();
+
+    if (it.result_type === "region") {
+      window.panel.close();
+      window.mapCtl.enterRegionOverview({
+        lat: it.latitude,
+        lng: it.longitude,
+        title: it.title,
+        bbox: {
+          min_lat: it.bbox_min_lat,
+          max_lat: it.bbox_max_lat,
+          min_lng: it.bbox_min_lng,
+          max_lng: it.bbox_max_lng,
+        },
+      });
+
+      if (it.polygon_available) {
+        const controller = new AbortController();
+        regionAbort = controller;
+        try {
+          const detail = await window.api.regionDetail(it.result_key, { signal: controller.signal });
+          if (generation !== pickGeneration) return;
+          if (detail?.polygon_geojson) window.mapCtl.showRegionPolygon(detail.polygon_geojson);
+          if (Number.isInteger(detail?.apartment_complex_count)) {
+            window.mapCtl.showRegionPin(it.latitude, it.longitude, it.title, detail.apartment_complex_count);
+          }
+        } catch (e) {
+          if (e.name === "AbortError") return;
+          console.error(e);
+        } finally {
+          if (regionAbort === controller) regionAbort = null;
+        }
+      }
+      return;
+    }
+
+    window.mapCtl.enterComplexViewport();
+    window.mapCtl.clearSelection();
     if (it.latitude != null && it.longitude != null) {
       window.mapCtl.focusOn(it.latitude, it.longitude, "complex");
     }
-    window.panel.open(it.complex_key, it.residential_type);
-    window.mapCtl.select(it.complex_key);
+    window.panel.open(it.result_key, it.residential_type);
   }
 
   input.addEventListener("keydown", (e) => {
+    if (e.isComposing) return;
+    if (e.key === "Escape") {
+      invalidateSearch();
+      items = [];
+      hideResults();
+      return;
+    }
     if (resultsEl.hidden) return;
     const n = items.length;
-    if (e.key === "ArrowDown") { e.preventDefault(); activeIdx = (activeIdx + 1) % n; }
-    else if (e.key === "ArrowUp") { e.preventDefault(); activeIdx = (activeIdx - 1 + n) % n; }
-    else if (e.key === "Enter") { e.preventDefault(); pick(activeIdx >= 0 ? activeIdx : 0); return; }
-    else if (e.key === "Escape") { hideResults(); return; }
+    if (!n) return;
+    if (e.key === "ArrowDown") { e.preventDefault(); setActiveOption((activeIdx + 1) % n); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setActiveOption((activeIdx - 1 + n) % n); }
+    else if (e.key === "Enter" && activeIdx >= 0) { e.preventDefault(); pick(activeIdx); return; }
     else return;
-    resultsEl.querySelectorAll("li[data-i]").forEach((li, i) =>
-      li.classList.toggle("is-active", i === activeIdx));
-    resultsEl.querySelector("li.is-active")?.scrollIntoView({ block: "nearest" });
   });
 
   clearBtn.addEventListener("click", () => {
+    invalidateSearch();
     input.value = "";
+    items = [];
     clearBtn.hidden = true;
     hideResults();
     input.focus();
   });
 
   document.addEventListener("click", (e) => {
-    if (!combo.contains(e.target) && !resultsEl.contains(e.target)) hideResults();
+    if (!combo.contains(e.target) && !resultsEl.contains(e.target)) {
+      invalidateSearch();
+      hideResults();
+    }
   });
 
   // ── 주거유형 필터 ────────────────────────────
-  document.querySelectorAll(".type-seg .seg-btn").forEach((btn) => {
+  const typeButtons = [...document.querySelectorAll(".type-seg .seg-btn")];
+  typeButtons.forEach((btn) => {
+    btn.setAttribute("aria-pressed", String(btn.classList.contains("is-on")));
     btn.addEventListener("click", () => {
-      document.querySelectorAll(".type-seg .seg-btn").forEach((b) =>
-        b.classList.toggle("is-on", b === btn));
+      typeButtons.forEach((b) => {
+        const selected = b === btn;
+        b.classList.toggle("is-on", selected);
+        b.setAttribute("aria-pressed", String(selected));
+      });
       window.mapCtl.setTypeFilter(btn.dataset.type);
     });
   });

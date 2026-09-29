@@ -14,7 +14,7 @@ Rows are grouped by theme: paths/keys → bbox/markers → sort/pagination → p
 | Treating `response.json()` as rows | Responses are wrapped | Read rows from `result.data` |
 | Flattening bbox into URL params | Bbox is a top-level JSON Body object | Send `body.bbox` with all four bbox values |
 | Using bbox on every product | Only some products support bbox | Check schema contract or API Reference |
-| Sending a bbox wider than 0.1 degrees per axis | The API caps bbox spans at 0.1 degrees per axis | Validate the span first and render a zoom-in guide for wide viewports |
+| Sending a marker bbox wider than 0.1 degrees per axis | The marker product caps bbox spans at 0.1 degrees per axis; legal-dong queries do not | Validate marker spans and render a zoom-in guide for wide viewports |
 | Using realdeal as base map coverage | Realdeal is transaction data, not complete marker coverage | Use residential type markers |
 | Paging markers with offset when `has_next` is true | `complex-type-markers` does not support offset; dense viewports truncate outward from the bbox center | Zoom in or shrink the map area, then re-call markers |
 | Treating marker price bubble labels as guaranteed | `recent_month6_average_realdeal_price` and similar fields can be sparse | Provide fallback label text (name, household count) when price fields are null |
@@ -22,18 +22,18 @@ Rows are grouped by theme: paths/keys → bbox/markers → sort/pagination → p
 | Relying on server default ordering for list tabs | Generated routes should be explicit and stable | Send the documented sort explicitly (e.g., `contract_date desc` for realdeal) |
 | Assuming every product uses the same `limit`/`offset` range | Pagination support and caps differ by product | Read the product-specific pagination rule from the API Reference |
 | Fetching all list rows on initial render | Large residential lists can be slow and request-heavy | Load the first page with documented pagination, then continue only when the UI asks for more |
-| Building area options from one `unit_details` page | Large complexes return only the first page, often sorted by area | Paginate, or derive area options from the product that matches the UI purpose |
+| Presenting loaded transaction areas as housing composition | Transaction rows do not count the complex’s housing stock | Label them as observed transaction-area filters; do not reconstruct a whole-complex unit summary |
 | Reading lease value from `price` | Lease rows may use `deposit_price` | Branch by transaction type |
 | Converting `price_min`/`price_max` or `deposit_min`/`deposit_max` to 만원 | Filters compare directly against KRW price columns | Send filter values in KRW, the same unit as response price fields |
 | Inventing `date_from`/`date_to` when the user did not specify a period | Fabricated date windows silently exclude real transactions | Omit date filters unless the user provides a period; use the documented sort for "latest rows" requests |
-| Rebuilding a whole-complex summary from detail rows | Realdeal and unit-price products are paged and can be truncated | Use matching-type profile `recent_month6_*` fields for the default summary |
+| Rebuilding a whole-complex summary from detail rows | Realdeal and unit-price products are paged and can be truncated | Use profile `recent_month6_*` only as the whole-complex summary; in a type-filtered view, require the selected type to match representative `residential_type` |
 | Treating `estimated-prices` as a complex/pyeong representative price | It returns unit-level detail rows | Show the selected unit's value after `ppk + jpk` is known |
-| Widening a selected pyeong silently | The value and label describe different populations | Keep the selected-area view unavailable; use whole-complex realdeal only when no pyeong information exists |
+| Widening a selected private area to another area or mixed rows | The value and label describe different populations | Keep an empty selected-area result empty. Mapping a displayed two-decimal area to its documented ±0.005㎡ bin is precision handling, not population widening |
 | Deriving a realdeal period from the browser date | Monthly product snapshots age independently of today | Anchor presets to profile `standard_ym` |
 | Showing one unit's grade as a complex grade | Grade belongs to the selected unit row | Show it only in the selected-unit detail |
-| Treating one snapshot as a trend | No time comparison exists | Display the returned standard year-month as current evidence |
+| Treating one snapshot as a trend | No time comparison exists | Display the returned notice year or estimated-price year-month as current evidence |
 | Turning raw distance into walking time | No route, entrance, or crossing data exists | Display distance only |
 | Trusting every numeric/GeoJSON value | Extreme values distort UI and unsupported shapes can throw | Apply the shared display policy, show `확인 필요`, and keep non-boundary UI usable |
 | Assuming `polygon_geojson` always exists | Some complexes have no shape row | Use representative coordinate fallback |
-| Assuming `pyeong_type_name` always exists on units, notice-price, or estimated-price rows | Row houses carry no pyeong label | Display numeric area fields safely |
+| Reading supply pyeong fields from notice-price or estimated-price rows | Those price products no longer enrich pyeong labels from units | Join the selected `jpk` to unit details when the label is required |
 | Reusing one validation rule across price products | Realdeal, notice, and estimated-price products accept different required keys and filters | Split validation per product |

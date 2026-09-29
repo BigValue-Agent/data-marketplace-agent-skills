@@ -67,14 +67,10 @@ window.mapAdapter = (() => {
     return "dot";
   }
 
-  function isDongLabelVisible() {
-    return map.getZoom() >= Z.DONG_LABEL;
-  }
-
   function zoomIn() { map.setZoom(map.getZoom() + 1); }
   function zoomOut() { map.setZoom(map.getZoom() - 1); }
 
-  const TIER_ZOOM = { complex: () => Z.FULL_PIN, dong: () => Z.DONG_LABEL };
+  const TIER_ZOOM = { complex: () => Z.FULL_PIN };
   function focusOn(lat, lng, tier = null) {
     if (tier && TIER_ZOOM[tier]) {
       const target = Math.max(map.getZoom(), TIER_ZOOM[tier]());
@@ -82,6 +78,10 @@ window.mapAdapter = (() => {
       return;
     }
     map.panTo([lat, lng]);
+  }
+
+  function fitBounds({ minLat, maxLat, minLng, maxLng }) {
+    map.fitBounds([[minLat, minLng], [maxLat, maxLng]], { padding: [24, 24] });
   }
 
   // HTML 마커 — Leaflet은 divIcon으로 임의 HTML을 넣는다. 크기를 지정하지 않으면
@@ -130,8 +130,8 @@ window.mapAdapter = (() => {
     id: "osm",
     supportsSatellite: false,
     load, create, onIdle,
-    getBoundsRect, getCenter, getDensityTier, isDongLabelVisible,
-    zoomIn, zoomOut, focusOn,
+    getBoundsRect, getCenter, getDensityTier,
+    zoomIn, zoomOut, focusOn, fitBounds,
     addOverlay, addPolygon, setSatellite,
   };
 })();

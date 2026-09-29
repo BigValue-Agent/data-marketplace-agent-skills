@@ -1,78 +1,26 @@
 window.createPanelUnitsModule = (context) => {
-  const { F, A, D, bodyEl, sheetEl, formatUnitArea, formatPyeong, formatFloor, onSelectPyeong } = context;
+  const { F, A, D, panelEl, bodyEl, sheetEl, formatUnitArea, formatPyeong, formatFloor } = context;
   const DONG_VISIBLE = 24;
   let dongExpanded = false;
   let sheetToken = 0;
+  let sheetReturnFocus = null;
+
+  sheetEl.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || sheetEl.hidden) return;
+    event.preventDefault();
+    closeSheet(true);
+  });
+
+  function suspendPanel(suspended) {
+    if (!panelEl) return;
+    panelEl.inert = suspended;
+    if (suspended) panelEl.setAttribute("aria-hidden", "true");
+    else panelEl.removeAttribute("aria-hidden");
+  }
 
   function bindBuildingsRetry(wrap) {
     wrap.querySelectorAll("[data-retry-buildings]").forEach((button) => {
       button.addEventListener("click", () => context.retryBuildings());
-    });
-  }
-
-  function renderPyeongControls() {
-    renderPyeongChips();
-    renderPyeongCards();
-  }
-
-  function renderPyeongChips() {
-    const cur = context.getCur();
-    const deal = context.getDeal();
-    const wrap = bodyEl.querySelector("#py-chips");
-    if (!cur || !deal || !wrap) return;
-    if (cur.buildingsError || !cur.pyeongs.length) { wrap.hidden = true; return; }
-    wrap.hidden = false;
-    const chips = cur.pyeongs.map((p) => ({ py: p.py, label: `${p.py}평`, ho: p.ho }));
-    wrap.innerHTML = chips.map((chip) =>
-      `<button type="button" class="py-chip${chip.py === deal.pyeong ? " is-on" : ""}" data-py="${chip.py ?? ""}">
-        ${chip.label}${chip.ho ? `<small>${F.count(chip.ho)}호${cur.buildingsHasNext ? "+" : ""}</small>` : ""}</button>`).join("");
-    wrap.querySelectorAll(".py-chip").forEach((btn) => {
-      btn.addEventListener("click", () => onSelectPyeong(btn.dataset.py === "" ? null : +btn.dataset.py));
-    });
-  }
-
-  function renderPyeongCards() {
-    const cur = context.getCur();
-    const deal = context.getDeal();
-    const wrap = bodyEl.querySelector("#py-cards");
-    if (!cur || !deal || !wrap) return;
-    // 동 목록은 백그라운드로 도착한다 — 도착 전에는 "없음"이 아니라 로딩으로 표시
-    if (!cur.buildingsReady) {
-      wrap.innerHTML = `<div class="skel" style="height:74px;width:100%"></div>`;
-      return;
-    }
-    if (cur.buildingsError) {
-      wrap.innerHTML = `<div class="err-box">동·평형 정보를 불러오지 못했어요.
-        <button type="button" data-retry-buildings>다시 시도</button></div>`;
-      bindBuildingsRetry(wrap);
-      return;
-    }
-    if (!cur.pyeongs.length) {
-      wrap.innerHTML = `<p class="sec-note">${cur.typeMismatch
-        ? `이 단지의 ${F.esc(cur.viewType)} 동·평형 정보는 제공되지 않아요.`
-        : "평형 정보가 없어요."}</p>`;
-      return;
-    }
-    const partialNote = cur.buildingsHasNext
-      ? `<p class="sec-note" style="margin:0 0 10px">평형과 호수는 불러온 일부 동 기준이며 전체 합계가 아니에요.</p>`
-      : "";
-    wrap.innerHTML = partialNote + cur.pyeongs.map((p) => `
-       <button type="button" class="py-card${p.py === deal.pyeong ? " is-on" : ""}" data-py="${p.py}" data-testid="area-summary-card">
-         <div class="pc-py">${p.py}평형</div>
-         <div class="pc-types">타입 ${[...p.types].sort().join("·") || "—"}</div>
-         <div class="pc-ho">전용 ${p.areaMin === Infinity ? "확인 필요"
-           : (p.areaMax - p.areaMin < 0.05
-             ? formatUnitArea(p.areaMin)
-             : `${formatUnitArea(p.areaMin)}~${formatUnitArea(p.areaMax)}`)} · ${F.count(p.ho)}호${cur.buildingsHasNext ? "+ · 일부 동 기준" : ""}</div>
-       </button>`).join("");
-    wrap.querySelectorAll(".py-card").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const currentDeal = context.getDeal();
-        if (!currentDeal) return;
-        const py = +btn.dataset.py;
-        onSelectPyeong(py);
-        bodyEl.querySelector("#sec-deals")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
     });
   }
 
@@ -108,7 +56,7 @@ window.createPanelUnitsModule = (context) => {
         wrap.querySelectorAll(".dong-cell").forEach((cell) => cell.classList.toggle("is-on", cell === btn));
         const current = context.getCur();
         const building = current?.buildings.find((item) => item.ppk === btn.dataset.ppk);
-        if (building) openSheet(building);
+        if (building) openSheet(building, btn);
       });
     });
     wrap.querySelector("#dong-more")?.addEventListener("click", () => {
@@ -117,22 +65,24 @@ window.createPanelUnitsModule = (context) => {
     });
   }
 
-  async function openSheet(building) {
+  async function openSheet(building, trigger) {
     const cur = context.getCur();
     if (!cur) return;
     const token = ++sheetToken;
+    sheetReturnFocus = trigger || null;
     sheetEl.hidden = false;
     sheetEl.innerHTML = `
       <div class="us-head">
+        <button type="button" class="us-back" id="us-close" aria-label="단지 상세로 돌아가기">←</button>
         <h3>${F.esc(building.dong_name)}동</h3>
         <span class="p-badge">${building.total_ho_count ?? "—"}호 · 지상 ${formatFloor(building.ground_floor_count)}</span>
-        <button type="button" class="p-close" id="us-close" aria-label="호 정보 닫기">×</button>
       </div>
       <div class="us-body">
         <div class="skel" style="height:200px"></div>
       </div>`;
-    sheetEl.querySelector("#us-close")?.addEventListener("click", closeSheet);
-    window.mapCtl.focusOn(building.latitude, building.longitude, "dong");
+    sheetEl.querySelector("#us-close")?.addEventListener("click", () => closeSheet(true));
+    sheetEl.querySelector("#us-close")?.focus();
+    suspendPanel(true);
 
     try {
       // 첫 페이지(100호)를 받는 즉시 표시한다 — 대단지도 한 번의 대기로 화면이 열린다.
@@ -197,7 +147,7 @@ window.createPanelUnitsModule = (context) => {
         console.error(e);
         if (paging.token !== sheetToken) return;
         event.target.disabled = false;
-        event.target.textContent = "호 정보를 더 불러오지 못했어요 — 다시 시도";
+        event.target.textContent = "호 정보 다시 불러오기";
       }
     });
   }
@@ -209,8 +159,8 @@ window.createPanelUnitsModule = (context) => {
       A.noticePricesByJpk(unit.ppk, unit.jpk),
     ]);
     const stateOf = (result) => result.status === "fulfilled"
-      ? { rows: result.value, error: false }
-      : { rows: [], error: true };
+      ? { rows: result.value, error: false, loading: false }
+      : { rows: [], error: true, loading: false };
     return {
       estimates: stateOf(estimateResult),
       notices: stateOf(noticeResult),
@@ -226,10 +176,10 @@ window.createPanelUnitsModule = (context) => {
     const token = sheetToken;
     try {
       const state = await loadUnitPrices(unit);
-      if (token !== sheetToken) return;
+      if (token !== sheetToken || !box.isConnected) return;
       renderUnitPrices(box, unit, state, token);
     } catch (e) {
-      if (token !== sheetToken) return;
+      if (token !== sheetToken || !box.isConnected) return;
       console.error(e);
       box.innerHTML = `<h4>${F.esc(unit.ho_name)}호</h4><p class="sec-note" style="margin:0">가격 정보를 불러오지 못했어요.</p>`;
     }
@@ -250,14 +200,12 @@ window.createPanelUnitsModule = (context) => {
         <span>공시가격 ${F.esc(notice.notice_year)}년</span>
         <b style="color:var(--notice)">${F.price(notice.notice_price, { compact: true })}</b>
       </div>`).join("");
-    const errorRows = [
-      state.estimates.error
-        ? `<p class="sec-note" style="margin:6px 0">산출시세를 불러오지 못했어요. <button type="button" class="link-more" data-retry-price="estimates">다시 시도</button></p>`
-        : "",
-      state.notices.error
-        ? `<p class="sec-note" style="margin:6px 0">공시가격을 불러오지 못했어요. <button type="button" class="link-more" data-retry-price="notices">다시 시도</button></p>`
-        : "",
-    ].join("");
+    const errorRows = [["estimates", "산출시세"], ["notices", "공시가격"]].map(([kind, label]) => {
+      const price = state[kind];
+      if (!price.error && !price.loading) return "";
+      return `<p class="sec-note" style="margin:6px 0">${label}${price.loading ? "를 불러오는 중이에요." : "를 불러오지 못했어요."}
+        <button type="button" class="link-more" data-retry-price="${kind}" ${price.loading ? "disabled" : ""}>${price.loading ? "불러오는 중…" : "다시 시도"}</button></p>`;
+    }).join("");
     const hasError = state.estimates.error || state.notices.error;
     box.innerHTML = `<h4>${F.esc(unit.ho_name)}호 최신 가격 정보 <small style="font-weight:500;color:var(--ink-3)">전용 ${formatUnitArea(unit.private_area)} · 최신 기준월</small></h4>
       ${estRows || ""}${noticeRows || ""}
@@ -265,34 +213,35 @@ window.createPanelUnitsModule = (context) => {
       ${!estRows && !noticeRows && !hasError ? `<p class="sec-note" style="margin:0">이 호의 산출시세·공시가격 정보가 없어요.</p>` : ""}`;
     box.querySelectorAll("[data-retry-price]").forEach((button) => {
       button.addEventListener("click", async () => {
-        if (token !== sheetToken) return;
         const kind = button.dataset.retryPrice;
-        button.disabled = true;
-        button.textContent = "불러오는 중…";
+        if (token !== sheetToken || !box.isConnected || state[kind].loading) return;
+        // 이 호실의 상태 객체를 공유한다. 다른 상품의 완료·진행 상태를 되돌리지 않는다.
+        state[kind] = { ...state[kind], loading: true };
+        renderUnitPrices(box, unit, state, token);
         try {
           const rows = kind === "estimates"
             ? await A.estimatesByJpk(unit.ppk, unit.jpk)
             : await A.noticePricesByJpk(unit.ppk, unit.jpk);
-          if (token !== sheetToken) return;
-          renderUnitPrices(box, unit, {
-            ...state,
-            [kind]: { rows, error: false },
-          }, token);
+          if (token !== sheetToken || !box.isConnected) return;
+          state[kind] = { rows, error: false, loading: false };
         } catch (error) {
           console.error(error);
-          if (token !== sheetToken) return;
-          button.disabled = false;
-          button.textContent = "다시 시도";
+          if (token !== sheetToken || !box.isConnected) return;
+          state[kind] = { ...state[kind], error: true, loading: false };
         }
+        renderUnitPrices(box, unit, state, token);
       });
     });
   }
 
-  function closeSheet() {
+  function closeSheet(restoreFocus = false) {
     sheetToken++;
     sheetEl.hidden = true;
     sheetEl.innerHTML = "";
+    suspendPanel(false);
+    if (restoreFocus && sheetReturnFocus?.isConnected) sheetReturnFocus.focus();
+    sheetReturnFocus = null;
   }
 
-  return { renderPyeongControls, renderDongGrid, closeSheet, loadUnitPrices };
+  return { renderDongGrid, closeSheet, loadUnitPrices };
 };

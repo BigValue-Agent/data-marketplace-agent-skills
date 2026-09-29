@@ -38,11 +38,10 @@ window.APP_CONFIG = {
   INITIAL_LEVEL: 5,
   FULL_PIN_LEVEL: 4,
   COMPACT_PIN_LEVEL: 6,
-  DONG_LABEL_LEVEL: 3,
 
   // 네이버: zoom이 클수록 확대 (어댑터가 `>=`로 비교) — 카카오와 부등호가 반대다
-  NAVER_ZOOM: { INITIAL: 15, FULL_PIN: 16, COMPACT_PIN: 14, DONG_LABEL: 17 },
+  NAVER_ZOOM: { INITIAL: 15, FULL_PIN: 16, COMPACT_PIN: 14 },
 
   // 오픈소스 맵(Leaflet): 네이버와 같은 방향
-  OSM_ZOOM: { INITIAL: 15, FULL_PIN: 16, COMPACT_PIN: 14, DONG_LABEL: 17 },
+  OSM_ZOOM: { INITIAL: 15, FULL_PIN: 16, COMPACT_PIN: 14 },
 };

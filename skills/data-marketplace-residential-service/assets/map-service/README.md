@@ -1,6 +1,6 @@
 # 주거 지도 — 참조 템플릿 (map-service)
 
-빅밸류 데이터 마켓플레이스 **주거형 데이터 상품 9종**만으로 만든 단지 중심 시세 지도 서비스의
+빅밸류 데이터 마켓플레이스 **주거형 데이터 상품 10종**으로 만든 지역·단지 중심 시세 지도 서비스의
 참조 구현. **단지 최근 6개월 실거래 요약**(단지 프로필 1행)과
 **주변 단지 시세 비교**(마커 상품의 단지 전체 대표가격)를 포함한다. 공시가격과 시세 신뢰등급은
 단지 대표값으로 만들지 않고 동·호를 선택했을 때만 표시한다.
@@ -26,15 +26,15 @@ DATA_MARKETPLACE_API_KEY=발급받은키 node server/proxy.mjs
 
 ## 각색 규칙 (must-adapt)
 
-1. **템플릿 기반 시작, 차이만 각색** — 스택이 같으면(바닐라 JS + Node 프록시) 파일을
-   거의 그대로 쓰고 키/브랜딩/중심좌표만 교체한다. 재구현하지 않는다.
-   요청 스택(React/Next 등)이 다를 때만 구조를 옮기되 화면 문법
-   (마커 3-info, 단지 실거래 요약, 평형→동→호 드릴다운, span 가드)은 유지한다.
+1. **템플릿 기반 시작, 요청에 맞게 각색** — 기존 구현을 출발점으로 삼고 요청에 필요한
+   디자인·기능·구조의 차이를 반영한다. 같은 스택에서도 키/브랜딩/중심좌표 외의 변경을 허용한다.
+   요청 스택(React/Next 등)으로 옮길 때도 선택한 구성의 데이터 의미와 동작을 보존한다.
    스택상 불가피하지 않다면 `data-policy/async-policy/api/map/panel-price/panel-units/panel/chart/format/proxy` 모듈 경계를 유지하고,
    한 개의 거대 스크립트로 합치지 않는다.
    `complex-realdeal-summary`와 `nearby-comparison-panel`은 핵심 컴포넌트라 의미를 바꾸지 않는다.
    다른 프레임워크로 옮겨도 `data-policy`의 가격 범위·응답 기준월·표시값·경계 판정 결과를 보존한다.
    API 원본 행을 삭제·변형하는 일과 화면 표시·파생계산 적격값을 고르는 일을 구분한다.
+   모듈을 제거하거나 옮길 때는 남기는 기능의 호출·판정 연결을 함께 보존한다.
 2. **보안 경계 유지** — 브라우저가 Data Marketplace를 직접 호출하는 코드를 만들지 않는다.
    `X-API-KEY`는 프록시(서버) 환경변수로만 다룬다.
 3. **placeholder 키 교체** — `YOUR_KAKAO_MAP_KEY`를 실키로 하드코딩해 커밋하지 말고
@@ -46,9 +46,11 @@ DATA_MARKETPLACE_API_KEY=발급받은키 node server/proxy.mjs
    (`MARKER_CACHE_TTL_MS` — 유형 필터 왕복 등 동일 뷰 중복 조회 방지,
    0이면 캐시 없음), 단지 단위 데이터는 세션 캐시로 분화돼 있다. 가격 신선도가
    중요한 서비스는 TTL 또는 수동 갱신으로 조정한다.
-7. **호출량** — 단지 대표가격은 프로필 1행을 사용한다. 동 상품이 도착하면 전용면적이
-   유효한 최다 호수 평형을 자동 선택하고, 그 면적의 실거래 첫 100행을 목록·차트에
-   공유한다. 평형 정보가 없는 단지만 단지 전체로 조회하며 다음 페이지는 `더 보기`에서만 요청한다. 주변 비교는 섹션이
+7. **호출량** — 단지 대표가격은 프로필 1행을 사용한다.
+   단지 범위 실거래 첫 100행에서 가장 많이 관측된 유효 전용면적을 기본 선택해 목록·차트에
+   바로 공유한다. 다른 면적을 선택할 때만 해당 표시 면적의 ±0.005㎡ 범위로 재조회한다.
+   동 조회와 독립적이며 전체 호실을 수집하지 않는다. 첫 페이지가 일부이면 그 범위를 표시한다.
+   다음 페이지는 `더 보기`에서만 요청한다. 주변 비교는 섹션이
    보일 때 마커 1회만 호출한다. 산출시세·공시가격은 단지·평형 대표값으로 조회하지 않고,
    호 선택 시 해당 호실의 최신 값 각 1행을 병렬 조회한다.
    6개월·1년·3년 기간은 브라우저 오늘 날짜가 아니라 프로필 `standard_ym`을 끝월로 계산한다.
@@ -74,7 +76,7 @@ DATA_MARKETPLACE_API_KEY=발급받은키 node server/proxy.mjs
    (`INITIAL_LEVEL`·`FULL_PIN_LEVEL`… / `NAVER_ZOOM` / `OSM_ZOOM`).
 
    컨트롤러 밖으로 나가는 것은 방향이 없는 이름뿐이다 — `zoomIn()`·`zoomOut()`·
-   `focusOn(lat, lng, "complex"|"dong")`, 그리고 밀도 티어 `"full"|"compact"|"dot"`.
+   `focusOn(lat, lng, "complex")`·`fitBounds(bbox)`, 그리고 밀도 티어 `"full"|"compact"|"dot"`.
    **화면 코드에서 줌 숫자를 읽거나 비교하면 그것이 버그다.** 어댑터를 바꿨을 때 줌인
    버튼이 축소로 도는 사고가 여기서 난다.
 
@@ -91,32 +93,32 @@ DATA_MARKETPLACE_API_KEY=발급받은키 node server/proxy.mjs
    전용이라 실서비스는 상용/자체 타일 서버를 쓴다.
 
    어댑터 계약(15개): `id` · `supportsSatellite` · `load` · `create` · `onIdle` ·
-   `getBoundsRect` · `getCenter` · `getDensityTier` · `isDongLabelVisible` · `zoomIn` ·
-   `zoomOut` · `focusOn` · `addOverlay` · `addPolygon` · `setSatellite`.
+   `getBoundsRect` · `getCenter` · `getDensityTier` · `zoomIn` ·
+   `zoomOut` · `focusOn` · `fitBounds` · `addOverlay` · `addPolygon` · `setSatellite`.
 
 10. **구성 3단 절삭** — 스킬이 구성(완성형·표준형·기본형)을 묻고, 하위 구성은 이
     템플릿(완성형)에서 **지워서** 만든다. 티어별 템플릿을 새로 만들지 않는다.
-    티어에 없는 route가 생성물에 남아 있으면 그것이 결함이다.
+    구성 제한은 데이터 상품 route와 그에 의존하는 화면에 적용한다. 지원 데이터와 사용자 입력으로
+    구현하는 요청 기능은 추가할 수 있으며, 작동에 필요한 저장·공유 등의 연결도 구현한다.
 
     | 구성 | 지우는 것 |
     |---|---|
-    | 표준형 | `panel-units.js`는 가격용 `renderPyeongControls`만 남기고 동·호실 흐름 제거 · `panel.js`는 `A.buildings`·평형 집계·`buildingsReady` 가드·가격 평형 UI를 유지하고 동 목록·동 라벨·호실 시트만 제거 · `api.js`와 proxy에서 units·notice·estimated 3종 제거 |
-    | 기본형 | 표준형에서 남긴 상세 실거래·평형 UI와 `panel-units.js` 제거 · `panel.js`의 buildings·shape 조회 제거 · `api.js`와 proxy에서 shape·buildings·realdeal·units·notice·estimated 제거. 가격 영역은 프로필 `recent_month6_*` 요약만 유지 |
+    | 표준형 | `panel-units.js`와 동·호실 흐름 제거 · `panel.js`의 buildings 조회·동 배지·동/호 탭·시트 연결 제거 · `api.js`와 proxy에서 buildings·units·notice·estimated 4종 제거 |
+    | 기본형 | 표준형에서 상세 실거래·전용면적 선택·차트·shape 조회 제거 · `api.js`와 proxy에서 shape·realdeal 제거. 가격 영역은 프로필 `recent_month6_*` 요약만 유지하며 `profilePriceEvidence()`에 선택 유형 불일치 여부를 전달하는 연결을 보존 |
 
-    표준형의 buildings는 화면용 동 목록이 아니라 실거래의 관측 전용면적 스코프를
-    정하는 의존성이다. 조회 실패 시 실거래를 막는 현재 동작을 유지하고
-    `buildingsReady=true` 강제 우회는 하지 않는다. allowlist 각 줄의 티어 주석이
-    지울 줄을 표시한다.
+    표준형은 6개 상품, 완성형은 10개 상품을 사용한다. 실거래는 buildings 응답을 기다리지 않는다.
+    allowlist 각 줄의 티어 주석이 지울 줄을 표시한다.
 
 ## 기능 ↔ route ↔ 데이터 상품 매핑
 
 | 화면 기능 | 프록시 route | 상품 slug |
 |---|---|---|
-| 검색 자동완성 | `/api/complex-search` | `complex-search` |
+| 지역·단지 검색 자동완성 | `/api/location-search` | `location-search` |
+| 선택 지역 경계 | `/api/region-detail` | `region/legaldongs` |
 | 지도 가격 마커 (bbox) | `/api/markers` | `complex-type-markers` |
 | 단지 프로필·배지·입지·개요 | `/api/complex-detail` | `complexes` |
 | 단지 경계 폴리곤 | `/api/complex-shape` | `complex-shapes` |
-| 평형 카드·동 그리드·동 라벨 | `/api/buildings` | `buildings` (units_summary 집계) |
+| 동 그리드 | `/api/buildings` | `buildings` |
 | 호실 목록 | `/api/units` | `units` |
 | 실거래 차트·테이블 | `/api/prices?tab=realdeal` | `realdeal` |
 | 호별 최신 공시가격 | `/api/prices?tab=notice` | `notice-prices` |
@@ -128,7 +130,7 @@ DATA_MARKETPLACE_API_KEY=발급받은키 node server/proxy.mjs
   마커를 호출하지 않고 "확대하면 표시" 안내를 띄운다. 줌 레벨로 호출 여부를 판단하지 않는다
   (SDK마다 레벨 체계가 달라 이식 시 깨진다).
 - **줌 레벨은 표시 밀도 전용**: ≤4 풀 핀(단지명+단지 최근 6개월 평균) / 5–6 컴팩트 핀 / 그 외 도트,
-  과밀 시 가격 보유→세대수 순 상한 컷. 선택 단지 동 라벨은 레벨 ≤3.
+  과밀 시 가격 보유→세대수 순 상한 컷.
 - `has_next=true`(중심거리순 상위로 잘림) 응답 시 다음 페이지를 요청하지 않고
   "지도 중심 주변 단지만 표시 중 — 확대하면 전체가 보여요" pill로 확대를 유도한다.
 - 마커 요청 body에는 `offset`을 넣지 않는다. 마커 상품은 중심거리순 상위 결과와
@@ -140,16 +142,16 @@ DATA_MARKETPLACE_API_KEY=발급받은키 node server/proxy.mjs
 
 ```
 index.html        골격, 검색 카드, 패널/시트 마운트, testid 훅
-css/app.css       디자인 토큰(딥그린·시스템 폰트), 마커·실거래 요약·패널 스타일
+css/app.css       디자인 토큰(BVDS 인디고·중립 표면·Pretendard), 반응형 양측 패널·마커·실거래 요약 스타일
 js/config.js      APP_NAME, placeholder 키, 초기 좌표, span/밀도 상수
-js/data-policy.js 가격 범위·대표 평형·대표가격 스코프·표시 수치·GeoJSON 경계를 판정하는 순수 정책
+js/data-policy.js 대표가격 스코프·표시 수치·GeoJSON 경계를 판정하는 순수 정책
 js/async-policy.js 역순으로 완료된 목록·차트 요청에서 최신 응답만 적용하는 순수 정책
 js/format.js      억/만 가격, 날짜, 평/㎡ 포맷
 js/api.js         계약 route 래퍼(프록시 경유), 세션 캐시, 단일 페이지·호실 가격 조회
 js/chart.js       API가 상품 기준월로 제한한 rows를 그대로 그리는 캔버스 실거래 차트
-js/map.js         SDK 로드, 마커 풀 diff 렌더, span 가드, 폴리곤, 동 라벨
+js/map.js         SDK 로드, 마커 풀 diff 렌더, span 가드, 폴리곤
 js/panel-price.js 단지 실거래 요약·상세 목록·차트·주변 비교
-js/panel-units.js 평형 선택·동 목록·호실 시트·호별 가격
+js/panel-units.js 동 목록·호실 시트·호별 가격
 js/panel.js       패널 상태·셸·모듈 연결·입지·단지 개요
 js/app.js         브랜드 주입, 검색 자동완성, 필터, 도구, 부트스트랩
 server/proxy.mjs  키 보관 + 계약 route allowlist 프록시 + proxy env 대응 + 정적 서빙 (의존성 없음)

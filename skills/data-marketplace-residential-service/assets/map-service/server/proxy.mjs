@@ -119,16 +119,17 @@ async function upstreamQuery(targetUrl, { headers, body }) {
 
 // minimum_service_contract의 core/lazy route ↔ Data Marketplace 상품 slug
 const ROUTES = {
-  // 티어 주석은 구성 3단 절삭용(README 각색 규칙 10): 기본형은 "전 구성" 3줄만 남긴다.
-  "/api/complex-search": "complex-search", // 전 구성
-  "/api/markers": "complex-type-markers", // 전 구성
-  "/api/complex-detail": "complexes", // 전 구성
-  "/api/complex-shape": "complex-shapes", // 표준형+
-  "/api/prices?tab=realdeal": "realdeal", // 표준형+
-  "/api/prices?tab=notice": "notice-prices", // 완성형
-  "/api/prices?tab=estimated": "estimated-prices", // 완성형
-  "/api/buildings": "buildings", // 표준형+
-  "/api/units": "units", // 완성형
+  // 티어 주석은 구성 3단 절삭용(README 각색 규칙 10): 기본형은 "전 구성" 4줄만 남긴다.
+  "/api/location-search": { domain: "residential", slug: "location-search" }, // 전 구성
+  "/api/region-detail": { domain: "region", slug: "legaldongs" }, // 전 구성
+  "/api/markers": { domain: "residential", slug: "complex-type-markers" }, // 전 구성
+  "/api/complex-detail": { domain: "residential", slug: "complexes" }, // 전 구성
+  "/api/complex-shape": { domain: "residential", slug: "complex-shapes" }, // 표준형+
+  "/api/prices?tab=realdeal": { domain: "residential", slug: "realdeal" }, // 표준형+
+  "/api/prices?tab=notice": { domain: "residential", slug: "notice-prices" }, // 완성형
+  "/api/prices?tab=estimated": { domain: "residential", slug: "estimated-prices" }, // 완성형
+  "/api/buildings": { domain: "residential", slug: "buildings" }, // 완성형
+  "/api/units": { domain: "residential", slug: "units" }, // 완성형
 };
 
 const MIME = {
@@ -174,8 +175,8 @@ function sendJson(res, status, obj) {
 async function handleApi(req, res, url) {
   if (req.method !== "POST") return sendJson(res, 405, { success: false, detail: "POST only" });
   const key = routeKey(url);
-  const slug = ROUTES[key];
-  if (!slug) return sendJson(res, 404, { success: false, detail: `unknown route: ${routeKey(url)}` });
+  const product = ROUTES[key];
+  if (!product) return sendJson(res, 404, { success: false, detail: `unknown route: ${routeKey(url)}` });
   let body;
   let payload;
   try {
@@ -190,9 +191,16 @@ async function handleApi(req, res, url) {
       detail: "/api/markers does not support offset pagination",
     });
   }
+  if (key === "/api/location-search" && Object.prototype.hasOwnProperty.call(payload, "offset")) {
+    return sendJson(res, 400, {
+      success: false,
+      detail: "/api/location-search does not support offset pagination",
+    });
+  }
   try {
     // 업스트림 응답 envelope를 가공 없이 그대로 전달한다
-    const upstream = await upstreamQuery(`${API_BASE}/api/v1/data-products/residential/${slug}/query`, {
+    const upstream = await upstreamQuery(
+      `${API_BASE}/api/v1/data-products/${product.domain}/${product.slug}/query`, {
       headers: { "X-API-KEY": API_KEY, "Content-Type": "application/json" },
       body: body || "{}",
     });

@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<title>조건에 맞는 단지 찾기</title>
+<style>
+/* Read-only document. These tokens own this template's visual identity.
+   Blue continues the sibling reports; ink, ruled rows and generous spacing
+   give conditions and their evidence priority over decorative score cards. */
+:root {
+  color-scheme: light;
+  --paper: #fff; --canvas: #f4f6f9; --ink: #191f28; --muted: #526174;
+  --accent: #205bc7; --accent-soft: #edf3ff; --line: #d9e0e9;
+  --positive: #126b50; --positive-soft: #edf7f2;
+  --caution: #87510d; --caution-soft: #fff5e6;
+  --negative: #a52b3d; --negative-soft: #fff0f2;
+  --scroll-thumb: #8996a6; --scroll-track: #edf0f5;
+  --scroll-hover: #667589; --scroll-active: #46566d;
+}
+* { box-sizing: border-box; scrollbar-width: auto; scrollbar-color: var(--scroll-thumb) var(--scroll-track); }
+*::-webkit-scrollbar { width: 12px; height: 12px; }
+*::-webkit-scrollbar-track { background: var(--scroll-track); }
+*::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border: 3px solid var(--scroll-track); border-radius: 8px; }
+*::-webkit-scrollbar-thumb:hover { background: var(--scroll-hover); }
+*::-webkit-scrollbar-thumb:active { background: var(--scroll-active); }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; color: var(--ink); background: var(--canvas); font: 16px/1.7 -apple-system, BlinkMacSystemFont, "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; word-break: keep-all; }
+[hidden] { display: none !important; }
+h1, h2, h3, p, dl { margin: 0; }
+h1, h2, h3 { line-height: 1.4; word-break: keep-all; overflow-wrap: anywhere; }
+p, li, dd, th, td { overflow-wrap: anywhere; }
+small { font-size: 13px; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
+.report { max-width: 1160px; margin: 32px auto; background: var(--paper); border: 1px solid var(--line); border-radius: 16px; }
+.hero { padding: 40px 48px 32px; border-top: 5px solid var(--accent); border-radius: 16px 16px 0 0; }
+.eyebrow { color: var(--accent); font-size: 13px; font-weight: 750; margin-bottom: 12px; }
+h1 { max-width: 30ch; font-size: clamp(28px, 3.4vw, 42px); letter-spacing: -.035em; }
+.subtitle { max-width: 76ch; color: var(--muted); margin-top: 12px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 16px 24px; }
+.fact { min-width: 0; }
+dt { color: var(--muted); font-size: 13px; }
+dd { margin: 4px 0 0; font-weight: 650; font-variant-numeric: tabular-nums; }
+dd small { display: block; margin-top: 2px; color: var(--muted); font-weight: 400; }
+.body { padding: 0 48px; }
+.finding { padding: 28px; background: var(--accent-soft); border-radius: 10px; }
+.finding h2 { margin-top: 12px; font-size: 24px; letter-spacing: -.025em; }
+.finding p { margin-top: 10px; }
+.section { padding: 32px 0; border-bottom: 1px solid var(--line); }
+.section h2 { font-size: 21px; letter-spacing: -.02em; }
+.intro { color: var(--muted); margin-top: 8px; max-width: 82ch; }
+.section > .facts, .section > .paragraph, .section > .notes { margin-top: 20px; }
+.criteria { list-style: none; padding: 0; margin: 18px 0 0; }
+.criterion { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 12px; padding: 13px 0; border-top: 1px solid var(--line); }
+.criterion strong { font-size: 15px; }
+.criterion p { font-size: 14px; color: var(--muted); }
+.kind { font-size: 12px; font-weight: 750; color: var(--accent); padding-top: 2px; }
+.kind.preference { color: var(--muted); }
+.kind.exclude { color: var(--negative); }
+.badge { display: inline-block; padding: 3px 9px; border-radius: 5px; font-size: 12px; font-weight: 750; color: var(--muted); background: var(--canvas); vertical-align: middle; }
+.badge.complete, .badge.pass { color: var(--positive); background: var(--positive-soft); }
+.badge.partial, .badge.unknown { color: var(--caution); background: var(--caution-soft); }
+.badge.unavailable, .badge.fail { color: var(--negative); background: var(--negative-soft); }
+.table-hint { font-size: 12px; color: var(--muted); margin-top: 20px; }
+.table-wrap { overflow: auto; max-height: 40rem; border: 1px solid var(--line); border-radius: 8px; scrollbar-gutter: stable; margin-top: 8px; }
+table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 14px; }
+caption { text-align: left; padding: 12px 16px; color: var(--muted); font-size: 13px; }
+th, td { min-width: 120px; padding: 15px 16px; text-align: left; vertical-align: top; border-top: 1px solid var(--line); }
+thead th { position: sticky; top: 0; z-index: 1; background: var(--canvas); color: var(--muted); font-size: 12px; font-weight: 700; }
+tbody th { min-width: 160px; font-weight: 700; }
+td.numeric { text-align: right; font-variant-numeric: tabular-nums; }
+td small, th small { display: block; font-weight: 400; color: var(--muted); margin-top: 4px; }
+tbody tr:last-child > * { border-bottom: 0; }
+.items { display: grid; gap: 16px; margin-top: 22px; }
+.candidate { padding: 24px; border: 1px solid var(--line); border-radius: 10px; }
+.candidate-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.candidate h3 { font-size: 19px; }
+.kicker { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.candidate .facts { margin-top: 20px; }
+.checks { list-style: none; padding: 0; margin: 20px 0 0; }
+.check { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); align-items: start; }
+.check p { color: var(--muted); font-size: 14px; }
+.check strong { color: var(--ink); font-weight: 650; }
+.check small { display: block; color: var(--muted); }
+.notes { padding-left: 20px; color: var(--muted); font-size: 14px; }
+.notes li + li { margin-top: 6px; }
+.empty { padding: 20px 0; color: var(--muted); }
+.footer { padding: 28px 48px 36px; color: var(--muted); font-size: 13px; }
+.footer h2 { font-size: 14px; color: var(--ink); margin-bottom: 12px; }
+.source + .source { margin-top: 8px; }
+.source strong { color: var(--ink); font-weight: 650; }
+.meta { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 12px; }
+.fallback { margin: 20px 48px; padding: 20px; border: 1px solid var(--line); }
+@media (max-width: 760px) {
+  .report { margin: 12px; border-radius: 12px; }
+  .hero { padding: 28px 24px; border-radius: 12px 12px 0 0; }
+  .body { padding: 0 24px; }
+  .finding { padding: 22px; }
+  .section { padding: 26px 0; }
+  .candidate { padding: 20px; }
+  .footer { padding: 24px; }
+  .fallback { margin: 20px 24px; }
+}
+@media (max-width: 400px) {
+  .report { margin: 0; border: 0; border-radius: 0; }
+  .hero { border-radius: 0; padding: 24px 18px; }
+  .body, .footer { padding-left: 18px; padding-right: 18px; }
+  .finding, .candidate { padding: 18px; }
+}
+@media (forced-colors: active) {
+  * { scrollbar-color: auto; }
+  .badge, .finding { border: 1px solid CanvasText; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+@page { size: A4; margin: 14mm; }
+@media print {
+  :root { --canvas: #fff; --accent-soft: #fff; --ink: #000; --muted: #333; --line: #aaa; }
+  body { background: #fff; font-size: 10pt; }
+  .report { max-width: none; margin: 0; border: 0; }
+  .hero { padding: 0 0 20px; border-top: 0; }
+  h1 { font-size: 24pt; max-width: none; }
+  .body, .footer { padding: 0; }
+  .finding { display: block; border: 1px solid var(--line); padding: 16px; }
+  .finding h2 { font-size: 16pt; }
+  .section { padding: 20px 0; }
+  h2, h3 { break-after: avoid; }
+  p { orphans: 3; widows: 3; }
+  .table-hint { display: none; }
+  .table-wrap { max-height: none; overflow: visible; border: 0; }
+  table { table-layout: fixed; font-size: 9pt; }
+  thead { display: table-header-group; }
+  thead th { position: static; }
+  th, td, tbody th { min-width: 0; padding: 8px 6px; }
+  tr, .criterion, .check, .fact { break-inside: avoid; }
+  .candidate { border-radius: 0; padding: 16px; }
+  .footer { margin-top: 24px; }
+  .meta { margin-top: 16px; }
+}
+</style>
+</head>
+<body>
+<main class="report">
+  <header class="hero">
+    <p class="eyebrow" id="eyebrow">조건에 맞는 단지 찾기</p>
+    <h1 id="title">조건에 맞는 단지 찾기</h1>
+    <p class="subtitle" id="subtitle" hidden></p>
+  </header>
+  <noscript><p class="fallback">이 문서의 결과를 표시하려면 JavaScript가 필요합니다. 텍스트 리포트가 필요하면 작성자에게 요청하세요.</p></noscript>
+  <div class="body">
+    <section class="finding" aria-labelledby="headline">
+      <div>
+        <span class="badge" id="outcomeState">결과 미입력</span>
+        <h2 id="headline">아직 조회 결과가 입력되지 않았습니다.</h2>
+        <p id="summary" hidden></p>
+      </div>
+    </section>
+    <!-- 결과와 중요한 조회 한계를 먼저 읽고, 상세 조건·범위는 뒤에서 확인한다. -->
+    <div id="sections"></div>
+    <section class="section" id="criteriaBlock" aria-labelledby="criteriaTitle" hidden>
+      <h2 id="criteriaTitle">적용한 조건</h2>
+      <ul class="criteria" id="criteria"></ul>
+    </section>
+    <section class="section" id="coverageDetails" aria-labelledby="coverageDetailsTitle" hidden>
+      <h2 id="coverageDetailsTitle">알아둘 점</h2>
+      <p class="intro" id="coverageSummary" hidden></p>
+      <dl class="facts" id="scope" hidden></dl>
+      <dl class="facts" id="coverageFacts" hidden></dl>
+    </section>
+  </div>
+  <footer class="footer">
+    <section id="sourceBlock" aria-labelledby="sourceTitle" hidden>
+      <h2 id="sourceTitle">데이터 출처와 기준시점</h2>
+      <div id="sources"></div>
+    </section>
+    <p class="meta" id="meta" hidden></p>
+  </footer>
+</main>
+<!--
+  Fill only dm-finder with verified presentation data. No API calls or keys.
+  Serialize JSON, then replace every less-than character with \u003c BEFORE
+  inserting it into this HTML. textContent protects rendering, not unsafe embedding.
+
+  All counts, criteria and sections are variable; unused arrays can stay empty.
+  Labels are display text, not API fields. Omit duplicate table/card presentations.
+  subtitle에는 지역·유형·시점·핵심 조건을 짧게 적는다. coverage.summary에는 부분 조회·
+  모집단 한정·미확인 조건 등 결과를 바꾸는 한계만 남긴다. scope와 coverage.facts는 하단 상세다.
+  outcome: {state: "complete"|"partial"|"unavailable"|"", headline, summary}
+    State describes query coverage, not a candidate's compliance. Complete has no badge.
+  scope, coverage.facts, section.facts, item.facts: [{label, value, note?}]
+  criteria: [{kind: "required"|"preference"|"exclude", label, description?, note?}]
+  sections: [{title, intro?, paragraphs?: [text], facts?: [...],
+    table?: {caption, columns: [label | {label, numeric?: true}],
+      rows: [[text | {value, note?, status?: "pass"|"fail"|"unknown"}]],
+      emptyMessage?},
+    items?: [{name, kicker?, status?, summary?, facts?: [...],
+      checks?: [{label, status, value, note?}]}],
+    notes?: [text]}]
+  sources: [{name, reference?, note?}]
+
+  Use sections to group matches, uncertain candidates, trade-offs or evidence.
+  첫 섹션은 후보 이름과 핵심 근거, 후보가 없으면 없음 또는 판단 보류의 이유부터 쓴다.
+  내부 코드·호출 과정은 근거 파일이나 별도 기술 부록에 둔다. 표 열은 질문에 필요한 값만
+  고르고, 주소·보조 설명은 셀의 note나 후보 상세 항목을 활용한다.
+  Rows and columns must correspond; the first column names the subject (row header).
+  Null/missing cells show "확인 불가", never zero. No HTML strings are supported.
+  Keep report length deliberate. Split wide tables by question; for many candidates,
+  state the displayed range and provide the full results separately if appropriate.
+  The scroll frame bounds long screen tables; print includes every embedded row.
+  Modify markup/styles as needed while retaining evidence, coverage and accessibility.
+-->
+<script type="application/json" id="dm-finder">
+{
+  "title": "",
+  "subtitle": "",
+  "scope": [],
+  "outcome": {"state": "", "headline": "", "summary": ""},
+  "coverage": {"summary": "", "facts": []},
+  "criteria": [],
+  "sections": [],
+  "sources": [],
+  "generatedAt": ""
+}
+</script>
+<script>
+(function () {
+  "use strict";
+  const byId = id => document.getElementById(id);
+  const list = value => Array.isArray(value) ? value : [];
+  const record = value => value !== null && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const text = value => value == null ? "" : String(value);
+  const labels = new Map([
+    ["partial", "일부 범위 확인"], ["unavailable", "조회 불가"],
+    ["pass", "충족"], ["fail", "미충족"], ["unknown", "확인 불가"]
+  ]);
+  function make(tag, className, value) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (value != null) node.textContent = text(value);
+    return node;
+  }
+  function optional(id, value) {
+    byId(id).textContent = text(value);
+    byId(id).hidden = !text(value);
+  }
+  function badge(status) {
+    const safe = labels.has(status) ? status : "unknown";
+    return make("span", "badge " + safe, labels.get(safe));
+  }
+  function facts(root, values) {
+    const entries = list(values);
+    root.hidden = !entries.length;
+    entries.forEach(value => {
+      const item = record(value), wrap = make("div", "fact");
+      wrap.append(make("dt", "", item.label));
+      const dd = make("dd", "", item.value == null ? "확인 불가" : item.value);
+      if (item.note) dd.append(make("small", "", item.note));
+      wrap.append(dd); root.append(wrap);
+    });
+  }
+  function appendFacts(parent, values) {
+    if (!list(values).length) return;
+    const dl = make("dl", "facts"); facts(dl, values); parent.append(dl);
+  }
+  let data;
+  try {
+    data = JSON.parse(byId("dm-finder").textContent);
+    if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("Invalid report");
+  } catch (_) {
+    byId("outcomeState").textContent = "표시 오류";
+    byId("headline").textContent = "리포트 데이터를 읽을 수 없습니다.";
+    optional("coverageSummary", "파일을 다시 생성해 주세요. 조회 결과가 없다는 뜻은 아닙니다.");
+    byId("coverageDetails").hidden = false;
+    return;
+  }
+  document.title = data.title || "조건에 맞는 단지 찾기";
+  byId("title").textContent = document.title;
+  optional("subtitle", data.subtitle);
+  facts(byId("scope"), data.scope);
+  const outcome = record(data.outcome), coverage = record(data.coverage);
+  if (["partial", "unavailable"].includes(outcome.state)) {
+    byId("outcomeState").replaceWith(badge(outcome.state));
+  } else byId("outcomeState").hidden = true;
+  if (outcome.headline) byId("headline").textContent = text(outcome.headline);
+  optional("summary", outcome.summary);
+  optional("coverageSummary", coverage.summary);
+  facts(byId("coverageFacts"), coverage.facts);
+  byId("coverageDetails").hidden = !text(coverage.summary) && !list(data.scope).length && !list(coverage.facts).length;
+  const criteria = list(data.criteria);
+  byId("criteriaBlock").hidden = !criteria.length;
+  criteria.forEach(value => {
+    const item = record(value), row = make("li", "criterion");
+    const kinds = new Map([["required", "필수"], ["preference", "선호"], ["exclude", "제외"]]);
+    const kind = kinds.has(item.kind) ? item.kind : "";
+    row.append(make("span", "kind " + kind, kinds.get(kind) || "조건"));
+    const detail = make("div"); detail.append(make("strong", "", item.label));
+    if (item.description) detail.append(make("p", "", item.description));
+    if (item.note) detail.append(make("p", "", item.note));
+    row.append(detail); byId("criteria").append(row);
+  });
+  list(data.sections).forEach((value, sectionIndex) => {
+    const item = record(value), section = make("section", "section");
+    const heading = make("h2", "", item.title || "확인한 근거");
+    heading.id = "section-" + sectionIndex;
+    section.setAttribute("aria-labelledby", heading.id); section.append(heading);
+    if (item.intro) section.append(make("p", "intro", item.intro));
+    list(item.paragraphs).forEach(value => section.append(make("p", "paragraph", value)));
+    appendFacts(section, item.facts);
+    const table = record(item.table), columns = list(table.columns), rows = list(table.rows);
+    if (columns.length && rows.length) {
+      const hint = make("p", "table-hint", "표가 길거나 넓으면 표 안에서 스크롤해 전체 내용을 확인할 수 있습니다.");
+      hint.id = "table-hint-" + sectionIndex; section.append(hint);
+      const frame = make("div", "table-wrap"); frame.tabIndex = 0;
+      frame.setAttribute("role", "region"); frame.setAttribute("aria-labelledby", heading.id);
+      frame.setAttribute("aria-describedby", hint.id);
+      const el = make("table"); el.append(make("caption", "", table.caption || item.title || "후보별 근거"));
+      const thead = make("thead"), headRow = make("tr");
+      columns.forEach(column => {
+        const th = make("th", "", typeof column === "string" ? column : record(column).label);
+        th.scope = "col"; headRow.append(th);
+      });
+      thead.append(headRow); el.append(thead);
+      const tbody = make("tbody");
+      rows.forEach(row => {
+        const tr = make("tr");
+        columns.forEach((column, index) => {
+          const value = list(row)[index], cell = record(value);
+          const content = value !== null && typeof value === "object" ? cell.value : value;
+          const td = make(index === 0 ? "th" : "td", record(column).numeric === true ? "numeric" : "");
+          if (index === 0) td.scope = "row";
+          if (cell.status) { td.append(badge(["pass", "fail", "unknown"].includes(cell.status) ? cell.status : "unknown")); td.append(document.createTextNode(" ")); }
+          td.append(document.createTextNode(content == null ? "확인 불가" : text(content)));
+          if (cell.note) td.append(make("small", "", cell.note));
+          tr.append(td);
+        });
+        tbody.append(tr);
+      });
+      el.append(tbody); frame.append(el); section.append(frame);
+    } else if (columns.length || table.emptyMessage) {
+      section.append(make("p", "empty", table.emptyMessage || "이 표에 입력된 후보가 없습니다. 조회 범위와 결론을 함께 확인하세요."));
+    }
+    if (list(item.items).length) {
+      const items = make("div", "items");
+      list(item.items).forEach(value => {
+        const candidate = record(value), article = make("article", "candidate");
+        if (candidate.kicker) article.append(make("p", "kicker", candidate.kicker));
+        const head = make("div", "candidate-head"); head.append(make("h3", "", candidate.name || "후보"));
+        if (candidate.status) head.append(badge(["pass", "fail", "unknown"].includes(candidate.status) ? candidate.status : "unknown"));
+        article.append(head);
+        if (candidate.summary) article.append(make("p", "intro", candidate.summary));
+        appendFacts(article, candidate.facts);
+        if (list(candidate.checks).length) {
+          const checks = make("ul", "checks");
+          list(candidate.checks).forEach(value => {
+            const check = record(value), li = make("li", "check");
+            li.append(badge(["pass", "fail", "unknown"].includes(check.status) ? check.status : "unknown"));
+            const detail = make("div"); detail.append(make("strong", "", check.label));
+            if (check.value != null) detail.append(make("p", "", check.value));
+            if (check.note) detail.append(make("small", "", check.note));
+            li.append(detail); checks.append(li);
+          });
+          article.append(checks);
+        }
+        items.append(article);
+      });
+      section.append(items);
+    }
+    if (list(item.notes).length) {
+      const notes = make("ul", "notes");
+      item.notes.forEach(value => notes.append(make("li", "", value))); section.append(notes);
+    }
+    byId("sections").append(section);
+  });
+  const sources = list(data.sources); byId("sourceBlock").hidden = !sources.length;
+  sources.forEach(value => {
+    const source = record(value), p = make("p", "source");
+    p.append(make("strong", "", source.name || "데이터 출처"));
+    const detail = [source.reference, source.note].filter(Boolean).map(text).join(" · ");
+    if (detail) p.append(document.createTextNode(" — " + detail));
+    byId("sources").append(p);
+  });
+  optional("meta", data.generatedAt ? "작성 " + text(data.generatedAt) : "");
+}());
+</script>
+</body>
+</html>

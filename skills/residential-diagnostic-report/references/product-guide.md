@@ -8,12 +8,12 @@
 
 | 필요한 근거 | 공개 상품 문서 | MCP 도구 | 행 단위와 쓰임 |
 |---|---|---|---|
-| 이름으로 단지 식별 | `complex-search.md` | `search_complex` | 단지 후보 1행. 이름·주소·유형으로 대상을 식별하고 `complex_key`를 얻는다. |
-| 단지 상태 또는 지역 내 단지 목록 | `residential-complexes.md` | `complex_profile`, `complexes_by_region` | 단지 × 주거 유형 1행. 규모·연식·주차·입지와 최근 6개월 단지 전체 실거래 요약을 본다. |
-| 지역 식별과 주거 유형 구성 | `region-legaldong-search.md` | `legaldong_search` | 법정동 코드 1행. 지역 코드·경계와 아파트/오피스텔/연립다세대 단지 수를 얻는다. |
-| 지도상의 유형별 단지 현황 | `residential-complex-type-markers.md` | `residential_type_markers` | 단지 × 주거 유형 마커 1행. bbox 기반 지도나 공간 분포가 결과에 필요할 때만 쓴다. |
+| 이름으로 지역·단지 식별 | `residential-location-search.md` | `search_residential_locations` | 지역 또는 단지 후보 1행. `result_type`을 확인하고 단지는 `result_key`를 `complex_key`로 쓴다. |
+| 단지 상태 또는 지역 내 단지 목록 | `residential-complexes.md` | `complex_profile`, `complexes_by_region` | 단지 1행이며 `residential_type`은 대표유형이다. 전체 포함 유형 목록은 제공하지 않으며, 최근 6개월 값은 유형별이 아닌 단지 전체 실거래 요약으로 쓴다. |
+| 선택 지역의 경계와 주거 유형 구성 | `region-legaldongs.md` | `legaldong_search` | 법정동 1행. `polygon_available=true`인 지역 키로 실제 경계와 아파트/오피스텔/연립다세대 단지 수를 얻는다. |
+| 지도상의 대표유형별 단지 현황 | `residential-complex-type-markers.md` | `residential_type_markers` | 단지 마커 1행이며 `residential_type`은 대표유형이다. bbox 기반 지도나 공간 분포가 결과에 필요할 때만 쓴다. |
 | 단지 경계 | `residential-complex-shapes.md` | `complex_area` | 단지 경계 1행. 지도 시각화가 없으면 호출하지 않는다. |
-| 동·건물과 평형 구성 | `residential-buildings.md` | `building_summaries` | 건물(`ppk`) 1행. 동별 규모와 `units_summary`의 평형·전용면적·수량을 본다. |
+| 동·건물 규모 | `residential-buildings.md` | `building_summaries` | 건물(`ppk`) 1행. 동 이름·층수·호실 수를 보고 호실 조회에 필요한 키를 얻는다. |
 | 호·층·면적 상세 | `residential-units.md` | `unit_details` | 호(`jpk`) 1행. 질문이 실제 호·층·세부 면적을 요구할 때만 내려간다. |
 | 과거 계약 | `residential-realdeal.md` | `realdeal_history` | 실거래 계약 1행. 매매·전세·월세 흐름과 면적별 거래 수준을 분석한다. |
 | 현재 산출시세 | `residential-estimated-prices.md` | `estimated_prices` | 호별 최신 월 산출시세 1행. 현재 추정 범위나 특정 면적/호 가격 근거에 쓴다. |
@@ -26,16 +26,16 @@
 ## 대상 해석과 식별자
 
 ```text
-단지명 ── search_complex ── complex_key
-                                ├─ complex profile / shape / buildings / prices / realdeal
-                                └─ buildings ── ppk ── units ── jpk
-
-지역명 ── legaldong_search ── legaldong_code 또는 5자리 시군구 prefix
-                                      └─ complexes_by_region
+지역명·단지명 ── search_residential_locations ── result_type
+                                     ├─ complex ── result_key → complex_key
+                                     │                └─ profile / shape / buildings / prices / realdeal
+                                     └─ region  ── bbox로 이동
+                                                      ├─ 경계 있음: result_key → legaldong_search
+                                                      └─ 지역 범위 키 → complexes_by_region
 ```
 
 - `complex_key`, `pnu`, `ppk`, `jpk`, 법정동 코드는 선행 0을 보존하는 문자열이다.
-- 이름 검색 결과가 여러 개면 주소·주거 유형·사용자 문맥으로 식별한다. 첫 행을 자동으로
+- 검색 결과가 여러 개면 `result_type`·보조 지역명·주거 유형·사용자 문맥으로 식별한다. 첫 행을 자동으로
   정답 처리하지 않는다.
 - 단지 질문에 지역 상품을 반드시 거치거나, 지역 질문에 임의의 대표 단지를 먼저 고르지
   않는다.
@@ -46,10 +46,9 @@
 | 질문의 중심 | 기본 출발점 | 추가 상품을 붙이는 조건 |
 |---|---|---|
 | 규모·연식·주차·학교·주변시설 | 단지 상세 | 위치 그림이 필요할 때만 경계/마커 |
-| 단지 거래 분위기 | 단지 상세 + 실거래 | 가격 수준·변화를 말하려면 면적 범위를 평형 요약으로 맞춤 |
-| 지역의 주거 구성·시장 상태 | 법정동 검색 + 지역 단지 목록 | 개별 계약이 꼭 필요할 때만 선택 단지 실거래를 추가 |
-| 평형·면적 구성 | 건물 상세 | 호/층 분포가 질문의 핵심일 때만 호실 상세 |
-| 가격 수준 | 실거래, 필요 시 산출시세·공시가격 | 평형이 지정되면 건물 요약에서 실제 전용면적 범위를 먼저 확인 |
+| 단지 거래 분위기 | 단지 상세 + 실거래 | 가격 수준·변화를 말하려면 실제 전용면적 범위를 맞춤 |
+| 지역의 주거 구성·시장 상태 | 통합검색 + 법정동 상세 + 지역 단지 목록 | 개별 계약이 꼭 필요할 때만 선택 단지 실거래를 추가 |
+| 가격 수준 | 실거래, 필요 시 산출시세·공시가격 | 공급 평형만 지정되면 실제 전용면적 근거를 확인하거나 전용면적 조건을 질문 |
 | 지도·공간 분포 | 법정동 경계 또는 유형 마커/단지 경계 | 텍스트 진단만이면 생략 |
 
 한 상품으로 충분한 질문에 여러 가격 상품을 장식처럼 추가하지 않는다. 반대로 결론의
@@ -78,10 +77,8 @@
 
 ## 해석 충돌 방지
 
-- 단지 상세의 세대수·호수와 건물 `units_summary` 합계는 정의와 포함 범위가 다를 수 있다.
-  평형 비중은 `units_summary` 내부 합계를 분모로 계산한다.
-- 공급 평형 숫자가 달라도 전용면적 구간이 겹칠 수 있다. 가격 비교는 전용면적 범위를
-  우선하고, 평형 구성 설명은 원래 공급 평형 라벨을 보존한다.
+- 공급 평형을 전용면적으로 환산하지 않는다. 실제 호의 평형·면적을 확인했더라도 그 호의
+  면적을 해당 공급 평형 전체의 면적 집합으로 확대하지 않는다. 실거래는 전용면적 기준으로 설명한다.
 - 단지 전체 평균 실거래가는 평당가가 아니다. 면적 혼합값을 특정 평형 가격으로 바꾸지
   않는다.
 - 가까운 지하철·학교·병원·공원 값은 접근성의 제한된 대리 지표다. 이동시간, 만족도,

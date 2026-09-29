@@ -58,16 +58,12 @@ window.mapAdapter = (() => {
     return "dot";
   }
 
-  function isDongLabelVisible() {
-    return map.getLevel() <= C.DONG_LABEL_LEVEL;
-  }
-
   // 방향 있는 연산 — 여기서만 부호를 안다.
   function zoomIn() { map.setLevel(map.getLevel() - 1); }
   function zoomOut() { map.setLevel(map.getLevel() + 1); }
 
   // 티어별 최소 확대 보장. 카카오는 값이 작을수록 확대이므로 Math.min을 쓴다.
-  const TIER_LEVEL = { complex: () => C.FULL_PIN_LEVEL, dong: () => C.DONG_LABEL_LEVEL };
+  const TIER_LEVEL = { complex: () => C.FULL_PIN_LEVEL };
   function focusOn(lat, lng, tier = null) {
     const { kakao } = window;
     if (tier && TIER_LEVEL[tier]) {
@@ -75,6 +71,14 @@ window.mapAdapter = (() => {
       if (map.getLevel() !== target) map.setLevel(target);
     }
     map.panTo(new kakao.maps.LatLng(lat, lng));
+  }
+
+  function fitBounds({ minLat, maxLat, minLng, maxLng }) {
+    const { kakao } = window;
+    const bounds = new kakao.maps.LatLngBounds();
+    bounds.extend(new kakao.maps.LatLng(minLat, minLng));
+    bounds.extend(new kakao.maps.LatLng(maxLat, maxLng));
+    map.setBounds(bounds);
   }
 
   // HTML 마커. 반환 핸들은 컨트롤러가 마커 풀을 관리할 때 쓴다.
@@ -111,8 +115,8 @@ window.mapAdapter = (() => {
     id: "kakao",
     supportsSatellite: true,
     load, create, onIdle,
-    getBoundsRect, getCenter, getDensityTier, isDongLabelVisible,
-    zoomIn, zoomOut, focusOn,
+    getBoundsRect, getCenter, getDensityTier,
+    zoomIn, zoomOut, focusOn, fitBounds,
     addOverlay, addPolygon, setSatellite,
   };
 })();

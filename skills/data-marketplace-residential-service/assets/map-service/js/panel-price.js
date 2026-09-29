@@ -1,12 +1,12 @@
 // 단지 상세 패널의 가격 모듈 — 단지 실거래 요약·상세 목록·차트·주변 비교
 //
 // 조회 전략(성능 계약):
-//   · 동 목록에서 대표 평형을 정한 뒤 실거래 첫 페이지(100건)를 1회 조회한다.
-//     목록(30건씩 공개)·차트가 이 rows를 공유한다. 단지 전체 요약은
+//   · 프로필 도착 후 단지 범위 실거래 첫 페이지(100건)를 1회 조회한다.
+//     가장 많이 관측된 전용면적을 기본 선택해 목록·차트에 같이 표시하며, 이때 추가 조회는 하지 않는다. 단지 전체 요약은
 //     프로필의 최근 6개월 요약을 사용하며 첫 페이지 rows로 덮어쓰지 않는다.
 //   · 주변 비교는 섹션이 화면에 보일 때 마커 1회로 그린다.
 window.createPanelPriceModule = (context) => {
-  const {F,A,D,Async,bodyEl,pyeongFilterRange,getFocusPyeong,formatPyeongBand,formatUnitArea,renderAreaUnavailable,openComplex}=context;
+  const {F,A,D,Async,bodyEl,formatUnitArea,openComplex}=context;
   const dealRequest = Async.latestRequest();
   const chartRequest = Async.latestRequest();
   let chartHandle = null;
@@ -43,7 +43,11 @@ window.createPanelPriceModule = (context) => {
       btn.addEventListener("click", () => {
         const deal = context.getDeal();
         if (!deal) return;
-        bodyEl.querySelectorAll(".deal-seg button").forEach((b) => b.classList.toggle("is-on", b === btn));
+        bodyEl.querySelectorAll(".deal-seg button").forEach((b) => {
+          const selected = b === btn;
+          b.classList.toggle("is-on", selected);
+          b.setAttribute("aria-pressed", String(selected));
+        });
         deal.division = btn.dataset.deal;
         syncOverlayBtn();
         loadDeals(context.getOpenToken(), { reset: true });
@@ -53,22 +57,19 @@ window.createPanelPriceModule = (context) => {
       btn.addEventListener("click", () => {
         const deal = context.getDeal();
         if (!deal) return;
-        bodyEl.querySelectorAll(".range-toggle button[data-range]").forEach((b) => b.classList.toggle("is-on", b === btn));
+        bodyEl.querySelectorAll(".range-toggle button[data-range]").forEach((b) => {
+          const selected = b === btn;
+          b.classList.toggle("is-on", selected);
+          b.setAttribute("aria-pressed", String(selected));
+        });
         deal.range = +btn.dataset.range || null;
         loadDeals(context.getOpenToken(), { reset: true });
       });
     });
     const overlayBtn = bodyEl.querySelector("#jeonse-overlay");
-    const syncOverlayBtn = () => {
-      const deal = context.getDeal();
-      if (!overlayBtn || !deal) return;
-      overlayBtn.hidden = deal.division !== "매매";
-      overlayBtn.classList.toggle("is-on", deal.overlayJeonse);
-      overlayBtn.setAttribute("aria-pressed", String(deal.overlayJeonse));
-    };
     overlayBtn?.addEventListener("click", () => {
       const deal = context.getDeal();
-      if (!deal) return;
+      if (!deal || !D.validUnitArea(deal.area)) return;
       deal.overlayJeonse = !deal.overlayJeonse;
       syncOverlayBtn();
       renderChartLoading();
@@ -78,6 +79,18 @@ window.createPanelPriceModule = (context) => {
       hydrateChart(context.getOpenToken(), chartRequest.next());
     });
     syncOverlayBtn();
+    bodyEl.querySelector("#deal-area")?.addEventListener("change", (event) => {
+      const deal = context.getDeal();
+      if (!deal) return;
+      const area = Number(event.currentTarget.value);
+      if (!D.validUnitArea(area) || !deal.observedAreas.has(area)) {
+        renderAreaOptions(deal);
+        return;
+      }
+      deal.area = area;
+      syncOverlayBtn();
+      loadDeals(context.getOpenToken(), { reset: true });
+    });
     // 더 보기: 이미 받아 둔 rows를 먼저 공개하고, 다 보여줬을 때만 다음 페이지를 조회한다.
     bodyEl.querySelector("#deal-more")?.addEventListener("click", () => {
       const deal = context.getDeal();
@@ -91,16 +104,62 @@ window.createPanelPriceModule = (context) => {
     });
   }
 
+  function syncOverlayBtn() {
+    const deal = context.getDeal();
+    const button = bodyEl.querySelector("#jeonse-overlay");
+    if (!button || !deal) return;
+    button.hidden = deal.division !== "매매" || !D.validUnitArea(deal.area);
+    button.classList.toggle("is-on", deal.overlayJeonse);
+    button.setAttribute("aria-pressed", String(deal.overlayJeonse));
+  }
+
+  function renderAreaOptions(deal) {
+    for (const row of deal.rows) {
+      if (D.validUnitArea(row.private_area)) deal.observedAreas.add(row.private_area);
+    }
+    const select = bodyEl.querySelector("#deal-area");
+    if (!select) return;
+    select.innerHTML = [...deal.observedAreas].sort((a, b) => a - b).map((area) =>
+        `<option value="${area}">전용 ${area}㎡</option>`).join("");
+    if (D.validUnitArea(deal.area)) select.value = String(deal.area);
+    select.disabled = !D.validUnitArea(deal.area);
+    select.setAttribute("aria-busy", "false");
+  }
+
+  function chooseInitialArea(rows, division) {
+    const counts = new Map();
+    for (const row of rows) {
+      const price = division === "전세" ? row.deposit_price : row.price;
+      if (row.cancel_date || !D.validUnitArea(row.private_area) || !D.validPrice(price)) continue;
+      counts.set(row.private_area, (counts.get(row.private_area) || 0) + 1);
+    }
+    let selected = null;
+    let selectedCount = 0;
+    for (const [area, count] of counts) {
+      // 동률은 최신순 응답에 먼저 등장한 면적을 유지한다.
+      if (count > selectedCount) { selected = area; selectedCount = count; }
+    }
+    return selected;
+  }
+
+  function renderChartBasis(deal) {
+    const basis = bodyEl.querySelector("#chart-basis");
+    if (!basis) return;
+    const basisLabel = deal.division === "월세" ? "차트는 월세액 기준" :
+      deal.division === "전세" ? "보증금 기준" : "체결가 기준";
+    basis.textContent = !D.validUnitArea(deal.area)
+      ? `전용면적 확인 중 · ${basisLabel}`
+      : `전용 ${deal.area}㎡ · ${basisLabel}`;
+  }
+
   // ── 실거래 목록·차트 ─────────────────────────────────────
   function dealOpts() {
     const cur = context.getCur();
     const deal = context.getDeal();
     if (!cur || !deal) return null;
-    const p = cur.pyeongs.find((item) => item.py === deal.pyeong) || null;
-    const { areaMin, areaMax } = pyeongFilterRange(p);
-    if (p && areaMin == null) return null;
+    if (deal.area != null && !D.validUnitArea(deal.area)) return null;
     const opts = {
-      dealDivision: deal.division, areaMin: p ? areaMin : null, areaMax: p ? areaMax : null,
+      dealDivision: deal.division, areaMin: deal.area ?? null, areaMax: deal.area ?? null,
       residentialType: cur.viewType,
     };
     if (deal.range) {
@@ -116,44 +175,57 @@ window.createPanelPriceModule = (context) => {
     const tbody = bodyEl.querySelector("#deal-tbody");
     const moreBtn = bodyEl.querySelector("#deal-more");
     if (!cur || !deal || !tbody || !moreBtn) return;
-    // 평형이 있는 단지를 잠깐 단지 전체로 조회하는 경합을 막는다. 동 상품이
-    // 성공적으로 끝난 뒤 대표 평형 또는 평형 없음 fallback이 확정돼야 호출한다.
-    if (!cur.buildingsReady) return;
-    if (cur.buildingsError) { renderDealDependencyError(); return; }
     const sequence = reset ? dealRequest.next() : dealRequest.current();
+    const shouldChooseInitialArea = reset && deal.area == null;
     // 새 실거래 범위가 시작되면 이전 차트/전세 요청을 즉시 무효화한다.
     if (reset) chartRequest.next();
     if (reset) {
       deal.rows = []; deal.offset = 0; deal.shown = 0;
       deal.hasNext = false; deal.truncated = false;
+      deal.fromInitialSample = false; deal.sourceRowCount = 0; deal.sourceHasNext = false;
       deal.overlayError = false; deal.overlayHasNext = false; deal.overlayTruncated = false;
       tbody.innerHTML = `<tr><td colspan="4"><div class="skel" style="height:60px"></div></td></tr>`;
       renderChartLoading();
       renderLoadNote(deal);
-      const basis = bodyEl.querySelector("#chart-basis");
-      if (basis) {
-        const basisLabel = deal.division === "월세" ? "차트는 월세액 기준" :
-          deal.division === "전세" ? "보증금 기준" : "체결가 기준";
-        // 전용면적이 겹치는 평형(32/33평)은 한 밴드로 조회됨을 표에서도 밝힌다
-        const band = context.getFocusBand();
-        basis.textContent = band && band.pys.length > 1
-          ? `${formatPyeongBand(getFocusPyeong())} · ${basisLabel}`
-          : basisLabel;
-      }
+      renderChartBasis(deal);
     }
     const opts = dealOpts();
     if (!opts) {
-      renderAreaUnavailable();
+      const message = "전용면적을 확인할 수 없어 실거래를 조회하지 않았어요.";
+      tbody.innerHTML = `<tr><td colspan="4">${message}</td></tr>`;
+      moreBtn.hidden = true;
+      renderChartError(message);
       return;
     }
     moreBtn.disabled = true;
     try {
       const { rows, hasNext } = await A.realdealPage(cur.key, { ...opts, limit: PAGE_LIMIT, offset: deal.offset });
       if (!context.isCurrentOpen(token) || !dealRequest.isCurrent(sequence)) return;
-      deal.rows.push(...rows);
+      const responseRows = rows;
+      // 옵션은 필터링 전 응답 전체에서 수집해 다른 면적도 계속 선택할 수 있게 한다.
+      for (const row of responseRows) {
+        if (D.validUnitArea(row.private_area)) deal.observedAreas.add(row.private_area);
+      }
+      let visibleRows = responseRows;
+      if (shouldChooseInitialArea) {
+        const initialArea = chooseInitialArea(responseRows, deal.division);
+        if (initialArea != null) {
+          deal.area = initialArea;
+          visibleRows = responseRows.filter((row) => row.private_area === initialArea);
+          deal.fromInitialSample = true;
+          deal.sourceRowCount = responseRows.length;
+          deal.sourceHasNext = !!hasNext;
+        }
+      }
+      deal.rows.push(...visibleRows);
+      renderAreaOptions(deal);
+      syncOverlayBtn();
+      renderChartBasis(deal);
       deal.offset += rows.length;
-      deal.truncated = !!hasNext && deal.offset >= MAX_OFFSET;
-      deal.hasNext = !!hasNext && !deal.truncated;
+      deal.truncated = deal.fromInitialSample
+        ? deal.sourceHasNext
+        : !!hasNext && deal.offset >= MAX_OFFSET;
+      deal.hasNext = deal.fromInitialSample ? false : !!hasNext && !deal.truncated;
       deal.shown = Math.min(deal.shown + TABLE_STEP, deal.rows.length);
       // 매매/전세 비교 캐시만 보존한다. 매매 rows는 현재 deal 상태가 이미 들고 있고,
       // 대표가격은 상세 rows가 아니라 프로필 요약을 사용한다.
@@ -188,9 +260,9 @@ window.createPanelPriceModule = (context) => {
     const moreBtn = bodyEl.querySelector("#deal-more");
     if (!tbody || !moreBtn) return;
     if (!deal.rows.length) {
-      // 정상 조회인데 0건 — API 실패(err-box)·면적 누락(areaMessage)과 문구를 구분한다
+      // 정상 조회인데 0건 — API 실패와 문구를 구분한다
       tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--ink-3);padding:22px 0">
-        선택한 기간·면적에 신고된 거래가 없어요. 다른 기간이나 평형을 선택해 보세요.</td></tr>`;
+        선택한 기간·면적에 신고된 거래가 없어요. 다른 기간이나 전용면적을 선택해 보세요.</td></tr>`;
       moreBtn.hidden = true;
       return;
     }
@@ -219,7 +291,11 @@ window.createPanelPriceModule = (context) => {
     const note = bodyEl.querySelector("#deal-load-note");
     if (!note) return;
     const messages = [];
-    if (deal.truncated) {
+    if (deal.fromInitialSample) {
+      const scope = deal.sourceHasNext ? `최신 ${F.count(deal.sourceRowCount)}건` : "조회된 거래";
+      messages.push(`${scope}에서 가장 많이 거래된 전용 ${deal.area}㎡ ${F.count(deal.rows.length)}건을 먼저 보여줘요`);
+      if (deal.sourceHasNext) messages.push("전체 기간 거래가 아니에요");
+    } else if (deal.truncated) {
       messages.push(`최신 ${F.count(deal.offset)}건 표시 · 상품 조회 한도에 도달해 전체 거래가 아니에요`);
     } else if (deal.hasNext) {
       messages.push(`최신 ${F.count(deal.rows.length)}건 표시 · 추가 거래가 있어요`);
@@ -237,7 +313,7 @@ window.createPanelPriceModule = (context) => {
     const wrap = bodyEl.querySelector("#deal-chart");
     if (!wrap) return;
     if (chartHandle) { chartHandle.destroy(); chartHandle = null; }
-    wrap.innerHTML = `<div class="chart-empty">거래 내역을 불러오는 중…</div>`;
+    wrap.innerHTML = '<div class="chart-empty">거래 내역을 불러오는 중…</div>';
   }
 
   function renderChartError(message) {
@@ -252,6 +328,10 @@ window.createPanelPriceModule = (context) => {
     const cur = context.getCur();
     const deal = context.getDeal();
     if (!cur || !deal || sequence == null) return;
+    if (!D.validUnitArea(deal.area)) {
+      renderChartError("차트로 표시할 유효한 면적별 거래가 없어요.");
+      return;
+    }
     const wrap = bodyEl.querySelector("#deal-chart");
     if (!wrap) return;
     try {
@@ -322,8 +402,8 @@ window.createPanelPriceModule = (context) => {
     const el = bodyEl.querySelector("#sec-price-summary");
     if (!el) return;
     const p = cur.profile;
-    // 대표가격은 단지 프로필의 사전 집계만 사용한다. 선택 평형의 일부 상세 rows를
-    // 대표 평균으로 승격하지 않으며, 복합단지 유형이 다르면 프로필 가격도 숨긴다.
+    // 단지 전체 요약은 단지 프로필의 사전 집계만 사용한다. 일부 상세 rows를
+    // 대표 평균으로 승격하지 않으며, 복합단지에서는 대표유형과 선택유형이 다르면 숨긴다.
     const evidence = D.profilePriceEvidence({
       min: p.recent_month6_min_realdeal_price,
       avg: p.recent_month6_average_realdeal_price,
@@ -333,14 +413,14 @@ window.createPanelPriceModule = (context) => {
 
     if (!evidence) {
       const statusText = cur.typeMismatch
-        ? `프로필 가격은 ${p.residential_type || "대표 유형"} 기준이라 ${cur.viewType || "선택 유형"} 가격으로 표시하지 않아요.`
+        ? `단지 전체 가격 요약을 ${cur.viewType || "선택 유형"} 유형 가격으로 표시하지 않아요. 프로필 대표 유형은 ${p.residential_type || "확인 필요"}입니다.`
         : "단지 프로필에 최근 6개월 실거래 요약이 없어요.";
       el.innerHTML = `
         <div class="price-summary-head">
           <h3 class="price-summary-title">최근 6개월 실거래 요약</h3>
           <p class="price-summary-empty">${F.esc(statusText)}</p>
         </div>
-        <p class="price-summary-note">선택 평형의 거래는 아래 실거래 목록과 차트에서 확인할 수 있어요.</p>`;
+        <p class="price-summary-note">아래 실거래 목록에서 거래를 확인하고 전용면적을 선택할 수 있어요.</p>`;
       return;
     }
 
@@ -354,7 +434,7 @@ window.createPanelPriceModule = (context) => {
         <span>데이터 기준 <b>${F.ym(p.standard_ym)}</b></span>
         <span>최저·최고 거래가 <b>${F.price(evidence.min, { compact: true })}~${F.price(evidence.max, { compact: true })}</b></span>
       </div>
-      <p class="price-summary-note">신고 기반 체결가의 단지 전체 요약이에요. 선택 평형의 거래는 아래 목록과 차트에서 보여줘요.</p>`;
+      <p class="price-summary-note">신고 기반 체결가의 단지 전체 요약이에요. 아래 목록에서 전용면적을 선택하면 같은 면적의 거래를 보여줘요.</p>`;
   }
 
   // ── 주변 단지 비교 ───────────────────────────────────────
@@ -455,21 +535,6 @@ window.createPanelPriceModule = (context) => {
     });
   }
 
-  // ── 평형 전환 ────────────────────────────────────────────
-  function onPyeongChange() {
-    loadDeals(context.getOpenToken(), { reset: true });
-  }
-
-  function renderDealDependencyError() {
-    const tbody = bodyEl.querySelector("#deal-tbody");
-    const more = bodyEl.querySelector("#deal-more");
-    const note = bodyEl.querySelector("#deal-load-note");
-    if (tbody) tbody.innerHTML = `<tr><td colspan="4"><div class="err-box">동·평형 정보를 불러오지 못해 실거래 범위를 정하지 못했어요.</div></td></tr>`;
-    if (more) { more.hidden = true; more.disabled = false; }
-    if (note) { note.hidden = true; note.textContent = ""; }
-    renderChartError("동·평형 정보를 불러오지 못해 실거래를 조회하지 않았어요.");
-  }
-
   function dispose() {
     nearbyGen++;
     nearbyCandidates = null;
@@ -483,6 +548,6 @@ window.createPanelPriceModule = (context) => {
 
   return {
     bindControls, hydrateSummary, observeNearby, loadDeals,
-    onPyeongChange, renderDealDependencyError, dispose,
+    dispose,
   };
 };

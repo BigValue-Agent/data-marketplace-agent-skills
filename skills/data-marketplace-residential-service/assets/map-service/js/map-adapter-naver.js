@@ -58,15 +58,11 @@ window.mapAdapter = (() => {
     return "dot";
   }
 
-  function isDongLabelVisible() {
-    return map.getZoom() >= Z.DONG_LABEL;
-  }
-
   function zoomIn() { map.setZoom(map.getZoom() + 1); }
   function zoomOut() { map.setZoom(map.getZoom() - 1); }
 
   // 최소 확대 보장 — 값이 클수록 확대이므로 Math.max를 쓴다(카카오는 Math.min).
-  const TIER_ZOOM = { complex: () => Z.FULL_PIN, dong: () => Z.DONG_LABEL };
+  const TIER_ZOOM = { complex: () => Z.FULL_PIN };
   function focusOn(lat, lng, tier = null) {
     const { naver } = window;
     if (tier && TIER_ZOOM[tier]) {
@@ -74,6 +70,15 @@ window.mapAdapter = (() => {
       if (map.getZoom() !== target) map.setZoom(target);
     }
     map.panTo(new naver.maps.LatLng(lat, lng));
+  }
+
+  function fitBounds({ minLat, maxLat, minLng, maxLng }) {
+    const { naver } = window;
+    const bounds = new naver.maps.LatLngBounds(
+      new naver.maps.LatLng(minLat, minLng),
+      new naver.maps.LatLng(maxLat, maxLng),
+    );
+    map.fitBounds(bounds);
   }
 
   // HTML 마커 — 네이버는 Marker의 icon.content로 임의 HTML을 붙인다.
@@ -124,8 +129,8 @@ window.mapAdapter = (() => {
     id: "naver",
     supportsSatellite: true,
     load, create, onIdle,
-    getBoundsRect, getCenter, getDensityTier, isDongLabelVisible,
-    zoomIn, zoomOut, focusOn,
+    getBoundsRect, getCenter, getDensityTier,
+    zoomIn, zoomOut, focusOn, fitBounds,
     addOverlay, addPolygon, setSatellite,
   };
 })();

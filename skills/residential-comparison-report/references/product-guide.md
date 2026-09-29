@@ -8,16 +8,16 @@
 
 | 필요한 근거 | 공개 상품 문서 | MCP 도구 | 비교에서의 역할 |
 |---|---|---|---|
-| 이름으로 단지 식별 | `complex-search.md` | `search_complex` | 단지 후보 1행. 주소·유형으로 대상을 확정하고 `complex_key`를 얻는다. 비교 지표 자체는 아니다. |
-| 지역 식별과 유형별 단지 수 | `region-legaldong-search.md` | `legaldong_search` | 법정동 1행. 같은 공간 수준의 지역을 확정하고 아파트·오피스텔·연립다세대 단지 수를 비교한다. |
-| 단지 또는 지역 단지 목록 | `residential-complexes.md` | `complex_profile`, `complexes_by_region` | 단지 × 주거 유형 1행. 규모·연식·주차·입지·최근 6개월 매매 요약의 중심 비교 자료다. |
-| 지도상의 공간 분포 | `residential-complex-type-markers.md` | `residential_type_markers` | 단지 × 주거 유형 마커 1행. 지도나 공간 분포가 결과에 필요할 때만 쓴다. |
+| 이름으로 지역·단지 식별 | `residential-location-search.md` | `search_residential_locations` | 지역 또는 단지 후보 1행. `result_type`을 확인하고 단지는 `result_key`를 `complex_key`로 쓴다. 비교 지표 자체는 아니다. |
+| 선택 지역의 경계와 유형별 단지 수 | `region-legaldongs.md` | `legaldong_search` | 법정동 1행. `polygon_available=true`인 지역 키로 같은 공간 수준의 경계와 유형별 단지 수를 비교한다. |
+| 단지 또는 지역 단지 목록 | `residential-complexes.md` | `complex_profile`, `complexes_by_region` | 단지 1행이며 `residential_type`은 대표유형이다. 전체 포함 유형 목록은 제공하지 않으며, 최근 6개월 값은 유형별이 아닌 단지 전체 매매 요약으로 쓴다. |
+| 지도상의 공간 분포 | `residential-complex-type-markers.md` | `residential_type_markers` | 단지 마커 1행이며 `residential_type`은 대표유형이다. 지도나 공간 분포가 결과에 필요할 때만 쓴다. |
 | 단지 경계 | `residential-complex-shapes.md` | `complex_area` | 선택 단지 경계 1행. 지도 표현이 없으면 호출하지 않는다. |
-| 동·건물과 평형 구성 | `residential-buildings.md` | `building_summaries` | 건물(`ppk`) 1행. 동별 규모와 `units_summary`를 합쳐 대상별 평형 구성을 비교한다. |
+| 동·건물 규모 | `residential-buildings.md` | `building_summaries` | 건물(`ppk`) 1행. 동 이름·층수·호실 수를 비교하고 호실 조회 키를 얻는다. |
 | 호·층·면적 상세 | `residential-units.md` | `unit_details` | 호(`jpk`) 1행. 실제 호·층·세부 면적이 비교 대상일 때만 사용한다. |
 | 과거 계약 | `residential-realdeal.md` | `realdeal_history` | 실거래 계약 1행. 같은 거래 유형·기간·전용면적 범위의 거래량과 가격을 비교한다. |
 | 현재 산출시세 | `residential-estimated-prices.md` | `estimated_prices` | 호별 최신 월 산출시세 1행. 같은 면적 또는 단위면적 가격으로 현재 추정 수준을 비교한다. |
-| 공시 기준값 | `residential-notice-prices.md` | `notice_prices` | 호별 당해 연도 공시가격 1행. 같은 물리적 대상이나 면적 범위의 공시 기준을 비교할 때 쓴다. |
+| 공시 기준값 | `residential-notice-prices.md` | `notice_prices` | 호별 당해 연도 공시가격 1행. 같은 물리적 대상은 `jpk`로 맞추고, 면적 비교에는 호실 상세를 함께 쓴다. |
 
 `complex_profile`과 `complexes_by_region`은 같은 `residential-complexes` 상품을 서로 다른
 진입 방식으로 사용한다. MCP 도구 수와 공개 상품 수가 달라도 별도 상품으로 중복 계산하지
@@ -26,21 +26,20 @@
 ## 대상과 식별자
 
 ```text
-단지명 ── search_complex ── complex_key
-                                ├─ complex profile / shape / buildings / prices / realdeal
-                                └─ buildings ── ppk ── units ── jpk
-
-지역명 ── legaldong_search
-          ├─ 동·읍·면·리 ── 10자리 legaldong_code
-          └─ 시군구 전체 ── 앞 5자리 legaldong_code_prefix
-                                  └─ complexes_by_region
+지역명·단지명 ── search_residential_locations ── result_type
+                                     ├─ complex ── result_key → complex_key
+                                     │                └─ profile / shape / buildings / prices / realdeal
+                                     └─ region  ── bbox로 이동
+                                                      ├─ 경계 있음: result_key → legaldong_search
+                                                      └─ 지역 범위 키 → complexes_by_region
 ```
 
 - 모든 식별자는 선행 0을 보존하는 문자열로 전달한다.
-- 이름 검색 후보가 여러 개면 주소·주거 유형·사용자 문맥으로 대상을 확정한다. 첫 행을 자동
+- 검색 후보가 여러 개면 `result_type`·보조 지역명·주거 유형·사용자 문맥으로 대상을 확정한다. 첫 행을 자동
   선택하지 않는다.
 - 동·읍·면·리를 지정했으면 해당 행의 10자리 `legaldong_code`를 쓴다. 시군구 전체를
-  지정했을 때만 검색 결과 페이지를 모두 모아 5자리 `legaldong_code_prefix`로 묶는다.
+  지정했을 때만 확정한 지역 코드의 앞 5자리를 `legaldong_code_prefix`로 쓴다.
+  이름 검색은 지역 식별용이며, 전체 단지 목록은 지역 단지 상품에서 모은다.
   같은 `중구`처럼 이름이 같은 다른 시·도의 행은 한 지역으로 합치지 않는다.
 - `ppk`와 `jpk`는 세부 비교의 연결 키다. 단지·지역 비교의 기본 요구사항이 아니다.
 
@@ -49,10 +48,9 @@
 | 비교 목적 | 기본 출발점 | 추가 상품을 붙이는 조건 |
 |---|---|---|
 | 단지 규모·연식·주차·접근성 | 대상별 단지 상세 | 지도 표현이 필요할 때만 마커/경계 |
-| 지역 시장 규모·구성·거래 활동 | 대상별 법정동 검색 + 지역 단지 목록 | 계약 시기·면적 구성이 핵심일 때만 선택 단지 실거래 |
-| 지역 안 단지 순위 | 법정동 검색 + 지역 단지 목록 | 단지 상세에 없는 기준일 때만 다른 상품 추가 |
+| 지역 시장 규모·구성·거래 활동 | 대상별 통합검색 + 법정동 상세 + 지역 단지 목록 | 계약 시기·면적 구성이 핵심일 때만 선택 단지 실거래 |
+| 정해진 후보 집합의 순위 | 선택 대상의 단지 상세 또는 기존 수집 근거 | 새 후보 발굴·조건 필터링이 먼저면 `residential-complex-finder`로 시작 |
 | 동일 면적 가격 | 대상 식별 + 면적을 맞춘 실거래 | 현재 추정 수준은 산출시세, 공시 기준은 공시가격을 별도 축으로 추가 |
-| 평형·면적 구성 | 대상별 건물 상세 | 실제 호·층 분포가 핵심일 때만 호실 상세 |
 | 지도·공간 분포 | 법정동 경계 또는 유형 마커/단지 경계 | 텍스트 표만 필요하면 생략 |
 
 한 상품으로 충분하면 나머지를 장식처럼 호출하지 않는다. 비교 대상의 실제 면적이나 범위를
@@ -67,16 +65,20 @@
 | 거래 활동 | 같은 기간·거래 유형·취소 제외 규칙 | 기간별 표로 나누거나 건수 비교를 보류한다. |
 | 거래 가격 | 같은 거래 유형과 전용면적 범위 | 면적별로 나누거나 단지 전체 혼합 범위라고 표시한다. |
 | 산출시세 | 같은 기준월의 특정 호 또는 같은 면적대 호별 분포 | 최신 스냅샷끼리만 비교하고 추세로 해석하지 않는다. |
-| 공시가격 | 같은 공시연도의 특정 호 또는 같은 면적대 호별 분포 | 실거래·산출시세와 별도 가격 축으로 둔다. |
-| 평형 구성 | 각 대상의 `units_summary` 수량 합계 | 단지 세대수로 임의 보정하지 않는다. |
+| 공시가격 | 같은 공시연도의 특정 호, 또는 `jpk`로 호실 상세와 연결한 같은 면적대 분포 | 실거래·산출시세와 별도 가격 축으로 둔다. |
 | 접근성 | 같은 거리 필드와 단위 | 도보시간이나 만족도 점수로 변환하지 않는다. |
+
+실거래는 대상별로 같은 전용면적 범위를 맞춘다. 공급 평형만 주어지고 실제 면적 근거가 없으면
+전용면적 조건을 확인한다. 실제 호 하나의 면적을 같은 공급 평형 전체로 확대하거나,
+전용면적이 같은 거래를 특정 공급 평형의 거래로 단정하지 않는다.
 
 ## 순위와 페이지
 
 - 단지 상세 API가 직접 정렬할 수 있는 기준과 로컬 계산이 필요한 기준을 구분한다. 파생값을
   정렬할 때는 전체 대상 행을 먼저 모은다.
 - 전체 순위·합계·중앙값을 말하려면 `has_next`가 끝날 때까지 지원 범위 안에서 수집한다.
-  한 페이지만 쓰면 `상위 N개` 또는 `조회된 N개`라고 쓴다.
+  한 페이지만 쓰면 `조회된 N개`라고 쓴다. `상위 N개`는 미조회 대상이 앞설 수 없음을
+  정렬 계약과 실제 응답으로 확인한 경우에만 쓴다.
 - `has_next` 상태로 허용된 최대 `offset`에 도달하면 필터로 좁히거나 관련된 모든 `ppk`별로
   나눠 조회한 뒤 합친다.
   전체를 모을 수 없으면 전체 통계로 단정하지 말고 `절단 표본`으로 표시한다.
