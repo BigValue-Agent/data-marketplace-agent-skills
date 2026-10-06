@@ -11,6 +11,8 @@ Use this skill as a routing and guardrail map, not as an API manual. Before writ
 
 If the index or a required linked product document is unavailable, stop contract-dependent implementation and name the unavailable URL. Do not infer paths, filters, fields, or limits from memory.
 
+Use the live API Reference as the authority for the generated app's HTTP requests. Reuse documents already read for the current task; retrieve additional contract metadata only when required information is missing, rather than routinely retrieving a second contract source for every product.
+
 ## Runtime Inputs
 
 For live API calls or runnable integration, use `https://datamarket-api.bigvalue.ai` as the default Data Marketplace base URL. Do not ask for a base URL unless the caller needs a non-default environment.
@@ -82,7 +84,7 @@ These are on-demand lookups, not a mandatory pre-read list; open each file only 
 - Read the relevant entries in `references/pitfalls.md` when resolving a contract or integration mistake.
 - Read `references/ui-recipes.md` when composing several products into a service screen.
 - Read `references/verification-checklist.md` before declaring a generated service complete.
-- For a full residential map service, adapt `assets/map-service/` instead of writing the service from scratch, then verify it with `references/verification-checklist.md`.
+- For a full residential map service, adapt the bundled `assets/map-service/` files to the selected tier and current service contract instead of writing the service from scratch. Reuse files already acquired, then verify with `references/verification-checklist.md`.
 
 ## Final Self-Check
 

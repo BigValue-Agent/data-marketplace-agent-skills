@@ -19,8 +19,8 @@ Use this checklist when verifying a generated residential map, detail, price, or
 ## Source Review Order
 
 1. Read `references/ui-recipes.md` for the service flow.
-2. Read `https://datamarket.bigvalue.ai/llms.txt`, then open the linked live documents for the core products you are wiring; read realdeal, building/unit, and unit-price contracts only when implementing those screens.
-3. Adapt `assets/map-service/` instead of writing screens from scratch; if the assets are unavailable, follow `references/ui-recipes.md`.
+2. Use the live documents linked from `https://datamarket.bigvalue.ai/llms.txt` for the products you are wiring, reusing documents already read for this task. Retrieve additional contract metadata only for missing information; read realdeal, building/unit, and unit-price contracts when implementing those screens.
+3. Adapt the bundled `assets/map-service/` files to the selected tier and current service contract. Reuse files already acquired instead of recreating screens from scratch; if no template is available, follow `references/ui-recipes.md`.
 4. Read `references/code-patterns.md` and `references/pitfalls.md` as needed for the specific code pattern or pitfall in question.
 5. Sample verification calls go directly to the Data Marketplace API from server-side code when credentials are available.
 
@@ -38,6 +38,7 @@ Route names are recommended examples; keep the role-to-route mapping even if nam
 | App route | Product role (`api_slug`) | Main purpose |
 |---|---|---|
 | `/api/location-search` | Region + complex search (`location-search`) | Search by region or complex name; region/address tokens can narrow only with a complex-name token |
+| `/api/region-detail` | Legal-dong detail (`region/legaldongs`) | Selected region boundary when available |
 | `/api/markers` | Residential type marker (`complex-type-markers`) | Current viewport markers or a selected complex marker |
 | `/api/complex-detail` | Residential complex profile (`complexes`) | Main complex profile |
 | `/api/complex-shape` | Residential complex area (`complex-shapes`) | Selected complex boundary |
