@@ -90,6 +90,7 @@ Use these recipes to compose product calls into residential service screens.
 4. Load the complex-scope realdeal page independently of buildings; automatically select an observed private area before showing its trend. Load notice and estimated prices only after unit selection.
 5. Add shape layer only if map boundary is visible.
 6. In 완성형, load buildings independently for dong/ho navigation and load units only after a building is selected.
+   Fetch one building page initially; expand already-loaded cards first, then fetch subsequent pages only on explicit “동 더 보기” clicks. Preserve the selected residential type and existing cards on retry, reset paging when the complex changes, and disclose a partial list when the API offset limit is reached. Do not fetch all buildings automatically to obtain a total count.
 7. If shape is missing, keep the panel usable with representative coordinates.
 8. Treat nearby `*_distance` fields as distance only; do not turn them into walking/driving time without route or travel-time data.
 

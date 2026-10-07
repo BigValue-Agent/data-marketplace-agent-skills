@@ -32,6 +32,7 @@ window.panel = (() => {
   const unitsModule = window.createPanelUnitsModule({
     ...moduleContext,
     retryBuildings: () => loadBuildings(openToken),
+    loadMoreBuildings: () => loadBuildings(openToken, { append: true }),
   });
 
   // 진입 residentialType은 혼합 단지의 패널 전체 조회 기준이다.
@@ -65,6 +66,8 @@ window.panel = (() => {
         // 동 목록 도착 전 상태 — 동 영역은 스켈레톤으로 표시된다.
         buildings: [],
         buildingsReady: false, buildingsHasNext: false, buildingsError: false,
+        buildingsOffset: 0, buildingsLoading: false, buildingsMoreError: false,
+        buildingsExpanded: false, buildingsTruncated: false,
         // 매매/전세 비교에서 재사용하는 전세 rows (기간·면적 scope 키 포함)
         jeonseRows: null,
       };
@@ -104,26 +107,37 @@ window.panel = (() => {
     }
   }
 
-  async function loadBuildings(token) {
-    if (!cur || token !== openToken) return;
-    cur.buildingsReady = false;
+  async function loadBuildings(token, { append = false } = {}) {
+    if (!cur || token !== openToken || cur.buildingsLoading) return;
+    if (append && (!cur.buildingsHasNext || cur.buildingsTruncated)) return;
+    const offset = append ? cur.buildingsOffset : 0;
+    cur.buildingsLoading = true;
+    cur.buildingsReady = append;
     cur.buildingsError = false;
+    cur.buildingsMoreError = false;
     updateBuildingCounts();
     unitsModule.renderDongGrid();
     try {
-      const { rows, hasNext } = await A.buildings(cur.key, cur.viewType);
+      const { rows, hasNext } = await A.buildings(cur.key, cur.viewType, { offset });
       if (!cur || token !== openToken) return;
-      cur.buildings = rows;
+      if (hasNext && rows.length === 0) throw new Error("동 목록의 다음 위치를 확인할 수 없어요");
+      cur.buildings = append ? [...cur.buildings, ...rows] : rows;
+      cur.buildingsOffset = offset + rows.length;
       cur.buildingsHasNext = hasNext;
-      cur.buildingsReady = true;
+      cur.buildingsTruncated = hasNext && cur.buildingsOffset > 2000;
     } catch (error) {
       if (!cur || token !== openToken) return;
       console.error(error);
-      cur.buildings = [];
-      cur.buildingsHasNext = false;
-      cur.buildingsReady = true;
-      cur.buildingsError = true;
+      if (append) {
+        cur.buildingsMoreError = true;
+      } else {
+        cur.buildings = [];
+        cur.buildingsHasNext = false;
+        cur.buildingsError = true;
+      }
     }
+    cur.buildingsReady = true;
+    cur.buildingsLoading = false;
     updateBuildingCounts();
     unitsModule.renderDongGrid();
   }

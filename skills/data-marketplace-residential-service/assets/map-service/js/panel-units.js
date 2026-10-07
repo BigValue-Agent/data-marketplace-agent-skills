@@ -1,7 +1,6 @@
 window.createPanelUnitsModule = (context) => {
   const { F, A, D, panelEl, bodyEl, sheetEl, formatUnitArea, formatPyeong, formatFloor } = context;
   const DONG_VISIBLE = 24;
-  let dongExpanded = false;
   let sheetToken = 0;
   let sheetReturnFocus = null;
 
@@ -40,16 +39,24 @@ window.createPanelUnitsModule = (context) => {
     }
     const sorted = [...cur.buildings].sort((a, b) =>
       String(a.dong_name).localeCompare(String(b.dong_name), "ko", { numeric: true }));
-    const list = dongExpanded ? sorted : sorted.slice(0, DONG_VISIBLE);
+    const list = cur.buildingsExpanded ? sorted : sorted.slice(0, DONG_VISIBLE);
+    const canExpand = sorted.length > DONG_VISIBLE && !cur.buildingsExpanded;
+    const canLoadMore = cur.buildingsHasNext && !cur.buildingsTruncated;
+    const restoreMoreFocus = document.activeElement === wrap.querySelector("#dong-more");
     wrap.innerHTML = list.map((building) => `
       <button type="button" class="dong-cell" data-ppk="${F.esc(building.ppk)}" data-testid="building-card">
         ${F.esc(building.dong_name)}동 <small>${building.total_ho_count ?? "—"}호</small>
       </button>`).join("") +
-      (sorted.length > DONG_VISIBLE && !dongExpanded
-        ? `<button type="button" class="dong-cell dong-more" id="dong-more">+${sorted.length - DONG_VISIBLE}개 더보기</button>`
+      (canExpand || canLoadMore
+        ? `<button type="button" class="dong-cell dong-more" id="dong-more" ${cur.buildingsLoading ? 'disabled aria-busy="true"' : ""}>${canExpand
+          ? `+${sorted.length - DONG_VISIBLE}개 더보기`
+          : cur.buildingsLoading ? "동 정보 불러오는 중…"
+          : cur.buildingsMoreError ? "동 정보 다시 불러오기" : "동 더 보기"}</button>`
         : "") +
       (cur.buildingsHasNext
-        ? `<p class="sec-note" style="grid-column:1/-1">현재 ${F.count(sorted.length)}개 동만 표시하고 있어요. 전체 목록이 아닐 수 있어요.</p>`
+        ? `<p class="sec-note" style="grid-column:1/-1">${cur.buildingsTruncated
+          ? `조회 한도에 도달해 ${F.count(sorted.length)}개 동만 불러왔어요. 전체 목록이 아니에요.`
+          : `현재 ${F.count(sorted.length)}개 동을 불러왔어요. 추가로 조회할 동이 있어요.`}</p>`
         : "");
     wrap.querySelectorAll(".dong-cell[data-ppk]").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -60,9 +67,16 @@ window.createPanelUnitsModule = (context) => {
       });
     });
     wrap.querySelector("#dong-more")?.addEventListener("click", () => {
-      dongExpanded = true;
-      renderDongGrid();
+      if (canExpand) {
+        cur.buildingsExpanded = true;
+        renderDongGrid();
+      } else {
+        context.loadMoreBuildings();
+      }
     });
+    if (restoreMoreFocus) {
+      (wrap.querySelector("#dong-more") || wrap.querySelectorAll(".dong-cell[data-ppk]")[0])?.focus();
+    }
   }
 
   async function openSheet(building, trigger) {

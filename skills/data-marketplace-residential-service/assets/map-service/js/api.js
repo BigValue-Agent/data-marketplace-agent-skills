@@ -110,15 +110,16 @@ window.api = (() => {
     return r.data[0] || null;
   }
 
-  // 5. 동/건물 목록 — 첫 페이지(최대 300동)만. hasNext=true면 건물이 더 있다는 뜻인데,
-  // 헤더 숫자 하나를 정확히 세려고 추가 페이지를 자동 조회하지 않는다("N+"로 표기).
+  // 5. 동/건물 목록 — 한 번에 최대 100동. 다음 페이지는 더 보기 클릭 시에만 조회한다.
+  // 헤더 숫자를 세기 위한 자동 전체 조회는 하지 않는다("N+"로 표기).
   // 주상복합 대응: residentialType을 주면 해당 유형의 동만 — 진입 유형과 평형/동 정보가 어긋나지 않게.
-  async function buildings(complexKey, residentialType = null) {
+  async function buildings(complexKey, residentialType = null, { offset = 0 } = {}) {
     const filters = { complex_key: complexKey };
     if (residentialType) filters.residential_type = residentialType;
     const r = await query(ROUTES.buildings, {
       filters,
-      limit: 300,
+      limit: 100,
+      offset,
     });
     return { rows: r.data, hasNext: !!r.has_next };
   }
