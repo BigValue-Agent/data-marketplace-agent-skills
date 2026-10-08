@@ -1,6 +1,6 @@
 ---
 name: residential-diagnostic-report
-description: "Use when the user wants an evidence-backed diagnosis or interpretive report about a Korean residential complex, neighborhood, market segment, housing composition, transactions, prices, or living conditions using BigValue data—for example, asks how the market feels, what is driving it, whether a price level looks high or low, what housing types dominate, or requests a diagnostic report. The subject may be one complex, a region, a residential type, an area band, or another coherent scope. Do not use for a simple one-fact lookup, a comparison or ranking whose main goal is ordering two or more targets, or application/API code generation."
+description: "시장 분석해줘, 시세 분석 리포트 만들어줘, 이 단지 가격 수준은 어때 같은 요청의 주거 데이터 진단·해석. Use when the user wants an evidence-backed diagnosis or interpretive report about a Korean residential complex, neighborhood, market segment, housing composition, transactions, prices, or living conditions using BigValue data—for example, asks how the market feels, what is driving it, whether a price level looks high or low, what housing types dominate, or requests a diagnostic report. The subject may be one complex, a region, a residential type, an area band, or another coherent scope. Do not use for data retrieval or simple presentation of retrieved values, a comparison or ranking whose main goal is ordering two or more targets, or application/API code generation."
 ---
 
 # Residential Diagnostic Report
@@ -12,8 +12,8 @@ description: "Use when the user wants an evidence-backed diagnosis or interpreti
 
 - 사용자가 원하는 대상과 관점에 맞춰 한국어 리포트를 작성한다.
 - 별도 형식 요청이 없으면 핵심 판단, 근거, 해석 한계가 읽히는 간결한 Markdown으로 답한다.
-- HTML 카드나 파일형 리포트가 필요하면 `assets/report.html`을 사용한다. 조회 근거가 없는
-  섹션은 추가하지 않는다.
+- HTML 카드나 파일형 리포트가 필요하면 아래 '리포트 표현'을 따른다. 조회 근거가 없는 섹션은
+  추가하지 않는다.
 - 같은 수치를 핵심 카드·표·본문에 반복하지 말고 가장 빨리 이해할 수 있는 표현 하나를 고른다.
   핵심 진단과 근거로 의미가 충분하면 같은 해석을 별도 섹션으로 다시 만들지 않는다.
 - 수집·계산·제외 처리는 내부에서 검증한다. 사용자 본문에는 진단을 바꾸는 근거와 한계만
@@ -73,6 +73,25 @@ description: "Use when the user wants an evidence-backed diagnosis or interpreti
 - 결측값은 0이 아니다. 조회되지 않은 사실, 원인, 미래 전망을 만들어내지 않는다.
 - 화면에 API slug, 영문 필드명, 내부 식별자, 인증 정보가 보이지 않게 한다.
 
+## 리포트 표현
+
+질문과 실제 데이터에 맞춰 구성한다. `assets/report.html`은 기본 디자인과 부품 모음이다. 맞는
+부분은 그대로 쓰고, 배치·차트·마크업·스타일은 필요하면 바꾸거나 새로 만든다.
+
+- 표현은 질문이 정한다. 거래 분위기는 월별 추이, 가격 수준은 세 가격 축을 나란히, 지역 구성은
+  구성비, 실거주 여건은 항목 나열이 기본이다. 표본이 적으면 큰 차트보다 개별 거래와 한계를 보인다.
+- 색·글꼴은 기본값을 쓰고, 사용자의 요청이나 쓰일 곳(인쇄·공유 이미지 등)이 있을 때 바꾼다.
+  한 리포트 안에서 같은 데이터의 색 의미를 바꾸지 않는다.
+
+어떤 디자인이든 다음은 지킨다.
+
+- 결측은 '확인 불가'로 표시하고 0이나 빈 막대로 그리지 않는다.
+- 막대·면적은 0에서 시작하는 실제 비례로 그린다. 단위·기준이 다른 값을 한 축에 올리거나 여러
+  지표를 종합 막대·점수로 합치지 않는다.
+- 값 옆이나 범례에 기준시점·범위를 붙이고, 신고가 덜 쌓였을 수 있는 최근 달은 구분해 표시한다.
+- 외부 스크립트·폰트·API 호출·인증 정보 없이 열리고 좁은 화면에서도 읽힌다. 데이터 문자열은
+  텍스트로만 넣고, JSON은 `<`를 `\u003c`로 바꿔 삽입한다.
+
 ## 완료 전 확인
 
 - 질문의 대상·필터 범위와 반환 행의 식별자·유형·날짜·면적이 일치하는가? 범위 밖 행은
@@ -81,3 +100,4 @@ description: "Use when the user wants an evidence-backed diagnosis or interpreti
 - 면적·주거 유형·거래 유형·기준시점이 섞여 생긴 가짜 평균이나 추세가 없는가?
 - 부분 조회, 결측, 신고 지연, 스냅샷 한계를 필요한 곳에 표시했는가?
 - 특정 단지·평형·동·호가 필요하지 않은 질문에 그 경로를 강제하지 않았는가?
+- HTML이면 결측·기준시점·막대 비례가 화면에서도 위 규칙대로 보이는가?

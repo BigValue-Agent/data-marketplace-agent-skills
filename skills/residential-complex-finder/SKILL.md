@@ -1,6 +1,6 @@
 ---
 name: residential-complex-finder
-description: "Find or shortlist Korean residential complexes from a region or an existing candidate pool using the user's constraints and BigValue data. Use for requests such as finding places that meet requirements, narrowing options, or discovering candidates by location, housing characteristics, area, transactions, or price evidence. Supports apartments, officetels, and row houses without requiring an uploaded file. This finds complexes, not currently available listings. Use residential-comparison-report when the main goal is comparing or ranking established targets, residential-diagnostic-report for understanding a target's state, and data-marketplace-residential-service for building an app."
+description: "조건에 맞는 단지 찾아줘, 예산과 역 거리로 아파트 후보 추려줘 같은 요청의 단지 탐색·선별. Find or shortlist Korean residential complexes from a region or an existing candidate pool using the user's constraints and BigValue data. Use for requests such as finding places that meet requirements, narrowing options, or discovering candidates by location, housing characteristics, area, transactions, or price evidence. Supports apartments, officetels, and row houses without requiring an uploaded file. This finds complexes, not currently available listings. Use residential-comparison-report when the main goal is comparing or ranking established targets, residential-diagnostic-report for understanding a target's state, and data-marketplace-residential-service for building an app."
 ---
 
 # 조건에 맞는 단지 찾기
@@ -12,7 +12,7 @@ description: "Find or shortlist Korean residential complexes from a region or an
 ## 결과 원칙
 
 - 기본 결과는 조건 요약, 후보 목록, 충족 근거, 조회 범위가 읽히는 간결한 Markdown이다.
-  파일형 리포트를 원하면 [assets/report.html](assets/report.html)을 사용한다.
+  파일형 리포트를 원하면 아래 '리포트 표현'을 따른다.
 - 파일 업로드나 지도는 전제하지 않는다. 자연어 요청과 연결된 데이터로 시작한다.
 - 결과의 단위는 단지다. 호·계약 행은 조건을 뒷받침하는 근거로 쓸 수 있지만, 현재 거래할
   수 있는 매물·호가·중개 연락처처럼 표현하지 않는다.
@@ -80,26 +80,25 @@ description: "Find or shortlist Korean residential complexes from a region or an
 - 오류·사용량 제한·페이지 상한은 ‘조건에 맞는 곳 없음’이 아니다. 수치가 없으면 0이 아니라
   확인 불가다. 알려진 값만으로 확정되는 판정과 아직 확인이 필요한 판정을 구분한다.
 
-## HTML은 질문에 맞게 구성한다
+## 리포트 표현
 
-템플릿의 JSON에 실제 조회 결과만 넣는다. 조건, 범위 설명, 결과 섹션, 표 열, 후보별 근거는
-모두 가변 배열이다. 특정 지역·가격 카드·후보 수·지도 영역을 필수로 만들지 않는다.
-작은 목록은 표 하나로, 근거가 복잡한 후보는 상세 항목으로, 서로 다른 비교 축은 섹션을
-나눠 표현할 수 있다. 같은 내용을 카드와 표에 반복해서 채울 필요는 없다.
-표 열은 선택에 필요한 근거만 고르고, 주소·보조 설명은 셀의 `note`나 후보 상세 항목을 활용한다.
+질문과 실제 데이터에 맞춰 구성하고, 배치 순서는 진행 순서 6을 따른다. [assets/report.html](assets/report.html)은
+기본 디자인과 부품 모음이다. 맞는 부분은 그대로 쓰고, 배치·차트·마크업·스타일은 필요하면 바꾸거나 새로 만든다.
 
-`subtitle`에는 지역·유형·시점·핵심 조건을 짧게, `coverage.summary`에는 결과 해석에 중요한
-조회 한계를 쓴다. `sections`는 후보와 근거부터 배치하고, 상세 조건·조회 범위는 뒤에 둔다.
+- 후보가 적고 근거가 복잡하면 후보별 카드, 많으면 조건 판정표, 한 수치로 늘어놓을 때는 막대가 기본이다.
+  탈락 목록 대신 선별 흐름(모집단 → 조건 통과 → 충족 건수)을 보일 수 있다. 특정 지역·가격 카드·후보 수·
+  지도 영역을 필수로 만들지 않고, 같은 내용을 카드와 표에 반복하지 않는다.
+- 색·글꼴은 기본값을 쓰고, 사용자의 요청이나 쓰일 곳(인쇄·공유 이미지 등)이 있을 때 바꾼다.
+- 사용자용 본문에는 익숙한 이름과 판단에 필요한 값을 쓴다. 내부 식별자·API 필드명·호출 과정은 근거
+  파일이나 기술 부록으로 분리하고, 동명 단지는 주소로 구분하며, 선정 방법은 쉬운 말로 설명한다.
 
-필요하면 마크업·스타일도 질문에 맞게 바꿀 수 있다. 조건 판정, 조회 범위, 기준시점과 출처는
-유지한다. 긴 표는 의미별로 나누거나 전체 결과를 별도 파일로 제공하고 표시한 범위를 밝힌다.
-이 파일은 조회가 끝난 뒤 읽는 문서다. 지도 SDK·외부 폰트·런타임 API 요청·인증 정보 없이
-열려야 한다. Markdown·HTML의 사용자용 본문에는 익숙한 이름과 판단에 필요한 값을 쓴다.
-내부 식별자·API 필드명·호출 과정은 근거 파일이나 별도 기술 부록으로 분리한다. 동명 단지는
-주소로 구분하고, 선정 방법도 사용자가 선택할 때 이해할 수 있는 말로 설명한다.
+어떤 디자인이든 다음은 지킨다.
 
-JSON 직렬화 후 `<`를 `\u003c`로 치환해 HTML에 삽입한다. 렌더러는 문자열을 텍스트로만
-다룬다. 원시 HTML을 데이터 셀에 넣거나 문자열을 스크립트 코드로 이어 붙이지 않는다.
+- 충족·미충족·확인 불가는 색과 함께 글자로 표시한다. 결측은 '확인 불가'이며 0이나 빈 막대로 그리지 않는다.
+- 막대는 0에서 시작하는 실제 비례로 그리고, 여러 조건을 합친 점수 막대를 만들지 않는다.
+- 조건 판정, 조회 범위, 기준시점과 출처를 빼지 않는다.
+- 지도 SDK·외부 스크립트·폰트·API 호출·인증 정보 없이 열리고 좁은 화면에서도 읽힌다. 데이터 문자열은
+  텍스트로만 넣고(원시 HTML·스크립트 연결 금지), JSON은 `<`를 `\u003c`로 바꿔 삽입한다.
 
 ## 완료 전 확인
 
@@ -111,4 +110,5 @@ JSON 직렬화 후 `<`를 `\u003c`로 치환해 HTML에 삽입한다. 렌더러�
   집계 결과를 사용했는가?
 - 후보·핵심 근거 또는 없음의 이유가 상세 설명보다 먼저 나오며, 중요한 조회 한계가 곁에 있는가?
 - 사용자용 본문과 표에 내부 코드·호출 과정·중복 설명이 남아 있지 않은가?
-- 후보 수나 표 항목이 달라져도 출력이 읽히며, HTML의 빈 상태·좁은 화면·인쇄가 정상인가?
+- 후보 수나 표 항목이 달라져도 출력이 읽히며, HTML이면 판정 표시·결측·막대 비례가 위 규칙대로이고
+  빈 상태·좁은 화면·인쇄가 정상인가?

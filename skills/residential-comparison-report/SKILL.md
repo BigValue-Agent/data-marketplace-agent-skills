@@ -1,6 +1,6 @@
 ---
 name: residential-comparison-report
-description: "Use when the user wants an evidence-backed comparison, ranking, prioritization, or choice among two or more established Korean residential complexes, regions, housing types, area bands, units, or other coherent targets using BigValue data—even when phrased casually as which is better, where stands out, or what should come first. When the main goal is discovering complexes in a region or filtering a pool by requirements, use residential-complex-finder first. Do not use for a simple one-fact lookup, a single-target diagnosis whose main goal is understanding its state, or application/API code generation."
+description: "두 지역 비교해줘, 아파트 가격 비교 리포트 만들어줘, 이 단지들 순위 정리해줘 같은 요청의 주거 데이터 비교·순위. Use when the user wants an evidence-backed comparison, ranking, prioritization, or choice among two or more established Korean residential complexes, regions, housing types, area bands, units, or other coherent targets using BigValue data—even when phrased casually as which is better, where stands out, or what should come first. When the main goal is discovering complexes in a region or filtering a pool by requirements, use residential-complex-finder first. Do not use for data retrieval or simple presentation of retrieved values, a single-target diagnosis whose main goal is understanding its state, or application/API code generation."
 ---
 
 # Residential Comparison Report
@@ -16,8 +16,8 @@ description: "Use when the user wants an evidence-backed comparison, ranking, pr
 
 - 사용자가 원하는 선택이나 비교 목적이 먼저 읽히는 한국어 리포트를 작성한다.
 - 별도 형식 요청이 없으면 핵심 결론, 비교표, 해석 한계가 읽히는 간결한 Markdown으로 답한다.
-- HTML 카드나 파일형 리포트가 필요하면 `assets/report.html`을 사용한다. 실제 근거가 있는
-  대상과 섹션만 넣는다.
+- HTML 카드나 파일형 리포트가 필요하면 아래 '리포트 표현'을 따른다. 실제 근거가 있는 대상과
+  섹션만 넣는다.
 - 같은 수치를 핵심 카드·표·본문에 반복하지 말고 가장 빨리 비교할 수 있는 표현 하나를 고른다.
   선택을 바꾸지 않는 공통점이나 실행 과정은 별도 섹션으로 확장하지 않는다.
 - 수집·계산·제외 처리는 내부에서 검증한다. 사용자 본문에는 선택을 바꾸는 근거와 한계만
@@ -93,6 +93,26 @@ description: "Use when the user wants an evidence-backed comparison, ranking, pr
   제공되지 않음, 일부 결측, 분석에서 미사용을 구분하고 일부 결측을 전체 부재로 설명하지 않는다.
 - 화면에 API slug, 영문 필드명, 내부 식별자, 인증 정보를 노출하지 않는다.
 
+## 리포트 표현
+
+비교 구조는 진행 순서 2에서 정한다. HTML·파일형 리포트는 그 구조와 실제 데이터에 맞춰 구성한다.
+`assets/report.html`은 기본 디자인과 부품 모음이다. 맞는 부분은 그대로 쓰고, 배치·차트·마크업·
+스타일은 필요하면 바꾸거나 새로 만든다.
+
+- 실거주 여건은 항목별 표나 지표별 막대, 지역 시장은 지역별 구성비와 거래 막대, 같은 면적 가격은
+  대상별 세 가격 축이 기본이다. 표본이 적은 대상은 큰 차트보다 개별 거래와 한계를 보인다.
+- 색·글꼴은 기본값을 쓰고, 사용자의 요청이나 쓰일 곳(인쇄·공유 이미지 등)이 있을 때 바꾼다.
+  한 리포트 안에서 같은 대상·같은 데이터의 색 의미를 바꾸지 않는다.
+
+어떤 디자인이든 다음은 지킨다.
+
+- 결측은 '확인 불가'로 표시하고 0이나 빈 막대로 그리지 않는다. 결측 대상은 순위 밖에 둔다.
+- 막대·면적은 0에서 시작하는 실제 비례로 그린다. 한 축에는 같은 단위·기준의 값만 올리고, 작을수록
+  유리한 값은 읽는 방향을 적는다. 종합 막대·점수는 사용자가 가중치를 준 경우에만 계산식과 함께 쓴다.
+- 1위 강조 같은 순위 표시는 기준과 방향이 정해진 순위에만 쓴다. 값 옆이나 범례에 기준시점·범위를 붙인다.
+- 외부 스크립트·폰트·API 호출·인증 정보 없이 열리고 좁은 화면에서도 읽힌다. 데이터 문자열은
+  텍스트로만 넣고, JSON은 `<`를 `\u003c`로 바꿔 삽입한다.
+
 ## 완료 전 확인
 
 - 대상, 비교 기준, 정렬 방향과 결과 범위가 명확한가?
@@ -101,3 +121,4 @@ description: "Use when the user wants an evidence-backed comparison, ranking, pr
 - 임의 가중치, 가짜 평균, 결측값 0 처리로 순위를 만들지 않았는가?
 - 전체·상위 일부·표본을 구분하고 동률과 결측을 필요한 곳에 표시했는가?
 - 예시나 특정 지역 순위 흐름을 모든 비교 요청에 강제하지 않았는가?
+- HTML이면 결측·기준시점·막대 비례·순위 표시가 화면에서도 위 규칙대로 보이는가?

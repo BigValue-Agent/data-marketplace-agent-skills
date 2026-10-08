@@ -3,237 +3,609 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
 <title>주거 비교 리포트</title>
 <style>
+/* kit:start — 빅밸류 리포트 키트 v1. 진단·비교·찾기 템플릿에서 이 구간은 글자 하나까지 같다. */
 :root{
-  --bg:#f4f6f9;--card:#fff;--ink:#191f28;--sub:#596575;--faint:#66707d;
-  --line:#e5e8eb;--accent:#3182f6;--accent-text:#205bc7;--accent-soft:#e8f1fe;
-  --green:#0ca678;--violet:#7048e8;--orange:#b26a00;--shadow:0 8px 28px rgba(25,31,40,.06)
+  --font:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
+  --bg:#eef1f5;--panel:#fff;--ink:#141a24;--sub:#5a6572;--faint:#6f7985;
+  --line:#e2e6ec;--zebra:#f6f8fa;--chip:#f1f4f8;
+  --accent:#2f6bed;--accent-s:#e6eefe;
+  --real:#2f6bed;--ai:#12a594;--notice:#c98a12;
+  --t1:#2f6bed;--t2:#7fa3f4;--t3:#bccff9;--t4:#dfe7fb;
+  --gold:#b87d0c;--gold-s:#f9efd6;
+  --good:#0b8a60;--good-s:#e2f5ed;--warn:#a96f0a;--warn-s:#faf0d9;--bad:#cc2a2a;--bad-s:#fde8e8;
+  --shadow:0 1px 2px rgba(20,26,36,.04),0 10px 30px rgba(20,26,36,.06);
 }
-/* 다크 색상은 화면에만 적용하고, 인쇄는 기본 밝은 테마의 글자색을 유지한다. */
-@media screen and (prefers-color-scheme:dark){
-  :root{
-    --bg:#0e1116;--card:#171b22;--ink:#edf0f3;--sub:#a3adb8;--faint:#7e8995;
-    --line:#2a313a;--accent:#6ba6ff;--accent-text:var(--accent);--accent-soft:#1c2a40;
-    --green:#3ecf9a;--violet:#a28af5;--orange:#e5b84b;--shadow:none
-  }
-}
-*{box-sizing:border-box}
+@media screen and (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0c0f14;--panel:#161b22;--ink:#e8ecf1;--sub:#9aa4b0;--faint:#7f8995;
+  --line:#262d37;--zebra:#1c222a;--chip:#1e242d;
+  --accent:#6b9bff;--accent-s:#1a2740;
+  --real:#6b9bff;--ai:#3cc9b6;--notice:#e0af4b;
+  --t1:#6b9bff;--t2:#4a73c4;--t3:#2f4a80;--t4:#22324f;
+  --gold:#e5b53b;--gold-s:#2c2410;
+  --good:#3ddc97;--good-s:#10301f;--warn:#e5b84b;--warn-s:#332a12;--bad:#ff7a7a;--bad-s:#3a1717;
+  --shadow:none;
+}}
+*{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,
-  "Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
-  font-size:15px;line-height:1.6}
-.wrap{max-width:960px;margin:0 auto;padding:24px 16px 56px}
-.block[hidden]{display:none}
-.hero{padding:10px 4px 18px}
-.eyebrow{margin:0 0 5px;color:var(--accent-text);font-size:12px;font-weight:800;letter-spacing:.04em}
-h1{margin:0;font-size:28px;line-height:1.3;letter-spacing:-.025em}
-.scope{margin:8px 0 0;color:var(--sub);font-size:13px}
-.subjects{display:flex;flex-wrap:wrap;gap:8px;margin:0 4px 14px}
-.subject{min-width:140px;padding:10px 13px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
-.subject-name{font-size:13px;font-weight:800}
-.subject-note{display:block;margin-top:1px;color:var(--faint);font-size:11.5px}
-.conclusion{padding:24px;border-radius:18px;background:var(--card);border:1px solid var(--line);
-  box-shadow:var(--shadow)}
-.label{color:var(--sub);font-size:12px;font-weight:700}
-.conclusion h2{margin:10px 0 6px;font-size:22px;line-height:1.45;letter-spacing:-.02em}
-.conclusion p{margin:0;color:var(--sub)}
-.highlights{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}
-.highlight{min-height:126px;padding:17px;border-radius:15px;background:var(--card);
-  border:1px solid var(--line);border-top:3px solid var(--accent)}
-.highlight.green{border-top-color:var(--green)}
-.highlight.violet{border-top-color:var(--violet)}
-.highlight.orange{border-top-color:var(--orange)}
-.highlight-label{margin:0;color:var(--sub);font-size:12px;font-weight:700}
-.highlight-value{margin:8px 0 3px;font-size:20px;font-weight:800;line-height:1.35;letter-spacing:-.02em}
-.highlight-note{margin:0;color:var(--faint);font-size:12px}
-.section{margin-top:14px;padding:22px;border-radius:16px;background:var(--card);border:1px solid var(--line)}
-.section h2{margin:0 0 8px;font-size:17px;letter-spacing:-.015em}
-.section-summary{margin:0 0 14px;color:var(--sub)}
-.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 18px;margin:0}
-.fact{padding:10px 0;border-top:1px solid var(--line)}
-.fact dt{color:var(--faint);font-size:12px}
-.fact dd{margin:2px 0 0;font-weight:700}
-.fact small{display:block;margin-top:2px;color:var(--faint);font-size:11.5px;font-weight:400}
-.table-wrap{overflow:auto;margin-top:14px}
-table{width:100%;border-collapse:collapse;white-space:nowrap}
-th{padding:8px 10px;border-bottom:1px solid var(--line);color:var(--faint);font-size:11.5px;
-  font-weight:700;text-align:left}
-td{padding:9px 10px;border-bottom:1px solid var(--line);font-size:13px}
-tbody tr:last-child td{border-bottom:0}
-.foot{margin-top:22px;padding:0 4px}
-.foot h2{margin:0 0 9px;font-size:13px}
-.foot ul{margin:0;padding-left:18px;color:var(--sub);font-size:12.5px}
-.foot li+li{margin-top:4px}
-.sources{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
-.source{margin:4px 0;color:var(--faint);font-size:11.5px}
-.meta{margin-top:12px;color:var(--faint);font-size:11px}
-@media(max-width:720px){
-  h1{font-size:23px}.highlights{grid-template-columns:1fr}.facts{grid-template-columns:1fr}
-  .conclusion,.section{padding:18px}.conclusion h2{font-size:19px}.subject{flex:1 1 140px}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--font);word-break:keep-all;overflow-wrap:anywhere}
+[hidden]{display:none!important}
+b{color:var(--ink);font-weight:800}
+.num{font-variant-numeric:tabular-nums}
+.wrap{max-width:860px;margin:0 auto;padding:24px 16px 64px}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--accent)}
+h1{margin-top:7px;font-size:27px;font-weight:850;line-height:1.3;letter-spacing:-.03em;text-wrap:balance}
+.lede{margin-top:10px;max-width:66ch;color:var(--sub)}
+.verdict{margin-top:22px;padding:20px 22px;background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
+.verdict-top{display:flex;align-items:center;gap:8px}
+.verdict-top .label{font-size:12px;font-weight:800;color:var(--accent)}
+.verdict h2{margin-top:8px;font-size:20px;font-weight:820;line-height:1.45;letter-spacing:-.025em;text-wrap:balance}
+.verdict p{margin-top:8px;color:var(--sub)}
+.badge{display:inline-flex;align-items:center;padding:1.5px 7px;border-radius:6px;font-size:11px;font-weight:800;line-height:1.5;
+  white-space:nowrap;vertical-align:1px;color:var(--sub);background:var(--chip)}
+.badge.info{color:var(--accent);background:var(--accent-s)}
+.badge.good{color:var(--good);background:var(--good-s)}
+.badge.warn{color:var(--warn);background:var(--warn-s)}
+.badge.bad{color:var(--bad);background:var(--bad-s)}
+.sec{margin-top:34px}
+.sec-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 9px;margin-bottom:12px}
+.sec-h .n{font-size:12px;font-weight:800;color:var(--faint);font-variant-numeric:tabular-nums}
+.sec-h h2{font-size:18.5px;font-weight:800;letter-spacing:-.02em}
+.sec-h .sub{margin-left:auto;font-size:12.5px;color:var(--faint)}
+.intro{max-width:70ch;margin:-4px 0 12px;color:var(--sub);font-size:14px}
+.panel{padding:16px 18px;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+.sec>*+*:not(.sec-h):not(.intro){margin-top:10px}
+.note{padding:9px 12px;border-radius:9px;background:var(--zebra);color:var(--sub);font-size:12.5px;line-height:1.55}
+.panel .note{margin-top:12px}
+.cap{margin-bottom:10px;font-size:12px;color:var(--faint)}
+/* 숫자 타일 */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:10px}
+.kpi{min-width:0;padding:14px 15px;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.kpi .k{font-size:11.5px;font-weight:700;color:var(--faint)}
+.kpi .v{margin-top:4px;font-size:22px;font-weight:850;line-height:1.3;letter-spacing:-.02em}
+.kpi .v small{margin-left:2px;font-size:13px;font-weight:700;color:var(--sub)}
+.kpi .d{margin-top:3px;font-size:11.5px;color:var(--sub)}
+/* 속성 칩과 항목 */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:3px 9px;border-radius:7px;background:var(--chip);color:var(--sub);font-size:12px;font-weight:600}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:0 20px}
+.fact{min-width:0;padding:10px 0;border-top:1px solid var(--line)}
+.fact dt{font-size:12px;font-weight:600;color:var(--faint)}
+.fact dd{margin-top:2px;font-weight:750}
+.fact dd small{display:block;font-size:11.5px;font-weight:500;color:var(--faint)}
+/* 공통 축 막대 */
+.bars{display:grid;grid-template-columns:fit-content(40%) minmax(0,1fr) auto;gap:9px 12px;align-items:center}
+.bar{display:grid;grid-column:1/-1;grid-template-columns:subgrid;align-items:center}
+.bar-l{min-width:0;font-size:13px;font-weight:700;line-height:1.35}
+.bar-l small{display:block;font-size:11px;font-weight:600;color:var(--faint)}
+.bar-l .badge{margin-left:5px}
+.rk{display:inline-block;min-width:16px;margin-right:6px;font-weight:850;color:var(--faint);font-variant-numeric:tabular-nums}
+.rk.top{color:var(--gold)}
+.bar-l.ranked small{padding-left:22px}
+.dot{display:inline-block;width:9px;height:9px;margin-right:6px;border-radius:3px;vertical-align:0}
+.track{height:20px;border-radius:6px;background:var(--zebra);overflow:hidden}
+.track.na,.comp-bar.na{background:repeating-linear-gradient(135deg,var(--zebra) 0 5px,transparent 5px 10px);box-shadow:inset 0 0 0 1px var(--line)}
+.fill{height:100%;border-radius:6px;background:var(--accent)}
+.bar.dim .fill{opacity:.35}
+.bar-v{font-size:13px;font-weight:800;text-align:right;white-space:nowrap}
+.bar-v small{margin-left:4px;font-size:11px;font-weight:600;color:var(--faint)}
+.bar-v.na{color:var(--faint);font-weight:700}
+/* 가격 세 축 카드 */
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px}
+.lg{display:inline-flex;align-items:center;font-size:12px;font-weight:700;color:var(--sub)}
+.lg small{margin-left:5px;font-size:12px;font-weight:600;color:var(--faint)}
+.pcard{padding:18px 18px 16px;border-radius:18px}
+.pcard-top{display:flex;align-items:flex-start;gap:12px}
+.medal{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;
+  background:var(--zebra);color:var(--faint);font-weight:850}
+.medal.top{background:var(--gold-s);color:var(--gold)}
+.pcard-t{flex:1 1 auto;min-width:0}
+.pcard-t h3{font-size:18px;font-weight:820;letter-spacing:-.02em}
+.pcard-t h3 .badge{margin-left:7px}
+.pcard-t p{margin-top:2px;font-size:12.5px;color:var(--faint)}
+.aside{flex:0 0 auto;text-align:right}
+.aside small{display:block;font-size:10.5px;font-weight:700;color:var(--faint)}
+.aside strong{font-size:17px;font-weight:850;letter-spacing:-.02em;color:var(--accent);white-space:nowrap}
+.pcard .chips{margin-top:13px}
+.band{margin-top:15px;font-size:12.5px;font-weight:700;color:var(--sub)}
+.pcard .bars{margin-top:14px}
+.pcard .band+.bars{margin-top:8px}
+.pcard .bars{grid-template-columns:76px minmax(0,1fr) 8.5em}
+.pcard .bar-v{white-space:normal}
+.pcard .bar-v small{display:block;margin-left:0}
+/* 월별 막대 */
+.cols{display:flex;align-items:stretch;gap:6px;height:190px;overflow-x:auto;padding-bottom:2px}
+.col{flex:1 0 22px;display:flex;flex-direction:column;min-width:22px}
+.plot{flex:1 1 auto;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;padding-top:18px;border-bottom:1px solid var(--line)}
+.colbar{position:relative;flex:0 0 auto;width:100%;max-width:38px}
+.col-v{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);padding-bottom:2px;font-size:11px;font-weight:800;line-height:1.4;white-space:nowrap;font-variant-numeric:tabular-nums}
+.stack{display:flex;flex-direction:column-reverse;width:100%;height:100%;border-radius:5px 5px 0 0;overflow:hidden}
+.seg{width:100%}
+.col.partial .stack{opacity:.45}
+.col.partial .stack::after,.sw.partial{background:repeating-linear-gradient(135deg,var(--faint) 0 2px,transparent 2px 5px)}
+.col.partial .stack{position:relative}
+.col.partial .stack::after{content:"";position:absolute;inset:0}
+.col-l{margin-top:6px;font-size:11px;color:var(--faint);text-align:center;white-space:nowrap}
+.cols.dense .col:not(:nth-child(3n+1)) .col-l{visibility:hidden}
+.sw{display:inline-block;width:9px;height:9px;margin-right:6px;border-radius:3px}
+.panel .legend{margin-bottom:12px}
+/* 구성비 막대 */
+.comp+.comp{margin-top:16px}
+.comp-h{display:flex;justify-content:space-between;gap:12px;margin-bottom:6px;font-size:13px;font-weight:750}
+.comp-h small{font-size:12px;font-weight:600;color:var(--faint)}
+.comp-bar{display:flex;gap:2px;height:22px;border-radius:6px;overflow:hidden;background:var(--zebra)}
+.comp-v{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:7px;font-size:12px;color:var(--sub)}
+/* 표 */
+.table-wrap{max-height:40rem;overflow:auto;padding:0;border-radius:16px}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5px}
+caption{padding:12px 16px 4px;text-align:left;font-size:12.5px;color:var(--faint)}
+th,td{padding:11px 14px;text-align:left;vertical-align:top;border-top:1px solid var(--line);overflow-wrap:normal}
+thead th{position:sticky;top:0;z-index:1;background:var(--panel);border-top:0;border-bottom:1px solid var(--line);
+  color:var(--faint);font-size:11.5px;font-weight:700;white-space:nowrap}
+thead+tbody tr:first-child>*{border-top:0}
+td{min-width:7.5em}
+tbody th{min-width:130px;font-weight:750}
+td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td small,th small{display:block;margin-top:2px;font-size:11.5px;font-weight:500;color:var(--faint);white-space:normal}
+td .badge,th .badge{margin-right:5px}
+.empty{color:var(--faint);font-size:13.5px}
+/* 후보 카드 */
+.item{border-radius:16px}
+.item+.item{margin-top:10px}
+.item-h{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.item-h h3{font-size:17px;font-weight:820;letter-spacing:-.02em}
+.kicker{margin-bottom:2px;font-size:12px;color:var(--faint)}
+.item>p{margin-top:4px;color:var(--sub);font-size:14px}
+.item .chips{margin-top:11px}
+.checks{margin-top:12px;list-style:none}
+.check{display:grid;grid-template-columns:max-content minmax(0,1fr);align-items:start;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:13.5px}
+.check strong{font-weight:750}
+.check span{color:var(--sub)}
+.check small{display:block;font-size:12px;color:var(--faint)}
+/* 조건 목록 */
+.crit{display:grid;grid-template-columns:40px minmax(0,1fr);gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.crit:first-child{border-top:0;padding-top:0}
+.crit:last-child{padding-bottom:0}
+.crit>span{padding-top:1px;font-size:12px;font-weight:800;color:var(--accent)}
+.crit>span.preference{color:var(--faint)}
+.crit>span.exclude{color:var(--bad)}
+.crit strong{font-weight:750}
+.crit p{font-size:13.5px;color:var(--sub)}
+/* 읽는 법과 출처 */
+.notes{list-style:none}
+.notes li{position:relative;padding-left:13px;margin-bottom:7px;color:var(--sub);font-size:13px}
+.notes li::before{content:"";position:absolute;left:0;top:9px;width:4px;height:4px;border-radius:50%;background:var(--faint)}
+.foot{margin-top:16px;padding-top:12px;border-top:1px solid var(--line);color:var(--faint);font-size:12px}
+.foot p+p{margin-top:3px}
+.sec-h+.foot{margin-top:0;padding-top:0;border-top:0}
+.foot strong{color:var(--sub);font-weight:700}
+.fallback{margin-top:22px}
+@media (max-width:640px){
+  h1{font-size:23px}.verdict{padding:18px}.verdict h2{font-size:18.5px}
+  .bars{display:flex;flex-direction:column;align-items:stretch;gap:12px}
+  .bar{grid-template-columns:minmax(0,1fr) auto;gap:5px 10px}
+  .bar .track{grid-column:1/-1;grid-row:2}
+  .pcard-top{flex-wrap:wrap}
+  .aside{flex-basis:100%;display:flex;align-items:baseline;gap:6px;text-align:left}
+  .cols{gap:4px}
+  .cols:has(.col:nth-child(9)) .col:nth-child(even) .col-l{visibility:hidden}
+  th,td{padding:10px 12px}
 }
+@media (forced-colors:active){.fill,.seg,.sw,.dot,.badge{forced-color-adjust:none}}
 @media print{
-  :root{--bg:#fff;--card:#fff}
-  .wrap{max-width:none;padding:0}.conclusion,.section,.highlight{box-shadow:none}
+  :root{--bg:#fff;--panel:#fff;--shadow:none}
+  body{font-size:10.5pt}
+  .wrap{max-width:none;padding:0}
+  .sec-h,.intro{break-after:avoid}
+  .panel,.kpi,.item,.pcard,tr,.bar,.comp{break-inside:avoid}
+  .table-wrap{max-height:none;overflow:visible}
+  .cols{overflow:visible}
+  thead th{position:static}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+/* kit:end */
+</style>
+<style id="theme">
+/* 요청이 있을 때만 채운다. :root의 색·글꼴 토큰(--accent, --font, --bg …)을 덮어쓰면 리포트 전체 톤이 바뀐다.
+   다크 화면까지 바꾸려면 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){…}} 안에서도 덮어쓴다.
+   가격 세 축(--real·--ai·--notice)은 서로 구분되는 색으로 둔다. */
 </style>
 </head>
 <body>
-<main class="wrap">
-  <header class="hero">
-    <p class="eyebrow">주거 비교 리포트</p>
-    <h1 id="title">비교 제목</h1>
-    <p class="scope" id="scope"></p>
-  </header>
-
-  <section class="subjects block" id="subjects" aria-label="비교 대상"></section>
-
-  <section class="conclusion">
-    <span class="label" id="conclusionLabel">핵심 비교</span>
-    <h2 id="headline"></h2>
-    <p id="summary"></p>
-  </section>
-
-  <section class="highlights block" id="highlights" aria-label="비교 핵심 지표"></section>
-  <div id="sections"></div>
-
-  <footer class="foot">
-    <section class="block" id="caveatBlock">
-      <h2>해석할 때 함께 볼 점</h2>
-      <ul id="caveats"></ul>
-    </section>
-    <section class="sources block" id="sourceBlock">
-      <h2>데이터 출처</h2>
-      <div id="sources"></div>
-    </section>
-    <p class="meta" id="meta"></p>
-  </footer>
+<main class="wrap" id="report">
+  <noscript><p class="panel fallback">이 리포트를 보려면 JavaScript가 필요합니다. 텍스트 리포트가 필요하면 작성자에게 요청하세요.</p></noscript>
 </main>
 
 <!--
-  이 JSON 블록에는 실제 조회 결과만 입력한다.
-  subjects, highlights, sections는 비교 질문에 맞게 개수를 늘리거나 비울 수 있다.
-  표와 순위는 sections.table의 columns와 rows로 표현한다.
-  사용자 화면에는 API 필드명, slug, 내부 식별자, 인증 정보를 넣지 않는다.
+  비교 리포트 기본 디자인. 데이터 블록에는 실제 조회·계산 결과만 넣는다.
+  쓰는 법: 기본 디자인으로 충분하면 파일을 복사해 report-data만 채운다. 톤만 바꾸려면 theme 블록에서
+  토큰을 덮어쓴다. 질문에 더 맞는 배치·차트가 있으면 마크업·스타일·부품을 바꾸거나 새로 그려도 된다.
+  어떤 경우든 SKILL.md '리포트 표현'의 표기 규칙은 지킨다.
+
+  넣는 법: JSON을 직렬화한 뒤 모든 < 를 \u003c 로 바꿔 아래 script 안에 넣는다.
+  문자열은 텍스트로만 그린다. HTML은 쓰지 않으며 **굵게** 표시만 지원한다.
+
+  최상위: title, lede(비교 대상·범위·기준 한두 문장), verdict, sections[], notes[], sources[], reference, generatedAt
+    verdict: {label?, headline, summary?, state?: "partial"|"unavailable"}
+      headline은 비교 기준과 결론이다. state는 조회 범위 상태이며 승자의 확신도가 아니다.
+    notes: 해석 한계와 주의점 문장. sources: [{name, reference?, note?}] 출처와 기준시점.
+
+  sections[]: {title, sub?(오른쪽 작은 글씨, 기준시점·범위), intro?, note?, 그리고 아래 부품 중 필요한 것}
+    부품                          쓰는 곳
+    kpis   [{label, value, unit?, note?}]           지역 규모처럼 대표 숫자 2~5개
+    chips  ["**1,928**세대", ...]                    단지 속성 나열
+    facts  [{label, value, note?}]                  이름·거리·학교처럼 값이 글인 항목
+    bars   {caption?, series?, rows:[{label, value, display, sub?, note?, rank?, tag?, highlight?}]}
+                                                    같은 단위 값을 한 축에 놓는 비교
+    prices {basis:{real?, ai?, notice?}, items:[{name, rank?, sub?, badge?(글 또는 tag), aside?:{label, value}, chips?, band?, real?, ai?, notice?, note?}]}
+                                                    실거래·산출시세·공시가격을 나란히. 축마다 {value, display, note?}
+    series {legend?:[이름], rows:[{label, values:[n...], display?, partial?}], partialNote?}
+                                                    월별 거래 건수처럼 기간 순서가 있는 값
+    composition {rows:[{label, parts:[{label, value, display?}]}]}
+                                                    아파트·오피스텔·연립다세대처럼 합이 전체인 구성
+    table  {caption?, columns:[이름 | {label, numeric:true}], rows:[[셀 | {value, note?, status?}]]}
+                                                    대상 × 항목이 많거나 정확한 값 대조가 필요할 때
+
+  기본 부품을 쓸 때의 조합 예 (질문에 필요한 것만 쓴다):
+    단지 실거주 여건  → 지표마다 bars 한 섹션(세대수, 역 거리, 세대당 주차). 대상이 넷 이상이고 항목이 많으면 table
+    지역 시장 규모    → composition(지역마다 한 줄) + bars(최근 6개월 매매 건수)
+    단일 기준 순위    → bars에 rank. 제목과 sub에 범위·유형·기간·지표·방향을 쓴다
+    같은 면적 가격    → prices에 대상마다 카드 한 장. 순위가 질문일 때만 rank를 넣는다
+
+  부품 규칙:
+    - 막대 길이는 value 숫자의 실제 비례이고 글자는 display 그대로다. 금액 display는 원값에서 만든 같은 표기를 쓴다.
+    - value가 null이면 '확인 불가'로 그린다. prices에서 조회하지 않은 축은 키를 빼서 숨긴다.
+    - bars·series는 0 이상 값만 그린다. 음수가 섞인 증감은 table로 보인다.
+    - composition은 한 항목이라도 null이면 전체를 알 수 없으므로 비율과 막대를 그리지 않고 확인된 값만 보인다.
+    - rank를 넣으면 1위가 금색으로 강조된다. 결측 대상은 rank를 비우고 value:null과 tag로 남긴다.
+    - prices 막대는 섹션 안 모든 카드가 같은 자를 쓴다. 기준시점은 basis에 축마다 적는다.
+    - 작을수록 유리한 값(거리·연식)은 bars caption에 읽는 방향을 적는다.
+    - tag는 {text, tone: "info"|"good"|"warn"|"bad"}(예: 표본이 적은 대상 {text:"거래 적음", tone:"warn"}),
+      status는 "pass"|"fail"|"unknown"이다.
 -->
-<script type="application/json" id="dm-comparison">
+<script type="application/json" id="report-data">
 {
   "title": "",
-  "scope": "",
-  "reference": "",
-  "generatedAt": "",
-  "conclusion": {
-    "label": "핵심 비교",
-    "headline": "",
-    "summary": ""
-  },
-  "subjects": [],
-  "highlights": [],
+  "lede": "",
+  "verdict": {"label": "핵심 비교", "headline": "", "summary": "", "state": ""},
   "sections": [],
-  "caveats": [],
-  "sources": []
+  "notes": [],
+  "sources": [],
+  "reference": "",
+  "generatedAt": ""
 }
 </script>
 
 <script>
-(function(){
+/* kit:start — 빅밸류 리포트 키트 v1 렌더러. 데이터 문자열은 textContent로만 넣는다. */
+const Kit = (() => {
   "use strict";
-  var data;
-  try{data=JSON.parse(document.getElementById("dm-comparison").textContent)}
-  catch(e){document.getElementById("headline").textContent="리포트 데이터를 읽을 수 없습니다.";return}
+  const list = v => Array.isArray(v) ? v : [];
+  const rec = v => v !== null && typeof v === "object" && !Array.isArray(v) ? v : {};
+  const str = v => v == null ? "" : String(v);
+  const isNum = v => typeof v === "number" && Number.isFinite(v);
+  const NA = "확인 불가";
+  const SERIES = {real: ["실거래가", "var(--real)", "실거래"], ai: ["AI 산출시세", "var(--ai)", "AI 시세"], notice: ["공시가격", "var(--notice)", "공시가격"]};
+  const STATUS = {pass: ["충족", "good"], fail: ["미충족", "bad"], unknown: ["확인 불가", "warn"],
+    partial: ["일부 범위 확인", "warn"], unavailable: ["조회 불가", "bad"]};
+  const TONES = ["info", "good", "warn", "bad"];
+  const RAMP = ["var(--t1)", "var(--t2)", "var(--t3)", "var(--t4)"];
 
-  function byId(id){return document.getElementById(id)}
-  function setText(node,value){node.textContent=value==null?"":String(value)}
-  function make(tag,className,text){
-    var node=document.createElement(tag);
-    if(className)node.className=className;
-    if(text!=null)setText(node,text);
-    return node
+  function rich(node, value) {
+    str(value).split(/\*\*(.+?)\*\*/).forEach((part, i) => {
+      if (!part) return;
+      if (i % 2) { const b = document.createElement("b"); b.textContent = part; node.append(b); }
+      else node.append(part);
+    });
+    return node;
   }
-  function hideWhenEmpty(node,items){node.hidden=!Array.isArray(items)||items.length===0}
+  function el(tag, cls, value) {
+    const node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (value != null && value !== "") rich(node, value);
+    return node;
+  }
+  const shown = (value, display) => display != null && display !== "" ? str(display)
+    : isNum(value) ? value.toLocaleString("ko-KR") : value == null || value === "" ? NA : str(value);
+  const badge = status => { const s = STATUS[status] || STATUS.unknown; return el("span", "badge " + s[1], s[0]); };
+  const tag = t => { t = rec(t); return el("span", "badge " + (TONES.includes(t.tone) ? t.tone : ""), t.text); };
+  const swatch = (color, cls) => { const s = el("span", "sw" + (cls ? " " + cls : "")); if (color) s.style.background = color; return s; };
+  const maxOf = values => Math.max(0, ...values.filter(isNum));
+  // 실제 비례 그대로 그린다. 0보다 큰 값이 안 보일 만큼 작을 때만 2px를 보장한다.
+  const size = (v, max) => isNum(v) && v > 0 && max > 0 ? "max(2px, " + v / max * 100 + "%)" : "0";
 
-  document.title=data.title||"주거 비교 리포트";
-  setText(byId("title"),data.title||"주거 비교 리포트");
-  setText(byId("scope"),data.scope||"");
-
-  var subjects=Array.isArray(data.subjects)?data.subjects:[];
-  var subjectRoot=byId("subjects");
-  hideWhenEmpty(subjectRoot,subjects);
-  subjects.forEach(function(item){
-    var subject=make("article","subject");
-    var name=typeof item==="string"?item:item&&item.name;
-    var note=typeof item==="object"&&item?item.note:"";
-    subject.appendChild(make("span","subject-name",name));
-    if(note)subject.appendChild(make("span","subject-note",note));
-    subjectRoot.appendChild(subject)
-  });
-
-  var conclusion=data.conclusion||{};
-  setText(byId("conclusionLabel"),conclusion.label||"핵심 비교");
-  setText(byId("headline"),conclusion.headline||"확인 가능한 비교 결과가 없습니다.");
-  setText(byId("summary"),conclusion.summary||"");
-
-  var highlights=Array.isArray(data.highlights)?data.highlights:[];
-  var highlightRoot=byId("highlights");
-  hideWhenEmpty(highlightRoot,highlights);
-  highlights.forEach(function(item){
-    var tones={green:"green",violet:"violet",orange:"orange"};
-    var card=make("article","highlight "+(tones[item.tone]||""));
-    card.appendChild(make("p","highlight-label",item.label));
-    card.appendChild(make("p","highlight-value",item.value));
-    if(item.note)card.appendChild(make("p","highlight-note",item.note));
-    highlightRoot.appendChild(card)
-  });
-
-  var sections=Array.isArray(data.sections)?data.sections:[];
-  var sectionRoot=byId("sections");
-  sections.forEach(function(item){
-    var section=make("section","section");
-    section.appendChild(make("h2","",item.title||"세부 비교"));
-    if(item.summary)section.appendChild(make("p","section-summary",item.summary));
-
-    var facts=Array.isArray(item.facts)?item.facts:[];
-    if(facts.length){
-      var dl=make("dl","facts");
-      facts.forEach(function(fact){
-        var wrap=make("div","fact");
-        wrap.appendChild(make("dt","",fact.label));
-        var dd=make("dd","",fact.value);
-        if(fact.note)dd.appendChild(make("small","",fact.note));
-        wrap.appendChild(dd);dl.appendChild(wrap)
+  function barRow(r, max, color, dim) {
+    r = rec(r);
+    const ranked = r.rank != null && r.rank !== "";
+    const row = el("div", "bar" + (dim ? " dim" : "")), label = el("div", "bar-l" + (ranked ? " ranked" : "")), line = el("div");
+    if (ranked) line.append(el("span", "rk" + (Number(r.rank) === 1 ? " top" : ""), r.rank));
+    if (r.dot) { const d = el("span", "dot"); d.style.background = r.dot; line.append(d); }
+    line.append(el("span", "", r.label || "항목"));
+    if (r.tag) line.append(tag(r.tag));
+    label.append(line);
+    if (r.sub) label.append(el("small", "", r.sub));
+    const track = el("div", "track" + (isNum(r.value) ? "" : " na")), fill = el("div", "fill");
+    fill.style.width = size(r.value, max);
+    if (color) fill.style.background = color;
+    track.append(fill);
+    const value = el("div", "bar-v num" + (isNum(r.value) || r.display ? "" : " na"), shown(r.value, r.display));
+    if (r.note) value.append(el("small", "", r.note));
+    row.append(label, track, value);
+    return row;
+  }
+  function bars(b) {
+    b = rec(b);
+    const rows = list(b.rows).map(rec), box = el("div", "panel");
+    if (b.caption) box.append(el("p", "cap", b.caption));
+    const grid = el("div", "bars"), max = maxOf(rows.map(r => r.value));
+    const color = SERIES[b.series] ? SERIES[b.series][1] : "";
+    const anyHighlight = rows.some(r => r.highlight);
+    rows.forEach(r => grid.append(barRow(r, max, color, anyHighlight && !r.highlight)));
+    box.append(grid);
+    return box;
+  }
+  function prices(p) {
+    p = rec(p);
+    const items = list(p.items).map(rec), basis = rec(p.basis), frag = document.createDocumentFragment();
+    const keys = Object.keys(SERIES).filter(k => items.some(it => k in it));
+    const max = maxOf(items.flatMap(it => keys.map(k => rec(it[k]).value)));
+    const legend = el("div", "legend");
+    keys.forEach(k => {
+      const lg = el("span", "lg"); lg.append(swatch(SERIES[k][1]), SERIES[k][0]);
+      if (basis[k]) lg.append(el("small", "", basis[k]));
+      legend.append(lg);
+    });
+    if (keys.length) frag.append(legend);
+    items.forEach(it => {
+      const card = el("article", "panel pcard"), top = el("div", "pcard-top");
+      if (it.rank != null && it.rank !== "") top.append(el("div", "medal" + (Number(it.rank) === 1 ? " top" : ""), it.rank));
+      const t = el("div", "pcard-t"), h = el("h3", "", it.name || "대상");
+      if (it.badge) h.append(typeof it.badge === "object" ? tag(it.badge) : el("span", "badge info", it.badge));
+      t.append(h);
+      if (it.sub) t.append(el("p", "", it.sub));
+      top.append(t);
+      if (it.aside) {
+        const a = el("div", "aside"), aside = rec(it.aside);
+        a.append(el("small", "", aside.label), el("strong", "num", aside.value));
+        top.append(a);
+      }
+      card.append(top);
+      if (list(it.chips).length) card.append(chips(it.chips));
+      if (it.band) card.append(el("p", "band", it.band));
+      const grid = el("div", "bars");
+      keys.filter(k => k in it).forEach(k => {
+        const v = rec(it[k]);
+        grid.append(barRow({label: SERIES[k][2], dot: SERIES[k][1],
+          value: v.value, display: v.display, note: v.note}, max, SERIES[k][1]));
       });
-      section.appendChild(dl)
+      card.append(grid);
+      if (it.note) card.append(el("p", "note", it.note));
+      frag.append(card);
+    });
+    return frag;
+  }
+  function series(s) {
+    s = rec(s);
+    const rows = list(s.rows).map(rec), names = list(s.legend), box = el("div", "panel");
+    const totals = rows.map(r => list(r.values).filter(isNum).reduce((a, v) => a + v, 0));
+    const max = maxOf(totals), partial = rows.some(r => r.partial);
+    const gaps = rows.map(r => list(r.values).some(isNum) && list(r.values).some(v => !isNum(v)));
+    if (names.length > 1 || partial || gaps.includes(true)) {
+      const legend = el("div", "legend");
+      if (names.length > 1) names.forEach((n, i) => { const lg = el("span", "lg"); lg.append(swatch(RAMP[i % 4]), str(n)); legend.append(lg); });
+      if (partial) { const lg = el("span", "lg"); lg.append(swatch("", "partial"), s.partialNote || "신고가 덜 쌓였을 수 있는 달"); legend.append(lg); }
+      if (gaps.includes(true)) { const lg = el("span", "lg"); lg.append(el("b", "", "+"), " 일부 구분 확인 불가 · 합계는 최소값"); legend.append(lg); }
+      box.append(legend);
     }
-
-    var table=item.table||{},columns=Array.isArray(table.columns)?table.columns:[];
-    var rows=Array.isArray(table.rows)?table.rows:[];
-    if(columns.length&&rows.length){
-      var tableWrap=make("div","table-wrap"),tableEl=make("table",""),thead=make("thead",""),tr=make("tr","");
-      columns.forEach(function(column){tr.appendChild(make("th","",column))});
-      thead.appendChild(tr);tableEl.appendChild(thead);
-      var tbody=make("tbody","");
-      rows.forEach(function(row){
-        var bodyRow=make("tr","");
-        columns.forEach(function(_,index){bodyRow.appendChild(make("td","",Array.isArray(row)?row[index]:""))});
-        tbody.appendChild(bodyRow)
+    const cols = el("div", "cols" + (rows.length > 18 ? " dense" : ""));
+    rows.forEach((r, i) => {
+      const values = list(r.values), known = values.some(isNum);
+      const col = el("div", "col" + (r.partial ? " partial" : "")), plot = el("div", "plot");
+      // 일부 구분이 비어 있으면 합계는 하한이다. display를 넣어도 +는 유지한다.
+      const label = known ? shown(totals[i], r.display) + (gaps[i] ? "+" : "") : "—";
+      const bar = el("div", "colbar"), stack = el("div", "stack");
+      bar.style.height = known ? size(totals[i], max) : "0";
+      bar.append(el("span", "col-v", label));
+      values.forEach((v, j) => {
+        if (!isNum(v) || v <= 0) return;
+        const seg = el("div", "seg"); seg.style.height = v / totals[i] * 100 + "%"; seg.style.background = RAMP[j % 4];
+        stack.append(seg);
       });
-      tableEl.appendChild(tbody);tableWrap.appendChild(tableEl);section.appendChild(tableWrap)
+      bar.append(stack);
+      plot.append(bar);
+      col.title = str(r.label) + " " + (known ? label : NA);
+      col.append(plot, el("span", "col-l", r.label));
+      cols.append(col);
+    });
+    box.append(cols);
+    return box;
+  }
+  function composition(c) {
+    const box = el("div", "panel");
+    list(rec(c).rows).map(rec).forEach(r => {
+      const parts = list(r.parts).map(rec), sum = parts.filter(p => isNum(p.value)).reduce((a, p) => a + p.value, 0);
+      // 한 항목이라도 비면 전체를 알 수 없으므로 비율과 막대를 그리지 않는다.
+      const anyKnown = parts.some(p => isNum(p.value)), complete = anyKnown && parts.every(p => isNum(p.value));
+      const total = !anyKnown ? NA : (complete ? "합계 " : "확인된 합계 ") + sum.toLocaleString("ko-KR") + (complete ? "" : " · 일부 확인 불가");
+      const row = el("div", "comp"), head = el("div", "comp-h");
+      head.append(el("span", "", r.label || "구성"), el("small", "num", total));
+      const bar = el("div", "comp-bar" + (complete ? "" : " na")), values = el("div", "comp-v");
+      parts.forEach((p, i) => {
+        const share = complete && sum > 0 ? p.value / sum * 100 : 0;
+        if (share > 0) { const seg = el("div", "seg"); seg.style.flex = "0 0 " + share + "%"; seg.style.background = RAMP[i % 4]; bar.append(seg); }
+        const v = el("span", "num"); v.append(swatch(RAMP[i % 4]), str(p.label) + " ");
+        v.append(el("b", "", shown(p.value, p.display)));
+        if (share > 0) v.append(" · " + Math.round(share) + "%");
+        values.append(v);
+      });
+      row.append(head, bar, values);
+      box.append(row);
+    });
+    return box;
+  }
+  function kpis(items) {
+    const grid = el("div", "kpis");
+    list(items).map(rec).forEach(k => {
+      const tile = el("div", "kpi"), v = el("div", "v num", shown(k.value));
+      if (k.unit) v.append(el("small", "", k.unit));
+      tile.append(el("div", "k", k.label), v);
+      if (k.note) tile.append(el("div", "d", k.note));
+      grid.append(tile);
+    });
+    return grid;
+  }
+  function chips(items) {
+    const box = el("div", "chips");
+    list(items).forEach(c => box.append(el("span", "chip", c)));
+    return box;
+  }
+  function facts(items) {
+    const dl = el("dl", "facts");
+    list(items).map(rec).forEach(f => {
+      const wrap = el("div", "fact"), dd = el("dd", "", shown(f.value));
+      if (f.note) dd.append(el("small", "", f.note));
+      wrap.append(el("dt", "", f.label), dd);
+      dl.append(wrap);
+    });
+    return dl;
+  }
+  function table(t, title) {
+    t = rec(t);
+    const columns = list(t.columns), rows = list(t.rows);
+    if (!rows.length) return el("p", "panel empty", t.emptyMessage || "표에 넣을 결과가 없습니다. 조회 범위와 결론을 함께 확인하세요.");
+    const frame = el("div", "panel table-wrap"), tableEl = el("table");
+    frame.tabIndex = 0; frame.setAttribute("role", "region"); frame.setAttribute("aria-label", t.caption || title || "표");
+    if (t.caption) tableEl.append(el("caption", "", t.caption));
+    const numeric = columns.map(c => rec(c).numeric === true);
+    const head = el("tr");
+    columns.forEach((c, i) => { const th = el("th", numeric[i] ? "r" : "", typeof c === "string" ? c : rec(c).label); th.scope = "col"; head.append(th); });
+    const thead = el("thead"); thead.append(head);
+    const tbody = el("tbody");
+    rows.forEach(row => {
+      const tr = el("tr");
+      columns.forEach((_, i) => {
+        const raw = list(row)[i], cell = rec(raw), value = raw !== null && typeof raw === "object" ? cell.value : raw;
+        const td = el(i === 0 ? "th" : "td", numeric[i] ? "r" : "");
+        if (i === 0) td.scope = "row";
+        if (cell.status) td.append(badge(cell.status));
+        rich(td, shown(value));
+        if (cell.note) td.append(el("small", "", cell.note));
+        tr.append(td);
+      });
+      tbody.append(tr);
+    });
+    tableEl.append(thead, tbody);
+    frame.append(tableEl);
+    return frame;
+  }
+  function items(list_) {
+    const frag = document.createDocumentFragment();
+    list(list_).map(rec).forEach(it => {
+      const card = el("article", "panel item");
+      if (it.kicker) card.append(el("p", "kicker", it.kicker));
+      const head = el("div", "item-h");
+      head.append(el("h3", "", it.name || "후보"));
+      if (it.status) head.append(badge(it.status));
+      card.append(head);
+      if (it.summary) card.append(el("p", "", it.summary));
+      if (list(it.chips).length) card.append(chips(it.chips));
+      const checks = list(it.checks).map(rec);
+      if (checks.length) {
+        const ul = el("ul", "checks");
+        checks.forEach(c => {
+          const li = el("li", "check"), body = el("div");
+          body.append(el("strong", "", c.label));
+          if (c.value != null && c.value !== "") body.append(" ", el("span", "", c.value));
+          if (c.note) body.append(el("small", "", c.note));
+          li.append(badge(c.status), body);
+          ul.append(li);
+        });
+        card.append(ul);
+      }
+      frag.append(card);
+    });
+    return frag;
+  }
+  function criteria(items_) {
+    const box = el("div", "panel"), kinds = {required: "필수", preference: "선호", exclude: "제외"};
+    list(items_).map(rec).forEach(c => {
+      const row = el("div", "crit"), body = el("div");
+      row.append(el("span", kinds[c.kind] ? c.kind : "", kinds[c.kind] || "조건"));
+      body.append(el("strong", "", c.label));
+      if (c.description) body.append(el("p", "", c.description));
+      if (c.note) body.append(el("p", "", c.note));
+      row.append(body);
+      box.append(row);
+    });
+    return box;
+  }
+  function notes(items_) {
+    const ul = el("ul", "notes");
+    list(items_).forEach(n => ul.append(el("li", "", n)));
+    return ul;
+  }
+  const BLOCKS = [["kpis", kpis], ["chips", chips], ["facts", f => { const b = el("div", "panel"); b.append(facts(f)); return b; }],
+    ["prices", prices], ["bars", bars], ["series", series], ["composition", composition], ["criteria", criteria],
+    ["items", items], ["table", table], ["notes", notes]];
+  function section(s, n) {
+    s = rec(s);
+    const sec = el("section", "sec"), head = el("div", "sec-h");
+    head.append(el("span", "n", String(n).padStart(2, "0")), el("h2", "", s.title || "세부 근거"));
+    if (s.sub) head.append(el("span", "sub", s.sub));
+    sec.append(head);
+    if (s.intro) sec.append(el("p", "intro", s.intro));
+    BLOCKS.forEach(([key, render]) => {
+      const v = s[key];
+      if (v == null || (Array.isArray(v) && !v.length)) return;
+      sec.append(render(v, s.title));
+    });
+    if (s.note) sec.append(el("p", "note", s.note));
+    return sec;
+  }
+  function page(dataId, opts) {
+    const root = document.getElementById("report");
+    let data;
+    try {
+      data = JSON.parse(document.getElementById(dataId).textContent);
+      if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("invalid");
+    } catch (_) {
+      root.append(el("p", "panel fallback", "리포트 데이터를 읽을 수 없습니다. 파일을 다시 만들어 주세요. 조회 결과가 없다는 뜻은 아닙니다."));
+      return;
     }
-    sectionRoot.appendChild(section)
-  });
-
-  var caveats=Array.isArray(data.caveats)?data.caveats:[];
-  hideWhenEmpty(byId("caveatBlock"),caveats);
-  caveats.forEach(function(item){byId("caveats").appendChild(make("li","",item))});
-
-  var sources=Array.isArray(data.sources)?data.sources:[];
-  hideWhenEmpty(byId("sourceBlock"),sources);
-  sources.forEach(function(item){
-    var text=[item.name,item.reference,item.note].filter(Boolean).join(" · ");
-    byId("sources").appendChild(make("p","source",text))
-  });
-  setText(byId("meta"),[data.reference,data.generatedAt&&("작성 "+data.generatedAt)].filter(Boolean).join(" · "));
-}());
+    document.title = data.title || opts.title;
+    root.append(el("p", "eyebrow", data.eyebrow || opts.eyebrow), el("h1", "", data.title || opts.title));
+    if (data.lede) root.append(el("p", "lede", data.lede));
+    const v = rec(data.verdict), box = el("section", "verdict"), top = el("div", "verdict-top");
+    top.append(el("span", "label", v.label || opts.verdictLabel));
+    if (v.state === "partial" || v.state === "unavailable") top.append(badge(v.state));
+    box.append(top, el("h2", "", v.headline || "아직 입력된 결과가 없습니다."));
+    if (v.summary) box.append(el("p", "", v.summary));
+    root.append(box);
+    const sections = list(data.sections).concat((opts.extra || (() => []))(data)).map(rec);
+    let n = 0;
+    sections.forEach(s => root.append(section(s, ++n)));
+    const sources = list(data.sources).map(rec);
+    if (list(data.notes).length || sources.length || data.reference || data.generatedAt) {
+      const hasNotes = list(data.notes).length > 0;
+      const end = section({title: hasNotes ? data.notesTitle || opts.notesTitle : "데이터 출처와 기준시점", notes: data.notes}, ++n), foot = el("div", "foot");
+      sources.forEach(src => {
+        const p = el("p"); p.append(el("strong", "", src.name || "데이터 출처"));
+        const detail = [src.reference, src.note].filter(Boolean).map(str).join(" · ");
+        if (detail) p.append(" — " + detail);
+        foot.append(p);
+      });
+      const meta = [data.reference, data.generatedAt && "작성 " + data.generatedAt].filter(Boolean).join("  |  ");
+      if (meta) foot.append(el("p", "num", meta));
+      if (foot.childNodes.length) end.append(foot);
+      root.append(end);
+    }
+  }
+  return {page};
+})();
+/* kit:end */
+Kit.page("report-data", {eyebrow: "빅밸류 · 주거 비교 리포트", title: "주거 비교 리포트", verdictLabel: "핵심 비교", notesTitle: "해석할 때 함께 볼 점"});
 </script>
 </body>
 </html>
