@@ -1,12 +1,12 @@
 {
   "name": "bigvalue-realestate",
-  "version": "0.1.22",
+  "version": "0.1.23",
   "description": "아파트·오피스텔·연립다세대의 조건별 단지 탐색, 주거 데이터 진단·비교·순위, 부동산 서비스 개발을 돕는 빅밸류 데이터 스킬. Korean residential complex discovery, diagnostics, comparisons, rankings, and service codegen on BigValue Data Marketplace.",
   "author": {
     "name": "BigValue"
   },
   "repository": "https://github.com/BigValue-Agent/data-marketplace-agent-skills",
-  "license": "SEE LICENSE IN LICENSE.md",
+  "license": "MIT",
   "keywords": [
     "부동산",
     "아파트",
@@ -25,7 +25,7 @@
   "interface": {
     "displayName": "빅밸류 부동산 (BigValue Real Estate)",
     "shortDescription": "조건별 단지 찾기·주거 진단·비교·서비스 개발",
-    "longDescription": "아파트·오피스텔·연립다세대에서 사용자 조건에 맞는 단지를 찾고 충족 근거를 보여줍니다. 주거 데이터를 진단하거나 정해진 대상을 비교·순위화하고, 부동산 서비스 개발도 안내합니다. 데이터 연결(MCP)은 첫 사용 때 브라우저 로그인 한 번으로 켜집니다. / Finds Korean residential complexes by user criteria, diagnoses markets, compares established targets, and guides service code generation on BigValue Data Marketplace; the MCP connection signs in once via browser OAuth on first use.",
+    "longDescription": "아파트·오피스텔·연립다세대에서 사용자 조건에 맞는 단지를 찾고 충족 근거를 보여줍니다. 주거 데이터를 진단하거나 정해진 대상을 비교·순위화하고, 부동산 서비스 개발도 안내합니다. 데이터 조회에는 빅밸류 데이터 마켓플레이스 회원가입과 MCP 연결 시 OAuth 로그인이 필요합니다. / Finds Korean residential complexes by user criteria, diagnoses markets, compares established targets, and guides service code generation on BigValue Data Marketplace. Data access requires a BigValue Data Marketplace account and OAuth sign-in when connecting MCP.",
     "developerName": "BigValue",
     "category": "Productivity",
     "capabilities": [

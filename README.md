@@ -21,7 +21,9 @@
 
 사용하는 도구에 맞는 설치 방법을 선택합니다. 같은 도구에 플러그인과 개별 스킬을 중복으로 설치하지 않습니다.
 
-데이터를 조회하려면 빅밸류 데이터 이용 권한이 있는 계정이 필요합니다. 플러그인의 MCP 연결은 브라우저 로그인(OAuth)으로 인증하며, API 키를 직접 입력할 필요는 없습니다. 계정에 이용 권한이 없으면 온보딩 담당자에게 계정 승인을 요청합니다.
+플러그인과 스킬은 공개적으로 설치할 수 있습니다. 데이터를 조회하려면 [빅밸류 데이터 마켓플레이스](https://datamarket.bigvalue.ai/)에서 회원가입한 뒤, MCP 연결 과정에서 빅밸류 계정으로 로그인하고 접근 권한에 동의합니다.
+
+MCP 연결은 OAuth로 인증하므로 API 키를 직접 입력할 필요는 없습니다. 이용 가능한 데이터와 사용량은 계정의 요금제 및 서비스 이용 조건에 따릅니다.
 
 ### Claude Code
 
@@ -152,10 +154,13 @@ export DATA_MARKETPLACE_API_KEY="발급받은_API_키"
 ## 관련 문서
 
 - [빅밸류 AI 연결 가이드](https://datamarket.bigvalue.ai/ai): 도구별 데이터 연결 및 인증 안내
+- [서비스 이용약관](https://datamarket.bigvalue.ai/legal/terms): 계정, 요금제 및 데이터 이용 조건
 - [데이터 상품 문서 색인](https://datamarket.bigvalue.ai/llms.txt): 상품별 최신 필터·필드·응답 문서
 - [플러그인 연결 확인](skills/setup/SKILL.md): 설치 상태와 MCP 인증 상태 확인 절차
 - [지도 서비스 템플릿](skills/data-marketplace-residential-service/assets/map-service/README.md): 서비스 구성과 실행 방법
 
 ## 라이선스
 
-이 저장소는 내부 사용 전용입니다. 재배포 또는 공개 게시에는 빅밸류의 별도 승인이 필요합니다. 자세한 내용은 [LICENSE.md](LICENSE.md)를 확인합니다.
+이 저장소의 코드, 스킬 문서 및 템플릿은 MIT 라이선스로 제공합니다. 자세한 내용은 [LICENSE.md](LICENSE.md)를 확인합니다.
+
+빅밸류 MCP·API를 통해 제공되는 데이터와 서비스에는 [서비스 이용약관](https://datamarket.bigvalue.ai/legal/terms) 및 개별 데이터 상품의 이용 조건이 적용됩니다. 저장소의 라이선스는 데이터의 재배포·재판매 권한을 부여하지 않습니다.

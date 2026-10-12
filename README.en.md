@@ -21,7 +21,9 @@ The plugin also includes a [setup skill](skills/setup/SKILL.md) for checking the
 
 Choose the installation method for your tool. Do not install both the plugin and individual skills in the same tool.
 
-Data access requires an account with permission to use BigValue data. The plugin's MCP connection authenticates through browser sign-in (OAuth); you do not need to enter an API key. If your account does not have access, contact your onboarding representative for approval.
+The plugin and skills are publicly available for installation. To access data, sign up at [BigValue Data Marketplace](https://datamarket.bigvalue.ai/), then sign in with your BigValue account and grant access when connecting MCP.
+
+The MCP connection uses OAuth, so you do not need to enter an API key. Available data and usage limits depend on your account's plan and the service terms.
 
 ### Claude Code
 
@@ -152,10 +154,13 @@ The default API base URL is `https://datamarket-api.bigvalue.ai`. Send the API k
 ## Related documentation
 
 - [BigValue AI connection guide](https://datamarket.bigvalue.ai/ai): Data connection and authentication instructions for each tool
+- [Terms of Service](https://datamarket.bigvalue.ai/legal/terms): Account, plan, and data usage terms
 - [Data product documentation index](https://datamarket.bigvalue.ai/llms.txt): Current product-specific filters, fields, and response documentation
 - [Plugin connection check](skills/setup/SKILL.md): Installation and MCP authentication checks
 - [Map-service template](skills/data-marketplace-residential-service/assets/map-service/README.md): Service structure and setup instructions
 
 ## License
 
-This repository is for internal use only. Redistribution or public publication requires separate approval from BigValue. See [LICENSE.md](LICENSE.md) for details.
+The code, skill documentation, and templates in this repository are licensed under the MIT License. See [LICENSE.md](LICENSE.md) for details.
+
+Data and services provided through BigValue MCP and APIs are subject to the [Terms of Service](https://datamarket.bigvalue.ai/legal/terms) and the applicable data product terms. The repository license does not grant permission to redistribute or resell that data.
