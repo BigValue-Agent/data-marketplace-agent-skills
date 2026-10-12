@@ -134,7 +134,7 @@ The detailed completeness criteria and DOM evidence list live in `references/ver
 7. Monthly volume bars can group loaded `contract_date` rows by year-month and should expose `data-testid="volume-bars"`.
 8. Monthly volume bars are secondary evidence; they do not replace the price trend chart when selected-area sale rows exist.
 9. Use the same scope and dates as the list, following Price Scope And Reference Time below.
-10. Fix the chart's right edge to `date_to`. When results are partial (`has_next` or the offset cap), start the left edge at the earliest loaded row instead of `date_from`; pad minimum width only toward the past and never beyond the product standard month.
+10. Fix the chart's right edge to `date_to`. When results are partial (`has_next` or the offset cap), start the left edge at the earliest loaded row instead of `date_from`; pad minimum width only toward the past and never beyond `date_to`.
 11. When more rows exist, label the first-page view as partial and fetch more only after explicit user intent.
 12. Cancelled rows should be visually marked or excluded with a clear note.
 
@@ -151,7 +151,7 @@ The detailed completeness criteria and DOM evidence list live in `references/ver
 
 1. The default whole-complex summary is the profile `recent_month6_*` snapshot. It is not type-specific: in a type-filtered view, show it only when the selected type matches representative `residential_type`, and do not rebuild it from paged rows.
 2. Treat `complex_key + residential_type + selected actual private-area bin + deal type + requested period` as one realdeal scope.
-3. Anchor preset periods to profile `standard_ym`; label the screen with that product reference month and actual contract dates.
+3. Realdeal updates daily: end presets at today's date in `Asia/Seoul`, starting on the first day of the N-month window including the current month. Freeze the dates when starting a fresh query and reuse them for pagination, charts, and lease overlays. Keep profile summaries tied to `standard_ym`; today's query cutoff does not guarantee all recent contracts have been reported or loaded.
 4. A selected-area empty result stays `해당 전용면적 자료 없음`; do not reuse a whole-complex value under the selected-area label.
 5. Keep sale/lease overlay optional and cache it independently by scope, deal type, and period.
 

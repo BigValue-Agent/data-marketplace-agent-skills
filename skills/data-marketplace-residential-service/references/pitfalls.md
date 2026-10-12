@@ -29,7 +29,7 @@ Rows are grouped by theme: paths/keys → bbox/markers → sort/pagination → p
 | Rebuilding a whole-complex summary from detail rows | Realdeal and unit-price products are paged and can be truncated | Use profile `recent_month6_*` only as the whole-complex summary; in a type-filtered view, require the selected type to match representative `residential_type` |
 | Treating `estimated-prices` as a complex/pyeong representative price | It returns unit-level detail rows | Show the selected unit's value after `ppk + jpk` is known |
 | Widening a selected private area to another area or mixed rows | The value and label describe different populations | Keep an empty selected-area result empty. Mapping a displayed two-decimal area to its documented ±0.005㎡ bin is precision handling, not population widening |
-| Deriving a realdeal period from the browser date | Monthly product snapshots age independently of today | Anchor presets to profile `standard_ym` |
+| Ending realdeal presets at profile `standard_ym` | Daily realdeal updates can include contracts after the monthly profile snapshot | End presets at today in `Asia/Seoul`; keep profile summaries on their own reference month |
 | Showing one unit's grade as a complex grade | Grade belongs to the selected unit row | Show it only in the selected-unit detail |
 | Treating one snapshot as a trend | No time comparison exists | Display the returned notice year or estimated-price year-month as current evidence |
 | Turning raw distance into walking time | No route, entrance, or crossing data exists | Display distance only |

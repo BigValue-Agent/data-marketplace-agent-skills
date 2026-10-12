@@ -162,10 +162,7 @@ window.createPanelPriceModule = (context) => {
       dealDivision: deal.division, areaMin: deal.area ?? null, areaMax: deal.area ?? null,
       residentialType: cur.viewType,
     };
-    if (deal.range) {
-      const period = F.productPeriod(cur.profile.standard_ym, deal.range);
-      if (period) Object.assign(opts, period);
-    }
+    if (deal.period) Object.assign(opts, deal.period);
     return opts;
   }
 
@@ -180,6 +177,12 @@ window.createPanelPriceModule = (context) => {
     // 새 실거래 범위가 시작되면 이전 차트/전세 요청을 즉시 무효화한다.
     if (reset) chartRequest.next();
     if (reset) {
+      // 조회를 시작할 때 한 번 계산해 자정 이후 추가 페이지·전세·차트도 같은 기간을 쓴다.
+      deal.period = deal.range ? F.realdealPeriod(deal.range) : null;
+      const periodLabel = bodyEl.querySelector("#deal-period");
+      if (periodLabel) periodLabel.textContent = deal.period
+        ? `빅밸류 · 조회 기간 ${F.dateShort(deal.period.dateFrom)}~${F.dateShort(deal.period.dateTo)}`
+        : "빅밸류 · 상품 제공 기간";
       deal.rows = []; deal.offset = 0; deal.shown = 0;
       deal.hasNext = false; deal.truncated = false;
       deal.fromInitialSample = false; deal.sourceRowCount = 0; deal.sourceHasNext = false;
@@ -378,7 +381,7 @@ window.createPanelPriceModule = (context) => {
         wrap.innerHTML = `<div class="chart-empty">선택한 기간·면적에 신고된 거래가 없어요.</div>`;
         return;
       }
-      // 축 경계 계약: 오른쪽 끝 = 조회 종료일(상품 기준월 말일, standard_ym에서 매월 동적 계산),
+      // 축 경계 계약: 오른쪽 끝 = 조회 시작 시 고정한 한국시간 오늘,
       // 왼쪽 끝 = 완전 조회(!hasNext && !truncated)일 때만 조회 시작일. 부분 로드는 첫 거래일.
       chartHandle = window.dealChart.render(wrap, deal.rows, deal.division, {
         overlay,

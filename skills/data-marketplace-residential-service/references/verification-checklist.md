@@ -73,7 +73,7 @@ Run only the checks for surfaces included in the selected tier.
 5. Selecting a marker or candidate opens a detail drawer by `complex_key`.
 6. 표준형·완성형 detail drawers include a realdeal chart or volume chart when selected-area transaction rows are available; 기본형 stops at the profile `recent_month6_*` summary.
 7. The whole-complex price summary comes from profile `recent_month6_*`, not paged detail rows, and a type-filtered view hides it when the selected type differs from the representative `residential_type`.
-8. In 표준형·완성형, realdeal does not wait for buildings. The selected-area list and chart share a first page and a period derived from profile `standard_ym`.
+8. In 표준형·완성형, realdeal does not wait for buildings. The selected-area list, chart, pagination, and lease overlay share a period ending at the query-start date in `Asia/Seoul`, independently of profile `standard_ym`.
 9. In 완성형, building/unit sections are lazy and carry `ppk` and `jpk` as strings; notice and estimated prices load only for a selected unit.
 10. In 표준형·완성형, the shape layer uses the complex area product only for selected complex boundaries.
 11. In 표준형·완성형, the initial list and chart contain only the automatically selected observed area; changing it updates both surfaces and no empty all-area option is exposed.
@@ -135,7 +135,7 @@ When local browser execution or port binding is blocked, these grep-level checks
 - Do not use the complex profile product (`complex_profile`) as the base bbox marker product.
 - Use the estimated-prices product for current 산출시세 flows; do not describe it with removed product names.
 - Do not calculate a complex/pyeong notice or estimated price from a limited page of unit rows.
-- Do not derive realdeal periods from the browser's current date; use profile `standard_ym`.
+- Do not cap daily realdeal at profile `standard_ym` or use the browser's local timezone; use `Asia/Seoul` for presets and preserve the profile summary's reference month.
 - Do not require a three-source price gauge, representative unit grade, or whole-complex housing-composition reconstruction.
 
 ## Do Not Overfit

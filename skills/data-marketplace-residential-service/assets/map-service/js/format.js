@@ -52,18 +52,19 @@ window.fmt = (() => {
     return `${s.slice(0, 4)}.${s.slice(4, 6)}`;
   }
 
-  // 상품 기준월을 끝월로 하는 포함 기간. 브라우저 현재 날짜가 바뀌어도 같은
-  // 상품 스냅숏은 같은 조회 범위를 사용한다. 202606의 6개월은 20260101~20260630.
-  function productPeriod(standardYm, months) {
-    const value = String(standardYm ?? "");
-    if (!/^\d{6}$/.test(value) || !Number.isInteger(months) || months <= 0) return null;
-    const year = Number(value.slice(0, 4));
-    const monthIndex = Number(value.slice(4, 6)) - 1;
-    if (monthIndex < 0 || monthIndex > 11) return null;
+  // 일일 갱신 실거래: 한국시간 오늘까지, 현재 월을 포함한 N개월.
+  // 예: 2026-10-12의 6개월은 20260501~20261012. 단지 요약 기준월과는 별개다.
+  function realdealPeriod(months, now = new Date()) {
+    if (!Number.isInteger(months) || months <= 0) return null;
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit",
+    }).formatToParts(now);
+    const part = (type) => parts.find((entry) => entry.type === type).value;
+    const year = Number(part("year"));
+    const monthIndex = Number(part("month")) - 1;
     const start = new Date(Date.UTC(year, monthIndex - (months - 1), 1));
-    const end = new Date(Date.UTC(year, monthIndex + 1, 0));
     const ymd = (date) => `${date.getUTCFullYear()}${String(date.getUTCMonth() + 1).padStart(2, "0")}${String(date.getUTCDate()).padStart(2, "0")}`;
-    return { dateFrom: ymd(start), dateTo: ymd(end) };
+    return { dateFrom: ymd(start), dateTo: `${part("year")}${part("month")}${part("day")}` };
   }
 
   // 면적: 전역 단위 설정(평/㎡)에 따름
@@ -96,5 +97,5 @@ window.fmt = (() => {
     })[c]);
   }
 
-  return { price, rent, dateShort, dateYm, ym, productPeriod, area, count, distance, esc, setAreaUnit, getAreaUnit };
+  return { price, rent, dateShort, dateYm, ym, realdealPeriod, area, count, distance, esc, setAreaUnit, getAreaUnit };
 })();

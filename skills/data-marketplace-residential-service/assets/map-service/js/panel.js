@@ -232,7 +232,7 @@ window.panel = (() => {
         <section class="price-summary" id="sec-price-summary" data-testid="complex-realdeal-summary"></section>
 
         <section class="p-sec" id="sec-deals">
-          <h3 class="p-sec-title">실거래가 <span class="p-sec-sub">국토교통부 · 데이터 기준 ${F.ym(p.standard_ym)}</span></h3>
+          <h3 class="p-sec-title">실거래가 <span class="p-sec-sub" id="deal-period">빅밸류 · 조회 기간 확인 중</span></h3>
           <div class="deal-seg" role="group" aria-label="거래유형">
             ${["매매", "전세", "월세"].map((d) =>
               `<button type="button" data-deal="${d}" class="${d === "매매" ? "is-on" : ""}"
