@@ -2,6 +2,8 @@
 
 [한국어](README.md) | English
 
+https://github.com/user-attachments/assets/658440a8-6439-45de-9b41-37fcb97f6dc2
+
 BigValue Real Estate is an AI agent plugin for working with residential property data from BigValue Data Marketplace. It supports complex discovery, residential data analysis and comparison, and service development for apartments, officetels, and low-rise multifamily housing in Korea.
 
 The plugin includes skills that describe task workflows and an MCP (Model Context Protocol) connection for data access. MCP is a standard protocol for connecting AI tools to external data. Once installation and authentication are complete, you can request tasks in the chat.
