@@ -44,6 +44,7 @@ The skill should say which role to use and which key to carry forward. The API R
 - Complex aggregate-title purpose and area fields are populated only when exactly one aggregate-title source row is linked. `representative_title_structure_name` is currently unavailable, and the legacy `sum_title_*` field names do not mean a sum across buildings.
 - Building `residential_type` can be null when the source type cannot be determined.
 - For realdeal rows, sale `price`, monthly rent `price`, and lease `deposit_price` have different meanings.
+- Realdeal areas are in m²: `private_area` (exclusive floor area) and `land_right_area` (land-right area). In the currently provided data, land-right area is populated only for 연립다세대 매매; other residential types and 전세/월세 return null. Keep the two areas distinct. Preserve nulls; never substitute zero or whole-complex areas. Area-based price comparisons still use `private_area`.
 
 ## Do Not Include Here
 
