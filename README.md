@@ -16,7 +16,6 @@ https://github.com/user-attachments/assets/658440a8-6439-45de-9b41-37fcb97f6dc2
 | 주거 진단 | 단지나 지역의 거래·가격·입지·주거 구성을 분석하고, 주요 특징과 유의할 점을 정리합니다. | [residential-diagnostic-report](skills/residential-diagnostic-report/SKILL.md) |
 | 주거 비교 | 둘 이상의 단지·지역 등을 같은 기준으로 비교합니다. 요청에 따라 순위나 우선순위도 정리합니다. | [residential-comparison-report](skills/residential-comparison-report/SKILL.md) |
 | 부동산 서비스 개발 | 단지 검색, 지도 표시, 단지·동·호별 정보 조회 등을 갖춘 서비스의 데이터 연동과 코드 작성을 지원합니다. | [data-marketplace-residential-service](skills/data-marketplace-residential-service/SKILL.md) |
-| 앱 배포 | 배포 허용 계정의 정적 사이트·Workers 호환 서버를 CLI로 배포·관리합니다. MCP 인증과 CLI 로그인은 별개입니다. | [bigvalue-cloudflare-deploy](skills/bigvalue-cloudflare-deploy/SKILL.md) |
 
 설치 후 연결 상태를 확인하는 [setup 스킬](skills/setup/SKILL.md)도 포함되어 있습니다.
 

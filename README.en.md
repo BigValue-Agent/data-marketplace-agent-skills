@@ -16,7 +16,6 @@ The plugin includes skills that describe task workflows and an MCP (Model Contex
 | Residential Diagnostic Report | Analyzes transactions, prices, location, and housing composition for a complex or area, highlighting key findings and caveats. | [residential-diagnostic-report](skills/residential-diagnostic-report/SKILL.md) |
 | Residential Comparison Report | Compares two or more complexes, areas, or other targets using consistent criteria. Provides rankings or priorities on request. | [residential-comparison-report](skills/residential-comparison-report/SKILL.md) |
 | Residential Service Development | Supports data integration and code generation for services with complex search, maps, and complex, building, and unit details. | [data-marketplace-residential-service](skills/data-marketplace-residential-service/SKILL.md) |
-| App Deployment | CLI deployment of static apps and Workers-compatible servers for approved accounts. Requires a separate CLI login from MCP. | [bigvalue-cloudflare-deploy](skills/bigvalue-cloudflare-deploy/SKILL.md) |
 
 The plugin also includes a [setup skill](skills/setup/SKILL.md) for checking the connection after installation.
 
