@@ -18,8 +18,8 @@ description: "BIGVALUE 배포가 허용된 사용자의 HTML·정적 프론트·
 Node 20 이상에서 아래 고정 버전 CLI를 사용한다.
 
 ```sh
-npx -y @bigvalue-datamarketplace/deploy@0.3.0 login
-npx -y @bigvalue-datamarketplace/deploy@0.3.0 deploy deploy.json
+npx -y @bigvalue-datamarketplace/deploy@0.4.0 login
+npx -y @bigvalue-datamarketplace/deploy@0.4.0 deploy deploy.json
 ```
 
 MCP는 이 스킬을 제공하고, 실제 배포·관리는 CLI로 실행한다. MCP 연결과 CLI 로그인은 별개다. 로그인은 사용자가 브라우저에서 완료한다. CLI가 내부 허가증·정적 업로드 토큰·갱신을 처리하므로 AI가 이 값을 읽거나 옮기지 않는다. 로그인 자격은 사용자 홈, 비밀값 없는 앱·배포 ID는 프로젝트 `.bigvalue/<환경>.json`에 저장한다. `.bigvalue/`는 Git에서 제외하고 재배포를 위해 보존한다.
@@ -28,7 +28,7 @@ MCP는 이 스킬을 제공하고, 실제 배포·관리는 CLI로 실행한다.
 
 CLI는 운영 HTTPS API에 연결한다. 배포 권한이 허용된 활성 계정이 필요하다. CI에서는 웹 발급 배포 키를 `BIGVALUE_DEPLOY_KEY`로 제공할 수 있다.
 
-아래 명령은 `npx -y @bigvalue-datamarketplace/deploy@0.3.0` 뒤에 붙인다.
+아래 명령은 `npx -y @bigvalue-datamarketplace/deploy@0.4.0` 뒤에 붙인다.
 
 | 명령 | 용도 |
 |---|---|
@@ -75,8 +75,8 @@ CLI는 운영 HTTPS API에 연결한다. 배포 권한이 허용된 활성 계�
 프로젝트 루트에서 실행한다. 기존 설정에서 필요한 값 하나만 추출해 JSON이나 `.env` 파일 전체가 아닌 **값의 원문**을 비공개 파일 또는 원문이 출력되지 않는 파이프로 전달한다. 값은 도구 출력·로그·명령 인자·대화·Git에 남기지 않는다.
 
 ```sh
-npx -y @bigvalue-datamarketplace/deploy@0.3.0 secret put MY_SECRET --input-file /private/value.txt
-npx -y @bigvalue-datamarketplace/deploy@0.3.0 secret delete MY_SECRET
+npx -y @bigvalue-datamarketplace/deploy@0.4.0 secret put MY_SECRET --input-file /private/value.txt
+npx -y @bigvalue-datamarketplace/deploy@0.4.0 secret delete MY_SECRET
 ```
 
 서버는 `env.MY_SECRET`으로 읽는다. 기존 Secret은 재배포해도 유지된다. 최초 공개와 Secret 등록은 별도이므로 등록 전 값이 없는 구간을 고려한다. 직접 만든 비공개 입력 파일은 처리 후 정리하고 사용자 원본은 지우지 않는다.
