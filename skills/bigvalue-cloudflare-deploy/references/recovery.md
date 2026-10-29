@@ -5,6 +5,7 @@
 | `login` | CLI login 후 재시도. MCP 재연결로 CLI 로그인을 대체하지 않는다. |
 | `request_access` | 계정 배포 권한을 확인한다. 반복 로그인하지 않는다. |
 | `update_cli` | 지원되는 CLI 버전을 사용한다. |
+| `choose_new_slug` | 사용할 수 없는 앱 이름이다. 새 slug를 정하고 변경된 경로에 맞춰 다시 빌드한다. |
 | `check_status` | 표시된 ID로 status. ID를 모르면 원래 프로젝트에서 status를 실행해 연결 기록을 사용한다. 기록도 없으면 list로 앱을 식별해 담당자에게 확인한다. |
 | `use_input_file` | Secret 원문을 비공개 파일로 전달한다. 터미널 입력은 거절된다. |
 | `check_configuration` | 오류 코드에 맞춰 빌드·명령·연결을 확인한다. 불명확하면 중단·보고한다. |

@@ -6,7 +6,7 @@ Workers로 처음 배포하거나 런타임·어댑터를 변경할 때는 해�
 
 ## 프레임워크 앱
 
-빌드 전에 `whoami`의 `base_path` + `{slug}/`를 프레임워크의 기본 경로에 반영한다(예: Vite `base`, Next.js `basePath`). 서버에 전달되는 `X-Forwarded-Prefix`만으로 이미 빌드된 브라우저 경로가 바뀌지는 않는다.
+앱별 서브도메인의 루트(`/`)에 배포한다. `whoami`의 `base_path: /`를 확인하고 Vite `base`는 `/`, Next.js `basePath`는 미지정으로 둔다. handle·slug를 붙인 옛 경로 설정은 제거하고 다시 빌드한다. 서버에는 원래 경로가 전달되며 `X-Forwarded-Prefix`에 의존하지 않는다.
 
 1. [Cloudflare Framework guides](https://developers.cloudflare.com/workers/framework-guides/)에서 해당 프레임워크의 가이드를 확인해 프로젝트 버전에 맞는 Workers 호환 형태로 준비한다. 목록에 없으면 Cloudflare 공식 문서에서 해당 런타임의 호환 방법을 확인한다. 기존 코드·의존성을 우선 유지하고, 호환되지 않는 부분만 조정한다.
 2. 빌드가 만든 Wrangler 설정에서 진입 파일(`main`)과 정적 폴더(`assets.directory`)를 확인한다.
@@ -22,7 +22,7 @@ Workers로 처음 배포하거나 런타임·어댑터를 변경할 때는 해�
 3. 출력의 `.py` 진입점과 **`python_modules` 전체**를 함께 보존한다. `requirements.txt`만 보내거나 Python SDK·패키지를 빼면 실행되지 않는다. BIGVALUE CLI가 공식 산출물의 모듈 유형을 구분해 전송한다.
 4. `server.directory`는 `dist/worker`, `server.main`은 출력 기준 진입점(예: `entry.py`), `compatibility_flags`는 `["python_workers"]`로 둔다. `nodejs_compat`과 섞지 않는다. 정적 파일은 별도 `assets` 폴더로 지정한다.
 
-Python의 환경변수·Secret은 Workers SDK의 `env` 또는 프레임워크가 제공하는 env 연결에서 읽는다. 정적 요청은 공식 프레임워크 가이드의 `ASSETS.fetch` 연결로 처리한다. 경로 접두사는 그대로 적용되므로 ASGI `root_path` 등 프레임워크 설정도 맞춘다.
+Python의 환경변수·Secret은 Workers SDK의 `env` 또는 프레임워크가 제공하는 env 연결에서 읽는다. 정적 요청은 공식 프레임워크 가이드의 `ASSETS.fetch` 연결로 처리한다. 앱이 루트에서 실행되므로 ASGI `root_path`에는 사용자·앱 경로 접두사를 넣지 않는다.
 
 서버 묶음은 multipart 포함 10MiB다. 검증한 FastAPI 최소 앱은 약 9.2MiB여서 추가 의존성에 따라 넘을 수 있다. `--dry-run`의 `gateway_bytes`로 확인하고, 필요한 패키지만 넣는다. 넘으면 한도 해제를 가정하지 말고 지원 범위를 설명한다.
 
