@@ -8,6 +8,8 @@ Workers로 처음 배포하거나 런타임·어댑터를 변경할 때는 해�
 
 앱별 서브도메인의 루트(`/`)에 배포한다. `whoami`의 `base_path: /`를 확인하고 Vite `base`는 `/`, Next.js `basePath`는 미지정으로 둔다. handle·slug를 붙인 옛 경로 설정은 제거하고 다시 빌드한다. 서버에는 원래 경로가 전달되며 `X-Forwarded-Prefix`에 의존하지 않는다.
 
+브라우저 번들에 포함되는 공개 설정은 빌드 전에 적용하고, 변경 시 다시 빌드·배포한다. Worker의 `vars`·Secret 변경만으로 기존 정적 JS가 바뀌지는 않는다.
+
 1. [Cloudflare Framework guides](https://developers.cloudflare.com/workers/framework-guides/)에서 해당 프레임워크의 가이드를 확인해 프로젝트 버전에 맞는 Workers 호환 형태로 준비한다. 목록에 없으면 Cloudflare 공식 문서에서 해당 런타임의 호환 방법을 확인한다. 기존 코드·의존성을 우선 유지하고, 호환되지 않는 부분만 조정한다.
 2. 빌드가 만든 Wrangler 설정에서 진입 파일(`main`)과 정적 폴더(`assets.directory`)를 확인한다.
 3. 서버 모듈 전체를 포함하는 출력 폴더와 그 기준 진입 파일 경로를 `deploy.json`의 `server.directory`·`server.main`에, 정적 폴더를 `assets`에 옮긴다. 호환 날짜와 필요한 플래그도 옮긴다(JS: `nodejs_compat`, Python: 아래 절차).

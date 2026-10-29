@@ -89,3 +89,5 @@ These are on-demand lookups, not a mandatory pre-read list; open each file only 
 ## Final Self-Check
 
 Use `references/verification-checklist.md` for the chosen tier and changed functionality. Confirm the requested features and their dependencies are complete, report which checks actually ran, and leave untested runtime behavior explicit. Finish with any remaining runtime configuration from Runtime Inputs.
+
+If the user also requests deployment or hosting, use the `bigvalue-cloudflare-deploy` skill when available locally or in `list_bigvalue_skills`. Read its `SKILL.md` locally or through `read_bigvalue_skill` and follow its CLI workflow. Do not deploy merely because the user requested app creation; if the deployment skill is unavailable, state that limitation without assuming deployment access.
