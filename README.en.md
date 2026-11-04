@@ -12,6 +12,7 @@ The plugin includes skills that describe task workflows and an MCP (Model Contex
 
 | Skill | Main features | Documentation |
 | --- | --- | --- |
+| API Key Setup | Prepares issuance links and guides allowed origins and key storage for browser or server calls. | [bigvalue-api-key-setup](skills/bigvalue-api-key-setup/SKILL.md) |
 | Residential Complex Finder | Finds complexes by criteria such as location, number of households, floor area, and price. Distinguishes verified criteria from items that need further checking. | [residential-complex-finder](skills/residential-complex-finder/SKILL.md) |
 | Residential Diagnostic Report | Analyzes transactions, prices, location, and housing composition for a complex or area, highlighting key findings and caveats. | [residential-diagnostic-report](skills/residential-diagnostic-report/SKILL.md) |
 | Residential Comparison Report | Compares two or more complexes, areas, or other targets using consistent criteria. Provides rankings or priorities on request. | [residential-comparison-report](skills/residential-comparison-report/SKILL.md) |
@@ -145,13 +146,9 @@ The skill connects the required data and generates service code. The map-service
 
 ## Service development setup
 
-If the generated service calls the BigValue REST API directly, it needs an API key separate from MCP sign-in. Set the key as a server environment variable:
+API calls from the generated service require an API key separate from MCP sign-in. See the [API Key Setup skill](skills/bigvalue-api-key-setup/SKILL.md) for key issuance and configuration appropriate to where the API calls run.
 
-```bash
-export DATA_MARKETPLACE_API_KEY="your_api_key"
-```
-
-The default API base URL is `https://datamarket-api.bigvalue.ai`. Send the API key from the server in the `X-API-KEY` header; do not include it in browser code or commit it to the repository. A map SDK may require a separate provider key and domain configuration.
+The default API base URL is `https://datamarket-api.bigvalue.ai`. A map SDK may require a separate provider key and domain configuration.
 
 ## Related documentation
 

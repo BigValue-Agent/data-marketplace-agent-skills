@@ -22,9 +22,11 @@ Use this checklist when verifying a generated residential map, detail, price, or
 2. Use the live documents linked from `https://datamarket.bigvalue.ai/llms.txt` for the products you are wiring, reusing documents already read for this task. Retrieve additional contract metadata only for missing information; read realdeal, building/unit, and unit-price contracts when implementing those screens.
 3. Adapt the bundled `assets/map-service/` files to the selected tier and current service contract. Reuse files already acquired instead of recreating screens from scratch; if no template is available, follow `references/ui-recipes.md`.
 4. Read `references/code-patterns.md` and `references/pitfalls.md` as needed for the specific code pattern or pitfall in question.
-5. Sample verification calls go directly to the Data Marketplace API from server-side code when credentials are available.
+5. Verify from the actual caller when credentials are available: backend with a server key, or browser with a web key and registered origin.
 
-## App Backend Pattern
+## API Caller Pattern
+
+For browser-only apps, verify a real request from the registered origin using a client key. Investigate preflight or rejected origins when diagnosing authentication problems. The following proxy pattern applies only to apps with a backend; the product roles below also apply to direct browser calls.
 
 - Browser code calls only the generated app backend.
 - The app backend calls `POST /api/v1/data-products/{domain}/{product_slug}/query`.

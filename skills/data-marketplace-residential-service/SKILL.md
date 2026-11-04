@@ -39,15 +39,19 @@ Tier to products: 기본형 = integrated location search + legal-dong detail + t
 
 For the map, offer exactly three choices — Kakao Maps (template default), Naver Maps, or OpenStreetMap as a keyless alternative (present it to end users as 오픈소스 맵). Do not offer other map SDKs unless the caller asks. All three map adapters ship with `assets/map-service/`, so switching maps means loading exactly one of `js/map-adapter-kakao.js`, `js/map-adapter-naver.js`, or `js/map-adapter-osm.js` in `index.html` — do not rewrite the controller or the panels for it. Never read or compare a zoom number outside an adapter, and never gate marker calls on zoom: marker eligibility stays on the `BBOX_MAX_DEG` viewport span in every adapter. OpenStreetMap has no satellite layer, so that tool hides itself there.
 
-After the composition and map SDK are resolved, runtime keys do not change the selected code shape and must not block implementation. Never switch to OpenStreetMap because a map key is missing. Finish the selected service, then close with a run checklist that names each value the caller still has to set, where it goes, and how to obtain it. Name the exact destination per key: `DATA_MARKETPLACE_API_KEY` goes in the server `.env`, and the map key goes in the browser map config (`js/config.js` in the bundled template). Name the exact key too — `KAKAO_MAP_KEY` for Kakao, `NAVER_MAP_CLIENT_ID` for Naver, none at all for OpenStreetMap. Ask for key values only in that closing message.
+After the composition and map SDK are resolved, missing runtime keys must not change the selected architecture or block implementation. Never switch to OpenStreetMap because a map key is missing. Finish the selected service, then name missing settings and their exact destinations. The bundled map uses a server proxy by default.
+
+When a Data Marketplace key is missing, use `bigvalue-api-key-setup` to give the user a creation link prefilled with key name, type and required origins.
+
+Map keys remain separate: `KAKAO_MAP_KEY` or `NAVER_MAP_CLIENT_ID` goes in browser map config (`js/config.js` in the template); OpenStreetMap needs neither. Register the actual app address with the chosen map provider.
 
 Never invent real keys, and inject real values at run time instead of committing them. Which keys you may invite into chat differs by key:
 
-- `DATA_MARKETPLACE_API_KEY` is a server-side secret that belongs in `.env` and must never reach browser code. Show the caller how to set it themselves; do not ask them to paste the value.
+- Data Marketplace secret keys go in server `.env` as `DATA_MARKETPLACE_API_KEY`; never invite them into chat.
 - Kakao JavaScript keys and the Naver Dynamic Map Client ID are domain-restricted public runtime map keys that belong in browser map config, protected by domain registration rather than secrecy. Inviting the caller to paste these is fine.
 - For Naver Maps, NCP issues both a Client ID (`X-NCP-APIGW-API-KEY-ID`) and a Client Secret (`X-NCP-APIGW-API-KEY`). Browser Dynamic Map JS uses only the Client ID as `ncpKeyId`; the Client Secret is server-side REST-only and must never be placed in browser config.
 
-If the caller pastes any key anyway, write it to its proper home immediately, never repeat its value in any later output, and recommend rotating production keys because chat history retains them.
+If the caller pastes a secret, do not repeat it and recommend rotating it.
 
 ## Choose the Entry Point
 
@@ -63,7 +67,7 @@ If the caller pastes any key anyway, write it to its proper home immediately, ne
 
 ## Critical Rules
 
-- Browser code calls the generated app's server; that server calls Data Marketplace directly with its environment key in `X-API-KEY`. Never expose that secret to the browser or route the app's data through agent tools.
+- Server apps call Data Marketplace with a server key in `X-API-KEY`; browser-only apps use a web key with registered origins. Never expose server secrets or route runtime data through agent tools.
 - Before writing requests, use the live API Reference with `references/schema-contract.md` and `references/code-patterns.md` for body fields, response wrapping, product-specific pagination, bbox and sort support. Never invent fields, paths, or bridge keys.
 - Keep identifiers as strings, branch search selection on `result_type`, and follow `references/entrypoints.md` for search and map loading. A truncated search or marker result is not an offset page or complete coverage.
 - Profile and markers represent one complex with a representative residential type. Only profile `recent_month6_*` supplies its whole-complex price summary; never promote paged detail rows into that summary or label it as a type-specific price.

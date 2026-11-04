@@ -12,6 +12,7 @@ https://github.com/user-attachments/assets/658440a8-6439-45de-9b41-37fcb97f6dc2
 
 | 스킬 | 주요 기능 | 상세 문서 |
 | --- | --- | --- |
+| API 키 설정 | 호출 위치에 맞는 키 발급 링크와 허용 도메인·보관 위치를 안내합니다. | [bigvalue-api-key-setup](skills/bigvalue-api-key-setup/SKILL.md) |
 | 조건별 단지 탐색 | 지역·세대수·면적·가격 등의 조건에 맞는 단지를 찾고, 확인한 조건과 추가 확인이 필요한 항목을 구분합니다. | [residential-complex-finder](skills/residential-complex-finder/SKILL.md) |
 | 주거 진단 | 단지나 지역의 거래·가격·입지·주거 구성을 분석하고, 주요 특징과 유의할 점을 정리합니다. | [residential-diagnostic-report](skills/residential-diagnostic-report/SKILL.md) |
 | 주거 비교 | 둘 이상의 단지·지역 등을 같은 기준으로 비교합니다. 요청에 따라 순위나 우선순위도 정리합니다. | [residential-comparison-report](skills/residential-comparison-report/SKILL.md) |
@@ -145,13 +146,9 @@ ChatGPT 등에서 데이터 조회 기능만 연결하려는 경우에도 위 �
 
 ## 서비스 개발 설정
 
-생성한 서비스가 빅밸류 REST API를 직접 호출하는 경우에는 MCP 로그인과 별도로 API 키가 필요합니다. API 키는 서버 환경변수로 설정합니다.
+생성한 서비스의 API 호출에는 MCP 로그인과 별도의 API 키가 필요합니다. 호출 환경에 맞는 키 발급·설정은 [API 키 설정 스킬](skills/bigvalue-api-key-setup/SKILL.md)을 참고합니다.
 
-```bash
-export DATA_MARKETPLACE_API_KEY="발급받은_API_키"
-```
-
-기본 API 주소는 `https://datamarket-api.bigvalue.ai`입니다. API 키는 서버에서 `X-API-KEY` 헤더로 전송하며, 브라우저 코드나 저장소에 포함하지 않습니다. 지도 SDK를 사용하는 경우에는 지도 제공사의 키와 도메인 설정이 별도로 필요할 수 있습니다.
+기본 API 주소는 `https://datamarket-api.bigvalue.ai`입니다. 지도 SDK를 사용하는 경우에는 지도 제공사의 키와 도메인 설정이 별도로 필요할 수 있습니다.
 
 ## 관련 문서
 

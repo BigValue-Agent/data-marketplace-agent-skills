@@ -1,6 +1,6 @@
 # Code Patterns
 
-Use server-side helpers. Keep the provided API Reference as the source for exact request details.
+Choose the helper by the actual API caller. Keep the provided API Reference as the source for exact request details.
 
 ## TypeScript Server Helper
 
@@ -82,10 +82,29 @@ const rows = result.data;
 
 For a current-viewport residential marker helper, use the residential type marker product role and read its exact public API path, `domain`, and `product_slug` from the API Reference. Build a `POST /api/v1/data-products/{domain}/{product_slug}/query` request with top-level `bbox`, documented `limit`, and docs-validated `fields` in the JSON Body.
 
-Do not flatten bbox or filters into URL query parameters. Authenticate only with the server-side `X-API-KEY` header. Validate the bbox span before calling: each axis is capped at 0.1 degrees. Do not add an offset input to the marker helper; expose a `hasNext` signal so the UI can render a zoom-in guide instead.
+Do not flatten bbox or filters into URL query parameters. Authenticate with `X-API-KEY`, using a server key in a backend or a web key in browser-only code. Validate the bbox span before calling: each axis is capped at 0.1 degrees. Do not add an offset input to the marker helper; expose a `hasNext` signal so the UI can render a zoom-in guide instead.
 
 ## Browser Boundary
 
-- Browser components call your server route, not Data Marketplace directly.
-- Server routes read `DATA_MARKETPLACE_API_KEY`.
+- With a backend, browser components call your server route and the server reads `DATA_MARKETPLACE_API_KEY`.
+- Without a backend, use only a web-type key. The browser sends Origin automatically; do not set it manually or use `no-cors`.
 - Do not log API keys, request headers, or decrypted source configuration.
+
+## Browser-Only Helper
+
+Register `location.origin` in the web key's allowed domains before testing. `file://` has a null origin and is not supported; start a local HTTP server instead.
+
+```js
+async function callBrowserProduct(apiDomain, productSlug, body, publicWebKey) {
+  const response = await fetch(`https://datamarket-api.bigvalue.ai/api/v1/data-products/${apiDomain}/${productSlug}/query`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-API-KEY': publicWebKey },
+    body: JSON.stringify(body),
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.detail || `API ${response.status}`);
+  return result;
+}
+```
+
+For the bundled map, keep the controller/panels and replace only the request transport in `js/api.js` and public configuration in `js/config.js`: map each app route to its documented product, translate URL parameters into the same POST body used by the server example, and preserve response wrappers, cancellation and error handling. Remove the `/api/*` proxy dependency only for an explicitly browser-only app. Keep server keys out of this adaptation.
