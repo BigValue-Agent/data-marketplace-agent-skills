@@ -8,6 +8,7 @@
   },
   "repository": "https://github.com/BigValue-Agent/data-marketplace-agent-skills",
   "license": "MIT",
+  "privacyPolicyUrl": "https://bigvalue.ai/policy",
   "keywords": [
     "부동산",
     "아파트",
