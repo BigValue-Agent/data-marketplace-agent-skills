@@ -1,0 +1,110 @@
+# Code Patterns
+
+Choose the helper by the actual API caller. Keep the provided API Reference as the source for exact request details.
+
+## TypeScript Server Helper
+
+```ts
+type DataProductValue = string | number | boolean | undefined;
+type DataProductBody = {
+  filters?: Record<string, DataProductValue>;
+  fields?: string[];
+  bbox?: {
+    min_lat: number;
+    max_lat: number;
+    min_lng: number;
+    max_lng: number;
+  };
+  sort?: {
+    field: string;
+    order: "asc" | "desc";
+  };
+  limit?: number;
+  offset?: number;
+};
+
+type DataProductResponse<T> = {
+  success: boolean;
+  data: T[];
+  row_count: number;
+  limit: number;
+  // Absent on products without offset pagination (name search, map markers,
+  // complex boundaries). There is no total-count field — page with has_next.
+  offset?: number;
+  has_next: boolean;
+};
+
+export async function callDataProduct<T>(
+  apiDomain: string,
+  productSlug: string,
+  body: DataProductBody,
+): Promise<DataProductResponse<T>> {
+  const baseUrl = process.env.DATA_MARKETPLACE_BASE_URL ?? "https://datamarket-api.bigvalue.ai";
+  const res = await fetch(
+    `${baseUrl}/api/v1/data-products/${apiDomain}/${productSlug}/query`,
+    {
+      method: "POST",
+      headers: {
+        "X-API-KEY": process.env.DATA_MARKETPLACE_API_KEY ?? "",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+      cache: "no-store",
+    },
+  );
+
+  if (!res.ok) {
+    throw new Error(`Data Product call failed: ${res.status}`);
+  }
+  return (await res.json()) as DataProductResponse<T>;
+}
+```
+
+Read rows from the common response wrapper:
+
+```ts
+const result = await callDataProduct<Row>(apiDomain, productSlug, body);
+const rows = result.data;
+```
+
+## Body Builder Rules
+
+- Put supported search filters in `body.filters`.
+- Put bbox in top-level `body.bbox`.
+- Put `fields` in `body.fields` as a string array.
+- Use the product's documented `limit` and `offset` support for map/list calls.
+- Exception: the type-markers product takes `limit` only (no offset). Dense map responses are handled with a zoom-in guide, not paging; has_next=true on markers means the viewport is too wide.
+- For potentially large list calls, expose documented pagination inputs in the server helper and return pagination metadata to the caller.
+- Do not fetch every page automatically for initial render; load the first page and continue only when the UI asks for more.
+- Keep ID values as strings from route params through API calls.
+
+## Map Bbox Marker Helper Guardrail
+
+For a current-viewport residential marker helper, use the residential type marker product role and read its exact public API path, `domain`, and `product_slug` from the API Reference. Build a `POST /api/v1/data-products/{domain}/{product_slug}/query` request with top-level `bbox`, documented `limit`, and docs-validated `fields` in the JSON Body.
+
+Do not flatten bbox or filters into URL query parameters. Authenticate with `X-API-KEY`, using a server key in a backend or a web key in browser-only code. Validate the bbox span before calling: each axis is capped at 0.1 degrees. Do not add an offset input to the marker helper; expose a `hasNext` signal so the UI can render a zoom-in guide instead.
+
+## Browser Boundary
+
+- With a backend, browser components call your server route and the server reads `DATA_MARKETPLACE_API_KEY`.
+- Without a backend, use only a web-type key. The browser sends Origin automatically; do not set it manually or use `no-cors`.
+- Do not log API keys, request headers, or decrypted source configuration.
+
+## Browser-Only Helper
+
+Register `location.origin` in the web key's allowed domains before testing. `file://` has a null origin and is not supported; start a local HTTP server instead.
+
+```js
+async function callBrowserProduct(apiDomain, productSlug, body, publicWebKey) {
+  const response = await fetch(`https://datamarket-api.bigvalue.ai/api/v1/data-products/${apiDomain}/${productSlug}/query`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-API-KEY': publicWebKey },
+    body: JSON.stringify(body),
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.detail || `API ${response.status}`);
+  return result;
+}
+```
+
+For the bundled map, keep the controller/panels and replace only the request transport in `js/api.js` and public configuration in `js/config.js`: map each app route to its documented product, translate URL parameters into the same POST body used by the server example, and preserve response wrappers, cancellation and error handling. Remove the `/api/*` proxy dependency only for an explicitly browser-only app. Keep server keys out of this adaptation.
